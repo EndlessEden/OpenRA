@@ -12,12 +12,13 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using OpenRA.Effects;
 using OpenRA.Graphics;
+using OpenRA.Mods.Common.Effects;
 using OpenRA.Orders;
 using OpenRA.Traits;
+using OpenRA.Widgets;
 
-namespace OpenRA.Widgets
+namespace OpenRA.Mods.Common.Widgets
 {
 	public class WorldInteractionControllerWidget : Widget
 	{
