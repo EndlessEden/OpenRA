@@ -1,16 +1,16 @@
 #!/bin/bash
 # OpenRA master packaging script
 
-if [ $# -ne "2" ]; then
-    echo "Usage: `basename $0` version outputdir"
+if [ $# -ne "1" ]; then
+    echo "Usage: `basename $0` outputdir"
     exit 1
 fi
 
 # Resolve the absolute source path from the location of this script
 SRCDIR=$(readlink -f $(dirname $0)/../)
 BUILTDIR="${SRCDIR}/packaging/built"
-TAG=$1
-OUTPUTDIR=$(readlink -f $2)
+TAG=bangkang-`date +"%Y%m%d"`
+OUTPUTDIR=$(readlink -f $1)
 
 # Build the code and push the files into a clean dir
 cd "$SRCDIR"
