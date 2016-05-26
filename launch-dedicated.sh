@@ -1,20 +1,41 @@
-#!/bin/sh
-# example launch script, see https://github.com/OpenRA/OpenRA/wiki/Dedicated for details
+#!/bin/bash
 
-# Usage:
-#  $ ./launch-dedicated.sh # Launch a dedicated server with default settings
-#  $ Mod="d2k" ./launch-dedicated.sh # Launch a dedicated server with default settings but override the Mod
-#  Read the file to see which settings you can override
+LPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+for i in "$@"; do
+  case $i in
+    -m=*|--mod=*)
+      Mod="${i#*=}"
+      #shift
+    ;;
+    -n=*|--name=*)
+      Name="${i#*=}"
+      #shift
+    ;;
+    -p=*|--port=*)
+      ListenPort="${i#*=}"
+      #shift
+    ;;
+    -l=*|--lock=*)
+      ServerPassword="${i#*=}"
+      #shift
+    ;;
+    -a|--advertise)
+      AdvertiseOnline=True
+      #shift
+    ;;
+  esac
+done
 
 Name="${Name:-"Dedicated Server"}"
 Mod="${Mod:-"ra"}"
 ListenPort="${ListenPort:-"1234"}"
 ExternalPort="${ExternalPort:-"1234"}"
-AdvertiseOnline="${AdvertiseOnline:-"True"}"
+AdvertiseOnline="${AdvertiseOnline:-"False"}"
 AllowPortForward="${AllowPortForward:-"False"}"
 
 while true; do
-     mono --debug OpenRA.Server.exe Game.Mod=$Mod \
-     Server.Name="$Name" Server.ListenPort=$ListenPort Server.ExternalPort=$ExternalPort \
-     Server.AdvertiseOnline=$AdvertiseOnline Server.AllowPortForward=$AllowPortForward
+  cd $LPATH && mono --debug OpenRA.Server.exe Game.Mod=$Mod \
+      Server.Name="$Name" Server.ListenPort=$ListenPort Server.ExternalPort=$ExternalPort \
+      Server.AdvertiseOnline=$AdvertiseOnline Server.AllowPortForward=$AllowPortForward
 done
