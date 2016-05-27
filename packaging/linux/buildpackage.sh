@@ -7,7 +7,6 @@ if [ $# -ne "3" ]; then
 fi
 
 TAG=$1
-VERSION=`echo $TAG | grep -o "[0-9]\\+-\\?[0-9]\\?"`
 BUILTDIR=$2
 PACKAGEDIR=$3
 ROOTDIR=root

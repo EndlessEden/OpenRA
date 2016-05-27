@@ -42,7 +42,7 @@ rm "${DEB_BUILD_ROOT}/${LIBDIR}/COPYING"
 
 # Create the control file
 PACKAGE_SIZE=`du --apparent-size -c "${DEB_BUILD_ROOT}/usr" | grep "total" | awk '{print $1}'`
-sed "s/{VERSION}/$VERSION/" DEBIAN/control | sed "s/{SIZE}/$PACKAGE_SIZE/" > "${DEB_BUILD_ROOT}/DEBIAN/control"
+sed "s/{VERSION}/0-$VERSION/" DEBIAN/control | sed "s/{SIZE}/$PACKAGE_SIZE/" > "${DEB_BUILD_ROOT}/DEBIAN/control"
 
 # Build it in the temp directory, but place the finished deb in our starting directory
 pushd "${DEB_BUILD_ROOT}" >/dev/null
