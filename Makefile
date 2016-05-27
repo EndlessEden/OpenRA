@@ -372,7 +372,7 @@ dependencies: $(os-dependencies)
 
 all-dependencies: cli-dependencies windows-dependencies osx-dependencies
 
-version: mods/ra/mod.yaml mods/cnc/mod.yaml mods/d2k/mod.yaml mods/ts/mod.yaml mods/modchooser/mod.yaml mods/all/mod.yaml
+version: mods/ra/mod.yaml mods/ra2/mod.yaml mods/cnc/mod.yaml mods/d2k/mod.yaml mods/ts/mod.yaml mods/modchooser/mod.yaml mods/all/mod.yaml
 	@for i in $? ; do \
 		awk '{sub("Version:.*$$","Version: $(VERSION)"); print $0}' $${i} > $${i}.tmp && \
 		awk '{sub("\tmodchooser:.*$$","\tmodchooser: $(VERSION)"); print $0}' $${i}.tmp > $${i}.tmp2 && \
@@ -404,6 +404,10 @@ install-core: default
 	@$(INSTALL_PROGRAM) $(mod_cnc_TARGET) "$(DATA_INSTALL_DIR)/mods/cnc"
 	@$(CP_R) mods/ra "$(DATA_INSTALL_DIR)/mods/"
 	@$(INSTALL_PROGRAM) $(mod_ra_TARGET) "$(DATA_INSTALL_DIR)/mods/ra"
+	@$(CP_R) mods/ra2 "$(DATA_INSTALL_DIR)/mods/"
+	@$(INSTALL_PROGRAM) $(mod_ra_TARGET) "$(DATA_INSTALL_DIR)/mods/ra2"
+	@$(CP_R) mods/ts "$(DATA_INSTALL_DIR)/mods/"
+	@$(INSTALL_PROGRAM) $(mod_ra_TARGET) "$(DATA_INSTALL_DIR)/mods/ts"
 	@$(CP_R) mods/d2k "$(DATA_INSTALL_DIR)/mods/"
 	@$(INSTALL_PROGRAM) $(mod_d2k_TARGET) "$(DATA_INSTALL_DIR)/mods/d2k"
 	@$(CP_R) mods/modchooser "$(DATA_INSTALL_DIR)/mods/"

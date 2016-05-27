@@ -88,7 +88,7 @@ elseif ($command -eq "clean")
 	}
 }
 elseif ($command -eq "version")
-{	
+{
 	if ($command.Length -gt 1)
 	{
 		$version = $command[1]
@@ -102,13 +102,13 @@ elseif ($command -eq "version")
 		}
 	}
 	else
-	{	
+	{
 		echo "Unable to locate Git. The version will remain unchanged."
 	}
-	
+
 	if ($version -ne $null)
 	{
-		$mods = @("mods/ra/mod.yaml", "mods/cnc/mod.yaml", "mods/d2k/mod.yaml", "mods/ts/mod.yaml", "mods/modchooser/mod.yaml", "mods/all/mod.yaml")
+		$mods = @("mods/ra/mod.yaml", "mods/ra2/mod.yaml", "mods/cnc/mod.yaml", "mods/d2k/mod.yaml", "mods/ts/mod.yaml", "mods/modchooser/mod.yaml", "mods/all/mod.yaml")
 		foreach ($mod in $mods)
 		{
 			$replacement = (gc $mod) -Replace "Version:.*", ("Version: {0}" -f $version)
