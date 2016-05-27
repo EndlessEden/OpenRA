@@ -13,9 +13,7 @@ then
     echo "Usage: `basename $0` version root-dir outputdir"
     exit $E_BADARGS
 fi
-DATE=`echo $1 | grep -o "[0-9]\\+-\\?[0-9]\\?"`
-TYPE=`echo $1 | grep -o "^[a-z]*"`
-VERSION="$DATE.$TYPE"
+VERSION="$1"
 
 # Copy template files into a clean build directory (required)
 mkdir "${DEB_BUILD_ROOT}"
@@ -62,4 +60,3 @@ fakeroot dpkg-deb -b . "$3/openra_${PKGVERSION}_all.deb"
 # Clean up
 popd >/dev/null
 rm -rf "${DEB_BUILD_ROOT}"
-
