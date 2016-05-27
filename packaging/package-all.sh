@@ -1,7 +1,7 @@
 #!/bin/bash
 # OpenRA master packaging script
 
-if [ $# -ne "1" ]; then
+if [ $# -ne "2" ]; then
     echo "Usage: `basename $0` version outputdir"
     exit 1
 fi
