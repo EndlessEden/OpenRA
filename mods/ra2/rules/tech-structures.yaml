@@ -1,0 +1,79 @@
+caoild:
+	Inherits: ^TechBuilding
+	Selectable:
+		Bounds: 96, 104, -2, -26
+	Building:
+		Footprint: xx xx
+		Dimensions: 2, 2
+	EngineerRepairable:
+	CashTrickler:
+		Period: 100
+		Amount: 20
+		CaptureAmount: 1000
+	Tooltip:
+		Name: Tech Oil Derrick
+	Health:
+		HP: 1000
+	RevealsShroud:
+		Range: 4c0
+	Armor:
+		Type: Steel
+	WithIdleOverlay@pump:
+		Sequence: idle-pump
+	GivesBuildableArea:
+
+caairp:
+	Inherits: ^TechBuilding
+	Tooltip:
+		Name: Tech Airport
+	Armor:
+		Type: concrete
+	Health:
+		HP: 800
+	Building:
+		Dimensions: 3,3
+		Footprint: xxx xxx xxx
+	ParatroopersPower@Allies:
+		OrderName: AlliedParatroopers
+		Icon: paradrop
+		ChargeTime: 360
+		Description: Allied Paratroopers
+		LongDesc: A Cargo Plane drops six GIs\nanywhere on the map.
+		DropItems: e1,e1,e1,e1,e1,e1
+		QuantizedFacings: 8
+		UnitType: pdplane
+		CameraActor: camera
+		Prerequisites: ~structures.allies
+	ParatroopersPower@Soviets:
+		OrderName: SovietParatroopers
+		Icon: paradrop
+		ChargeTime: 360
+		Description: Soviet Paratroopers
+		LongDesc: A Cargo Plane drops nine conscripts\nanywhere on the map.
+		DropItems: e2,e2,e2,e2,e2,e2,e2,e2,e2
+		QuantizedFacings: 8
+		UnitType: pdplane
+		CameraActor: camera
+		Prerequisites: ~structures.soviets
+	WithIdleOverlay@decoration:
+	WithIdleOverlay@flag:
+		Sequence: flag
+
+cahosp:
+	Inherits: ^TechBuilding
+	Building:
+		Footprint: xxxx xxxx xxxx xxxx xxxx xxxx
+		Dimensions: 6, 4
+	Tooltip:
+		Name: Civilian Hospital
+	Health:
+		HP: 800
+	RevealsShroud:
+		Range: 6c0
+	Armor:
+		Type: Concrete
+	GivesBuildableArea:
+	RepairsUnits:
+		StartRepairingNotification:
+	RallyPoint:
+	WithIdleOverlay:

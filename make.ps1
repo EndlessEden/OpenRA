@@ -152,6 +152,8 @@ elseif ($command -eq "test")
 		./OpenRA.Utility.exe cnc --check-yaml
 		echo "Testing Red Alert mod MiniYAML..."
 		./OpenRA.Utility.exe ra --check-yaml
+		echo "Testing Red Alert 2 mod MiniYAML..."
+		./OpenRA.Utility.exe ra2 --check-yaml
 	}
 	else
 	{
@@ -172,6 +174,8 @@ elseif ($command -eq "check")
 		./OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.Common
 		echo "Checking for code style violations in OpenRA.Mods.RA..."
 		./OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.RA
+		echo "Checking for code style violations in OpenRA.Mods.RA2..."
+		./OpenRA.Utility.exe ra2 --check-code-style OpenRA.Mods.RA2
 		echo "Checking for code style violations in OpenRA.Mods.Cnc..."
 		./OpenRA.Utility.exe cnc --check-code-style OpenRA.Mods.Cnc
 		echo "Checking for code style violations in OpenRA.Mods.D2k..."
