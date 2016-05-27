@@ -249,7 +249,10 @@ ghost:
 	RevealsShroud:
 		Range: 8c0
 	Demolition:
+<<<<<<< HEAD
 		DetonationDelay: 45
+=======
+>>>>>>> 549eec75f9a6d862fe150431c98abfc78f73c265
 		Voice: SpecialAttack
 	Armor:
 		Type: Flak
@@ -314,7 +317,10 @@ tany:
 	RevealsShroud:
 		Range: 6c0
 	Demolition:
+<<<<<<< HEAD
 		DetonationDelay: 45
+=======
+>>>>>>> 549eec75f9a6d862fe150431c98abfc78f73c265
 		Voice: Attack
 	Armor:
 		Type: Flak
