@@ -89,8 +89,7 @@ INSTALL_DATA = $(INSTALL) -m644
 # program targets
 CORE = pdefault game utility server
 TOOLS = gamemonitor
-#VERSION     = $(shell git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null || echo git-`git rev-parse --short HEAD`)
-VERSION     = $(shell echo bangkang-`date +"%Y%m%d"`)
+VERSION     = $(shell echo kang-`git rev-parse --short HEAD`)
 
 # dependencies
 UNAME_S := $(shell uname -s)

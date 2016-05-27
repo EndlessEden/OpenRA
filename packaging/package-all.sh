@@ -2,15 +2,15 @@
 # OpenRA master packaging script
 
 if [ $# -ne "1" ]; then
-    echo "Usage: `basename $0` outputdir"
+    echo "Usage: `basename $0` version outputdir"
     exit 1
 fi
 
 # Resolve the absolute source path from the location of this script
 SRCDIR=$(readlink -f $(dirname $0)/../)
 BUILTDIR="${SRCDIR}/packaging/built"
-TAG=bangkang-`date +"%Y%m%d"`
-OUTPUTDIR=$(readlink -f $1)
+TAG=$1
+OUTPUTDIR=$(readlink -f $2)
 
 # Build the code and push the files into a clean dir
 cd "$SRCDIR"
@@ -31,7 +31,7 @@ markdown DOCUMENTATION.md > DOCUMENTATION.html
 markdown Lua-API.md > Lua-API.html
 
 # List of files that are packaged on all platforms
-FILES=('OpenRA.Game.exe' 'OpenRA.Game.exe.config' 'OpenRA.Utility.exe' 'OpenRA.Server.exe' 
+FILES=('OpenRA.Game.exe' 'OpenRA.Game.exe.config' 'OpenRA.Utility.exe' 'OpenRA.Server.exe'
 'OpenRA.Platforms.Default.dll' \
 'lua' 'glsl' 'mods/common' 'mods/ra' 'mods/cnc' 'mods/d2k' 'mods/ts' 'mods/ra2' 'mods/modchooser' \
 'AUTHORS' 'COPYING' 'README.html' 'CONTRIBUTING.html' 'DOCUMENTATION.html' 'CHANGELOG.html' \
