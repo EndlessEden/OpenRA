@@ -1,11 +1,11 @@
 Metadata:
 	Title: Red Alert 2
 	Description: The Soviet Union is back!\nThis time to conquer the United States...
-	Version: kang-c79f52f
+	Version: kang-d27da77
 	Author: the RA2 mod team
 
 RequiresMods:
-	modchooser: kang-c79f52f
+	modchooser: kang-d27da77
 
 Packages:
 	~^Content/ra2
@@ -49,7 +49,7 @@ Packages:
 
 MapFolders:
 	ra2|maps: System
-	~^maps/ra2/kang-c79f52f: User
+	~^maps/ra2/kang-d27da77: User
 
 Rules:
 	ra2|rules/proxy-actors.yaml

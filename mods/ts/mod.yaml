@@ -1,11 +1,11 @@
 Metadata:
 	Title: Tiberian Sun
 	Description: Developer stub, not yet ready for release!
-	Version: kang-c79f52f
+	Version: kang-d27da77
 	Author: the OpenRA Developers
 
 RequiresMods:
-	modchooser: kang-c79f52f
+	modchooser: kang-d27da77
 
 Packages:
 	~^Content/ts
@@ -55,7 +55,7 @@ Packages:
 
 MapFolders:
 	ts|maps: System
-	~^maps/ts/kang-c79f52f: User
+	~^maps/ts/kang-d27da77: User
 
 Rules:
 	ts|rules/ai.yaml
