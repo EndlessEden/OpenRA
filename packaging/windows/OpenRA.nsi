@@ -79,6 +79,7 @@ Section "Game" GAME
 	File /r "${SRCDIR}\mods\d2k"
 	File /r "${SRCDIR}\mods\ra"
 	File /r "${SRCDIR}\mods\ts"
+	File /r "${SRCDIR}\mods\ra2"
 	File /r "${SRCDIR}\mods\modchooser"
 
 	SetOutPath "$INSTDIR"
