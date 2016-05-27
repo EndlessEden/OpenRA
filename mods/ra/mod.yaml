@@ -1,11 +1,11 @@
 Metadata:
 	Title: Red Alert
 	Description: In a world where Hitler was assassinated and the Third Reich never\nexisted, the Soviet Union seeks power over all of Europe.  Allied\nagainst this Evil Empire, the free world faces a Cold War turned hot.\n\nRed Alert fuses the quick and fun gameplay of the original\nC&C: Red Alert, with balance improvements and new gameplay\nfeatures inspired by modern RTS games.
-	Version: kang-ef24309
+	Version: kang-9ad6814
 	Author: the OpenRA Developers
 
 RequiresMods:
-	modchooser: kang-ef24309
+	modchooser: kang-9ad6814
 
 Packages:
 	~^Content/ra
@@ -34,7 +34,7 @@ Packages:
 
 MapFolders:
 	ra|maps: System
-	~^maps/ra/kang-ef24309: User
+	~^maps/ra/kang-9ad6814: User
 
 Rules:
 	ra|rules/misc.yaml
