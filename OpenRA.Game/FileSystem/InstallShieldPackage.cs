@@ -18,7 +18,7 @@ namespace OpenRA.FileSystem
 {
 	public sealed class InstallShieldPackage : IReadOnlyPackage
 	{
-		struct Entry
+		public struct Entry
 		{
 			public readonly uint Offset;
 			public readonly uint Length;
@@ -114,15 +114,20 @@ namespace OpenRA.FileSystem
 				return null;
 
 			s.Seek(dataStart + e.Offset, SeekOrigin.Begin);
-			var data = s.ReadBytes((int)e.Length);
 
-			return new MemoryStream(Blast.Decompress(data));
+			var ret = new MemoryStream();
+			Blast.Decompress(s, ret);
+			ret.Seek(0, SeekOrigin.Begin);
+
+			return ret;
 		}
 
 		public bool Contains(string filename)
 		{
 			return index.ContainsKey(filename);
 		}
+
+		public IReadOnlyDictionary<string, Entry> Index { get { return new ReadOnlyDictionary<string, Entry>(index); } }
 
 		public void Dispose()
 		{

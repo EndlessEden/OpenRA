@@ -113,7 +113,7 @@ M16:
 			None: 100
 			Wood: 25
 			Light: 30
-			Heavy: 10
+			Heavy: 15
 		DamageTypes: Prone50Percent, TriggerProne, BulletDeath
 	Warhead@2Eff: CreateEffect
 		Explosions: piff
@@ -185,7 +185,7 @@ APCGun.AA:
 	Report: gun20.aud
 	ValidTargets: Air
 	Projectile: Bullet
-		Speed: 1c682
+		Speed: 2c0
 		Blockable: false
 	Warhead@1Dam: SpreadDamage
 		Spread: 128

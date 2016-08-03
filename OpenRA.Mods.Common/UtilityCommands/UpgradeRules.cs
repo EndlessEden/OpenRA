@@ -92,8 +92,10 @@ namespace OpenRA.Mods.Common.UtilityCommands
 			catch { }
 		}
 
-		internal static void UpgradeActorRules(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
+		internal static void UpgradeActorRules(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
 		{
+			var addNodes = new List<MiniYamlNode>();
+
 			foreach (var node in nodes)
 			{
 				if (engineVersion < 20160515)
@@ -130,11 +132,152 @@ namespace OpenRA.Mods.Common.UtilityCommands
 					node.Value.Nodes.Add(new MiniYamlNode("Id", id));
 				}
 
-				UpgradeActorRules(engineVersion, ref node.Value.Nodes, node, depth + 1);
+				if (engineVersion < 20160611)
+				{
+					// Deprecated WithSpriteRotorOverlay
+					if (depth == 1 && node.Key.StartsWith("WithSpriteRotorOverlay"))
+					{
+						var parts = node.Key.Split('@');
+						node.Key = "WithIdleOverlay";
+						if (parts.Length > 1)
+							node.Key += "@" + parts[1];
+
+						Console.WriteLine("The 'WithSpriteRotorOverlay' trait has been removed.");
+						Console.WriteLine("Its functionality can be fully replicated with 'WithIdleOverlay' + upgrades.");
+						Console.WriteLine("Look at the helicopters in our RA / C&C1  mods for implementation details.");
+					}
+				}
+
+				// Map difficulty configuration was split to a generic trait
+				if (engineVersion < 20160614 && node.Key.StartsWith("MapOptions"))
+				{
+					var difficultiesNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "Difficulties");
+					if (difficultiesNode != null)
+					{
+						var difficulties = FieldLoader.GetValue<string[]>("Difficulties", difficultiesNode.Value.Value)
+							.ToDictionary(d => d.Replace(" ", "").ToLowerInvariant(), d => d);
+						node.Value.Nodes.Remove(difficultiesNode);
+
+						var childNodes = new List<MiniYamlNode>()
+						{
+							new MiniYamlNode("ID", "difficulty"),
+							new MiniYamlNode("Label", "Difficulty"),
+							new MiniYamlNode("Values", new MiniYaml("", difficulties.Select(kv => new MiniYamlNode(kv.Key, kv.Value)).ToList()))
+						};
+
+						var difficultyNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "Difficulty");
+						if (difficultyNode != null)
+						{
+							childNodes.Add(new MiniYamlNode("Default", difficultyNode.Value.Value.Replace(" ", "").ToLowerInvariant()));
+							node.Value.Nodes.Remove(difficultyNode);
+						}
+						else
+							childNodes.Add(new MiniYamlNode("Default", difficulties.Keys.First()));
+
+						var lockedNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "DifficultyLocked");
+						if (lockedNode != null)
+						{
+							childNodes.Add(new MiniYamlNode("Locked", lockedNode.Value.Value));
+							node.Value.Nodes.Remove(lockedNode);
+						}
+
+						addNodes.Add(new MiniYamlNode("ScriptLobbyDropdown@difficulty", new MiniYaml("", childNodes)));
+					}
+				}
+
+				if (engineVersion < 20160702)
+				{
+					if (node.Key.StartsWith("GivesExperience"))
+					{
+						var ff = "FriendlyFire";
+						var ffNode = node.Value.Nodes.FirstOrDefault(n => n.Key == ff);
+						if (ffNode != null)
+						{
+							var newStanceStr = "";
+							if (FieldLoader.GetValue<bool>(ff, ffNode.Value.Value))
+								newStanceStr = "Neutral, Enemy, Ally";
+							else
+								newStanceStr = "Neutral, Enemy";
+
+							node.Value.Nodes.Add(new MiniYamlNode("ValidStances", newStanceStr));
+						}
+
+						node.Value.Nodes.Remove(ffNode);
+					}
+					else if (node.Key.StartsWith("GivesBounty"))
+					{
+						var stancesNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "Stances");
+						if (stancesNode != null)
+							stancesNode.Key = "ValidStances";
+					}
+				}
+
+				if (engineVersion < 20160703)
+				{
+					if (node.Key.StartsWith("WithDecoration") || node.Key.StartsWith("WithRankDecoration") || node.Key.StartsWith("WithDecorationCarryable"))
+					{
+						var stancesNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "Stances");
+						if (stancesNode != null)
+							stancesNode.Key = "ValidStances";
+					}
+				}
+
+				if (engineVersion < 20160704)
+				{
+					if (node.Key.Contains("PoisonedByTiberium"))
+					{
+						node.Key = node.Key.Replace("PoisonedByTiberium", "DamagedByTerrain");
+						if (!node.Key.StartsWith("-"))
+						{
+							if (node.Value.Nodes.Any(a => a.Key == "Resources"))
+								node.Value.Nodes.Where(n => n.Key == "Resources").Do(n => n.Key = "Terrain");
+							else
+								node.Value.Nodes.Add(new MiniYamlNode("Terrain", new MiniYaml("Tiberium, BlueTiberium")));
+
+							Console.WriteLine("PoisonedByTiberium: Weapon isn't converted. Copy out the appropriate");
+							Console.WriteLine("weapon's Damage, ReloadDelay and DamageTypes to DamagedByTerrain's Damage,");
+							Console.WriteLine("DamageInterval and DamageTypes, respectively, then remove the Weapon tag.");
+						}
+					}
+
+					if (node.Key.Contains("DamagedWithoutFoundation"))
+					{
+						node.Key = node.Key.Replace("DamagedWithoutFoundation", "DamagedByTerrain");
+						if (!node.Key.StartsWith("-"))
+						{
+							Console.WriteLine("DamagedWithoutFoundation: Weapon isn't converted. Copy out the appropriate");
+							Console.WriteLine("weapon's Damage, ReloadDelay and DamageTypes to DamagedByTerrain's Damage,");
+							Console.WriteLine("DamageInterval and DamageTypes, respectively, then remove the Weapon tag.");
+
+							Console.WriteLine("SafeTerrain isn't converted. Setup an inverted check using Terrain.");
+
+							node.Value.Nodes.Add(new MiniYamlNode("StartOnThreshold", new MiniYaml("true")));
+							if (!node.Value.Nodes.Any(a => a.Key == "DamageThreshold"))
+								node.Value.Nodes.Add(new MiniYamlNode("DamageThreshold", new MiniYaml("50")));
+						}
+					}
+				}
+
+				// ParticleDensityFactor was converted from a float to an int
+				if (engineVersion < 20160713 && node.Key == "WeatherOverlay")
+				{
+					var density = node.Value.Nodes.FirstOrDefault(n => n.Key == "ParticleDensityFactor");
+					if (density != null)
+					{
+						var value = float.Parse(density.Value.Value, CultureInfo.InvariantCulture);
+						value = (int)Math.Round(value * 10000, 0);
+						density.Value.Value = value.ToString();
+					}
+				}
+
+				UpgradeActorRules(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
+
+			foreach (var a in addNodes)
+				nodes.Add(a);
 		}
 
-		internal static void UpgradeWeaponRules(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
+		internal static void UpgradeWeaponRules(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
 		{
 			foreach (var node in nodes)
 			{
@@ -182,61 +325,113 @@ namespace OpenRA.Mods.Common.UtilityCommands
 						node.Key = "Speed";
 				}
 
-				UpgradeWeaponRules(engineVersion, ref node.Value.Nodes, node, depth + 1);
+				UpgradeWeaponRules(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 		}
 
-		internal static void UpgradeTileset(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
+		static int RemapD2k106Sequence(int frame)
+		{
+			if (frame < 2518)
+				return frame;
+			if (frame < 3370)
+				return frame + 248;
+			if (frame < 4011)
+				return frame + 253;
+			if (frame < 4036)
+				return frame + 261;
+			return frame + 264;
+		}
+
+		internal static void UpgradeSequences(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
+		{
+			foreach (var node in nodes)
+			{
+				if (engineVersion < 20160730 && modData.Manifest.Mod.Id == "d2k" && depth == 2)
+				{
+					if (node.Key == "Start")
+						node.Value.Value = RemapD2k106Sequence(FieldLoader.GetValue<int>("", node.Value.Value)).ToString();
+					if (node.Key == "Frames")
+						node.Value.Value = FieldLoader.GetValue<int[]>("", node.Value.Value)
+							.Select(RemapD2k106Sequence).JoinWith(", ");
+				}
+
+				UpgradeSequences(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
+			}
+		}
+
+		internal static void UpgradeTileset(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
 		{
 			foreach (var node in nodes)
 			{
 				// Add rules here
-				UpgradeTileset(engineVersion, ref node.Value.Nodes, node, depth + 1);
+				UpgradeTileset(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 		}
 
-		internal static void UpgradeCursors(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
+		internal static void UpgradeCursors(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
 		{
 			foreach (var node in nodes)
 			{
 				// Add rules here
-				UpgradeCursors(engineVersion, ref node.Value.Nodes, node, depth + 1);
+				UpgradeCursors(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 		}
 
-		internal static void UpgradePlayers(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
+		internal static void UpgradePlayers(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
 		{
 			foreach (var node in nodes)
 			{
 				// Add rules here
-				UpgradePlayers(engineVersion, ref node.Value.Nodes, node, depth + 1);
+				UpgradePlayers(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 		}
 
-		internal static void UpgradeChromeMetrics(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
+		internal static void UpgradeChromeMetrics(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
 		{
 			foreach (var node in nodes)
 			{
 				// Add rules here
-				UpgradeChromeMetrics(engineVersion, ref node.Value.Nodes, node, depth + 1);
+				UpgradeChromeMetrics(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 		}
 
-		internal static void UpgradeChromeLayout(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
+		internal static void UpgradeChromeLayout(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
 		{
 			foreach (var node in nodes)
 			{
 				// Add rules here
-				UpgradeChromeLayout(engineVersion, ref node.Value.Nodes, node, depth + 1);
+				UpgradeChromeLayout(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 		}
 
-		internal static void UpgradeActors(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
+		internal static void ModifyCPos(ref string input, CVec vector)
+		{
+			var oldCPos = FieldLoader.GetValue<CPos>("(value)", input);
+			var newCPos = oldCPos + vector;
+			input = newCPos.ToString();
+		}
+
+		internal static void UpgradeActors(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
 		{
 			foreach (var node in nodes)
 			{
-				// Add rules here
-				UpgradeActors(engineVersion, ref node.Value.Nodes, node, depth + 1);
+				// Fix RA building footprints to not use _ when it's not necessary
+				if (engineVersion < 20160619 && modData.Manifest.Mod.Id == "ra" && depth == 1)
+				{
+					var buildings = new List<string>() { "tsla", "gap", "agun", "apwr", "fapw" };
+					if (buildings.Contains(parent.Value.Value) && node.Key == "Location")
+						ModifyCPos(ref node.Value.Value, new CVec(0, 1));
+				}
+
+				// Fix TD building footprints to not use _ when it's not necessary
+				if (engineVersion < 20160619 && modData.Manifest.Mod.Id == "cnc" && depth == 1)
+				{
+					var buildings = new List<string>() { "atwr", "obli", "tmpl", "weap", "hand" };
+					if (buildings.Contains(parent.Value.Value) && node.Key == "Location")
+						ModifyCPos(ref node.Value.Value, new CVec(0, 1));
+				}
+
+				UpgradeActors(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 		}
 

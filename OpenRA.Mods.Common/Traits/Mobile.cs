@@ -168,7 +168,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public int CalculateTilesetMovementClass(TileSet tileset)
 		{
-			/* collect our ability to cross *all* terraintypes, in a bitvector */
+			// collect our ability to cross *all* terraintypes, in a bitvector
 			return TilesetTerrainInfo[tileset].Select(ti => ti.Cost < int.MaxValue).ToBits();
 		}
 
@@ -179,18 +179,17 @@ namespace OpenRA.Mods.Common.Traits
 
 		static bool IsMovingInMyDirection(Actor self, Actor other)
 		{
-			if (!other.IsMoving()) return false;
+			var otherMobile = other.TraitOrDefault<Mobile>();
+			if (otherMobile == null || !otherMobile.IsMoving)
+				return false;
 
 			var selfMobile = self.TraitOrDefault<Mobile>();
-			if (selfMobile == null) return false;
+			if (selfMobile == null)
+				return false;
 
-			var otherMobile = other.TraitOrDefault<Mobile>();
-			if (otherMobile == null) return false;
-
-			// Sign of dot-product indicates (roughly) if vectors are facing in same or opposite directions:
-			var dp = CVec.Dot(selfMobile.ToCell - self.Location, otherMobile.ToCell - other.Location);
-
-			return dp > 0;
+			// Moving in the same direction if the facing delta is between +/- 90 degrees
+			var delta = Util.NormalizeFacing(otherMobile.Facing - selfMobile.Facing);
+			return delta < 64 || delta > 192;
 		}
 
 		public int TileSetMovementHash(TileSet tileSet)
@@ -319,7 +318,7 @@ namespace OpenRA.Mods.Common.Traits
 	}
 
 	public class Mobile : UpgradableTrait<MobileInfo>, IIssueOrder, IResolveOrder, IOrderVoice, IPositionable, IMove, IFacing, ISync,
-		IDeathActorInitModifier, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyBlockingMove
+		IDeathActorInitModifier, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyBlockingMove, IActorPreviewInitModifier
 	{
 		const int AverageTicksBeforePathing = 5;
 		const int SpreadTicksBeforePathing = 5;
@@ -505,7 +504,7 @@ namespace OpenRA.Mods.Common.Traits
 
 			TicksBeforePathing = AverageTicksBeforePathing + self.World.SharedRandom.Next(-SpreadTicksBeforePathing, SpreadTicksBeforePathing);
 
-			self.QueueActivity(new Move(self, currentLocation, 8));
+			self.QueueActivity(new Move(self, currentLocation, WDist.FromCells(8)));
 
 			self.SetTargetLine(Target.FromCell(self.World, currentLocation), Color.Green);
 		}
@@ -684,7 +683,7 @@ namespace OpenRA.Mods.Common.Traits
 			{
 				self.CancelActivity();
 				self.SetTargetLine(Target.FromCell(self.World, moveTo.Value), Color.Green, false);
-				self.QueueActivity(new Move(self, moveTo.Value, 0));
+				self.QueueActivity(new Move(self, moveTo.Value, WDist.Zero));
 
 				Log.Write("debug", "OnNudge #{0} from {1} to {2}",
 					self.ActorID, self.Location, moveTo.Value);
@@ -714,6 +713,12 @@ namespace OpenRA.Mods.Common.Traits
 						self.ActorID, self.Location);
 				}
 			}
+		}
+
+		void IActorPreviewInitModifier.ModifyActorPreviewInit(Actor self, TypeDictionary inits)
+		{
+			if (!inits.Contains<DynamicFacingInit>() && !inits.Contains<FacingInit>())
+				inits.Add(new DynamicFacingInit(() => facing));
 		}
 
 		class MoveOrderTargeter : IOrderTargeter
@@ -757,7 +762,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 
 		public Activity ScriptedMove(CPos cell) { return new Move(self, cell); }
-		public Activity MoveTo(CPos cell, int nearEnough) { return new Move(self, cell, nearEnough); }
+		public Activity MoveTo(CPos cell, int nearEnough) { return new Move(self, cell, WDist.FromCells(nearEnough)); }
 		public Activity MoveTo(CPos cell, Actor ignoredActor) { return new Move(self, cell, ignoredActor); }
 		public Activity MoveWithinRange(Target target, WDist range) { return new MoveWithinRange(self, target, WDist.Zero, range); }
 		public Activity MoveWithinRange(Target target, WDist minRange, WDist maxRange) { return new MoveWithinRange(self, target, minRange, maxRange); }

@@ -90,9 +90,6 @@ pips:
 	groups: pipsra #TODO: backfall to RA asset
 		Start: 8
 		Length: 10
-	tag-primary: pipsra #TODO: backfall to RA asset
-		Start: 2
-		Offset: 0, 2
 	pip-empty: pips2
 	pip-green: pips2
 		Start: 1
@@ -171,10 +168,6 @@ explosion:
 	small_grey_explosion: xgrysml2
 	medium_grey_explosion: xgrymed1
 	large_grey_explosion: xgrymed2
-	veins: veinatac
-		Length: 12
-		UseTilesetExtension: true
-		ZOffset: 1023
 
 discus:
 	idle:
@@ -368,6 +361,7 @@ icon:
 	clustermissile: mltiicon
 	ioncannon: ioncicon
 	hunterseeker: detnicon
+	emp: pulsicon
 
 clustermissile:
 	up: null # TODO

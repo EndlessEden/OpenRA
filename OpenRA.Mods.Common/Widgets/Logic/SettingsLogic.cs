@@ -77,7 +77,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					OriginalGraphicsRenderer != current.Graphics.Renderer ||
 					OriginalGraphicsWindowedSize != current.Graphics.WindowedSize ||
 					OriginalGraphicsFullscreenSize != current.Graphics.FullscreenSize)
-					ConfirmationDialogs.PromptConfirmAction(
+					ConfirmationDialogs.ButtonPrompt(
 						title: "Restart Now?",
 						text: "Some changes will not be applied until\nthe game is restarted. Restart now?",
 						onConfirm: Game.Restart,
@@ -450,21 +450,43 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					{ "CycleStatusBarsKey", "Cycle status bars display" },
 					{ "TogglePixelDoubleKey", "Toggle pixel doubling" },
 					{ "ToggleMuteKey", "Toggle audio mute" },
-					{ "TogglePlayerStanceColorsKey", "Toggle player stance colors" },
-
-					{ "MapScrollUp", "Map scroll up" },
-					{ "MapScrollDown", "Map scroll down" },
-					{ "MapScrollLeft", "Map scroll left" },
-					{ "MapScrollRight", "Map scroll right" },
-
-					{ "MapPushTop", "Map push to top" },
-					{ "MapPushBottom", "Map push to bottom" },
-					{ "MapPushLeftEdge", "Map push to left edge" },
-					{ "MapPushRightEdge", "Map push to right edge" }
+					{ "TogglePlayerStanceColorsKey", "Toggle player stance colors" }
 				};
 
 				var header = ScrollItemWidget.Setup(hotkeyHeader, returnTrue, doNothing);
 				header.Get<LabelWidget>("LABEL").GetText = () => "Game Commands";
+				hotkeyList.AddChild(header);
+
+				foreach (var kv in hotkeys)
+					BindHotkeyPref(kv, ks, globalTemplate, hotkeyList);
+			}
+
+			// Viewport
+			{
+				var hotkeys = new Dictionary<string, string>()
+				{
+					{ "MapScrollUp", "Scroll up" },
+					{ "MapScrollDown", "Scroll down" },
+					{ "MapScrollLeft", "Scroll left" },
+					{ "MapScrollRight", "Scroll right" },
+
+					{ "MapPushTop", "Jump to top edge" },
+					{ "MapPushBottom", "Jump to bottom edge" },
+					{ "MapPushLeftEdge", "Jump to left edge" },
+					{ "MapPushRightEdge", "Jump to right edge" },
+
+					{ "ViewPortBookmarkSaveSlot1", "Record bookmark #1" },
+					{ "ViewPortBookmarkUseSlot1", "Jump to bookmark #1" },
+					{ "ViewPortBookmarkSaveSlot2", "Record bookmark #2" },
+					{ "ViewPortBookmarkUseSlot2", "Jump to bookmark #2" },
+					{ "ViewPortBookmarkSaveSlot3", "Record bookmark #3" },
+					{ "ViewPortBookmarkUseSlot3", "Jump to bookmark #3" },
+					{ "ViewPortBookmarkSaveSlot4", "Record bookmark #4" },
+					{ "ViewPortBookmarkUseSlot4", "Jump to bookmark #4" }
+				};
+
+				var header = ScrollItemWidget.Setup(hotkeyHeader, returnTrue, doNothing);
+				header.Get<LabelWidget>("LABEL").GetText = () => "Viewport Commands";
 				hotkeyList.AddChild(header);
 
 				foreach (var kv in hotkeys)
@@ -630,7 +652,6 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var gs = Game.Settings.Game;
 
 			BindCheckboxPref(panel, "NAT_DISCOVERY", ss, "DiscoverNatDevices");
-			BindCheckboxPref(panel, "VERBOSE_NAT_CHECKBOX", ss, "VerboseNatDiscovery");
 			BindCheckboxPref(panel, "PERFTEXT_CHECKBOX", ds, "PerfText");
 			BindCheckboxPref(panel, "PERFGRAPH_CHECKBOX", ds, "PerfGraph");
 			BindCheckboxPref(panel, "CHECKUNSYNCED_CHECKBOX", ds, "SanityCheckUnsyncedCode");
@@ -652,7 +673,6 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			return () =>
 			{
 				ss.DiscoverNatDevices = dss.DiscoverNatDevices;
-				ss.VerboseNatDiscovery = dss.VerboseNatDiscovery;
 				ds.PerfText = dds.PerfText;
 				ds.PerfGraph = dds.PerfGraph;
 				ds.SanityCheckUnsyncedCode = dds.SanityCheckUnsyncedCode;

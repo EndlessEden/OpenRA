@@ -94,6 +94,7 @@ GAPILE:
 	Exit@1:
 		SpawnOffset: -256,1024,0
 		ExitCell: 2,2
+	ExitsDebugOverlay:
 	Production:
 		Produces: Infantry
 	PrimaryBuilding:
@@ -109,12 +110,11 @@ GAPILE:
 	ProvidesPrerequisite@buildingname:
 	SelectionDecorations:
 		VisualBounds: 88, 56, 0, -8
-	WithDecoration@primary:
+	WithTextDecoration@primary:
 		RequiresSelection: true
-		Image: pips
-		Sequence: tag-primary
-		Palette: pips
-		ReferencePoint: Center
+		Text: PRIMARY
+		ReferencePoint: Top
+		Color: E0D048
 		ZOffset: 256
 		UpgradeTypes: primary
 		UpgradeMinEnabledLevel: 1
@@ -151,6 +151,7 @@ GAWEAP:
 		SpawnOffset: -384,-384,0
 		ExitCell: 3,1
 		ExitDelay: 5
+	ExitsDebugOverlay:
 	Production:
 		Produces: Vehicle
 	PrimaryBuilding:
@@ -171,12 +172,11 @@ GAWEAP:
 	ProvidesPrerequisite@buildingname:
 	SelectionDecorations:
 		VisualBounds: 154, 100, -2, -12
-	WithDecoration@primary:
+	WithTextDecoration@primary:
 		RequiresSelection: true
-		Image: pips
-		Sequence: tag-primary
-		Palette: pips
-		ReferencePoint: Center
+		Text: PRIMARY
+		ReferencePoint: Top
+		Color: E0D048
 		ZOffset: 256
 		UpgradeTypes: primary
 		UpgradeMinEnabledLevel: 1
@@ -201,6 +201,7 @@ GAHPAD:
 		Range: 5c0
 	Exit@1:
 		SpawnOffset: 0,-256,0
+	ExitsDebugOverlay:
 	RallyPoint:
 		Palette: mouse
 		IsPlayerPalette: false
@@ -209,6 +210,7 @@ GAHPAD:
 	PrimaryBuilding:
 	Reservable:
 	RepairsUnits:
+		PlayerExperience: 15
 	ProductionBar:
 	WithIdleOverlay@PLATFORM:
 		Sequence: idle-platform
@@ -224,12 +226,11 @@ GAHPAD:
 	ProvidesPrerequisite@buildingname:
 	SelectionDecorations:
 		VisualBounds: 88, 66, 0, -5
-	WithDecoration@primary:
+	WithTextDecoration@primary:
 		RequiresSelection: true
-		Image: pips
-		Sequence: tag-primary
-		Palette: pips
-		ReferencePoint: Center
+		Text: PRIMARY
+		ReferencePoint: Top
+		Color: E0D048
 		ZOffset: 256
 		UpgradeTypes: primary
 		UpgradeMinEnabledLevel: 1
@@ -256,6 +257,7 @@ GADEPT:
 		Range: 5c0
 	Reservable:
 	RepairsUnits:
+		PlayerExperience: 15
 	RallyPoint:
 		Palette: mouse
 		IsPlayerPalette: false
@@ -403,11 +405,8 @@ GAPLUG:
 		ChargeTime: 180
 		Description: Ion Cannon
 		LongDesc: Initiate an Ion Cannon strike.\nApplies instant damage to a small area.
-		BeginChargeSound:
-		EndChargeSound: 00-i156.aud
-		LaunchSound:
-		SelectTargetSound:
-		InsufficientPowerSound:
+		EndChargeSpeechNotification: IonCannonReady
+		SelectTargetSpeechNotification: SelectTarget
 		DisplayRadarPing: True
 		CameraActor: camera
 	ProduceActorPower:
@@ -422,6 +421,7 @@ GAPLUG:
 	Production:
 		Produces: HunterSeeker
 	Exit@1:
+	ExitsDebugOverlay:
 	SupportPowerChargeBar:
 	Power:
 		Amount: -150

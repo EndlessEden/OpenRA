@@ -19,8 +19,14 @@ namespace OpenRA.Mods.Common.Traits
 		[Desc("If -1, use the value of the unit cost.")]
 		public readonly int Experience = -1;
 
-		[Desc("Grant experience for team-kills.")]
-		public readonly bool FriendlyFire = false;
+		[Desc("Stance the attacking player needs to receive the experience.")]
+		public readonly Stance ValidStances = Stance.Neutral | Stance.Enemy;
+
+		[Desc("Percentage of the `Experience` value that is being granted to the killing actor.")]
+		public readonly int ActorExperienceModifier = 10000;
+
+		[Desc("Percentage of the `Experience` value that is being granted to the player owning the killing actor.")]
+		public readonly int PlayerExperienceModifier = 0;
 
 		public object Create(ActorInitializer init) { return new GivesExperience(init.Self, this); }
 	}
@@ -36,20 +42,25 @@ namespace OpenRA.Mods.Common.Traits
 
 		public void Killed(Actor self, AttackInfo e)
 		{
-			// Prevent TK from giving exp
-			if (e.Attacker == null || e.Attacker.Disposed || (!info.FriendlyFire && e.Attacker.Owner.Stances[self.Owner] == Stance.Ally))
+			if (e.Attacker == null || e.Attacker.Disposed)
+				return;
+
+			if (!info.ValidStances.HasStance(e.Attacker.Owner.Stances[self.Owner]))
 				return;
 
 			var valued = self.Info.TraitInfoOrDefault<ValuedInfo>();
 
-			// Default experience is 100 times our value
 			var exp = info.Experience >= 0
 				? info.Experience
-				: valued != null ? valued.Cost * 100 : 0;
+				: valued != null ? valued.Cost : 0;
 
 			var killer = e.Attacker.TraitOrDefault<GainsExperience>();
 			if (killer != null)
-				killer.GiveExperience(exp);
+				killer.GiveExperience(Util.ApplyPercentageModifiers(exp, new[] { info.ActorExperienceModifier }));
+
+			var attackerExp = e.Attacker.Owner.PlayerActor.TraitOrDefault<PlayerExperience>();
+			if (attackerExp != null)
+				attackerExp.GiveExperience(Util.ApplyPercentageModifiers(exp, new[] { info.PlayerExperienceModifier }));
 		}
 	}
 }

@@ -93,7 +93,9 @@ HVR:
 		TrailWhileStationary: True
 		StationaryInterval: 18
 		MovingInterval: 6
-	-PoisonedByTiberium:
+	-DamagedByTerrain@VEINS:
+	-UpgradeOnTerrain@VEINS:
+	-WithIdleOverlay@VEINS:
 
 SMECH:
 	Inherits: ^Vehicle
@@ -132,7 +134,9 @@ SMECH:
 		MoveSequence: run
 	Selectable:
 		Bounds: 20, 32, 0, -8
-	-PoisonedByTiberium:
+	-DamagedByTerrain@VEINS:
+	-UpgradeOnTerrain@VEINS:
+	-WithIdleOverlay@VEINS:
 
 MMCH:
 	Inherits: ^Tank
@@ -164,7 +168,7 @@ MMCH:
 	AttackTurreted:
 		Voice: Attack
 	WithSpriteTurret:
-		Recoils: no
+		Recoils: false
 	Armament:
 		Weapon: 120mm
 		MuzzleSequence: muzzle

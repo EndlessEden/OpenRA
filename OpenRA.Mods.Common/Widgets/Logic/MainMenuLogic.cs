@@ -185,11 +185,10 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var mapEditorMenu = widget.Get("MAP_EDITOR_MENU");
 			mapEditorMenu.IsVisible = () => menuType == MenuType.MapEditor;
 
-			var onSelect = new Action<string>(uid =>
-			{
-				RemoveShellmapUI();
-				LoadMapIntoEditor(modData.MapCache[uid].Uid);
-			});
+			// Loading into the map editor
+			Game.BeforeGameStart += RemoveShellmapUI;
+
+			var onSelect = new Action<string>(uid => LoadMapIntoEditor(modData.MapCache[uid].Uid));
 
 			var newMapButton = widget.Get<ButtonWidget>("NEW_MAP_BUTTON");
 			newMapButton.OnClick = () =>
@@ -295,8 +294,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 								.JoinWith("&");
 
 						new Download(newsURL, cacheFile, e => { },
-							(e, c) => NewsDownloadComplete(e, cacheFile, currentNews,
-							() => newsButton.AttachPanel(newsPanel)));
+							e => NewsDownloadComplete(e, cacheFile, currentNews,
+								() => newsButton.AttachPanel(newsPanel)));
 					}
 
 					newsButton.OnClick = () => newsButton.AttachPanel(newsPanel);
@@ -450,7 +449,11 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		protected override void Dispose(bool disposing)
 		{
 			if (disposing)
+			{
 				Game.OnRemoteDirectConnect -= OnRemoteDirectConnect;
+				Game.BeforeGameStart -= RemoveShellmapUI;
+			}
+
 			base.Dispose(disposing);
 		}
 	}

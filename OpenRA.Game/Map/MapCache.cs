@@ -128,11 +128,11 @@ namespace OpenRA
 
 			var url = Game.Settings.Game.MapRepository + "hash/" + string.Join(",", maps.Keys) + "/yaml";
 
-			Action<DownloadDataCompletedEventArgs, bool> onInfoComplete = (i, cancelled) =>
+			Action<DownloadDataCompletedEventArgs> onInfoComplete = i =>
 			{
-				if (cancelled || i.Error != null)
+				if (i.Error != null)
 				{
-					Log.Write("debug", "Remote map query failed with error: {0}", i.Error != null ? i.Error.Message : "cancelled");
+					Log.Write("debug", "Remote map query failed with error: {0}", Download.FormatErrorMessage(i.Error));
 					Log.Write("debug", "URL was: {0}", url);
 					foreach (var p in maps.Values)
 						p.UpdateRemoteSearch(MapStatus.Unavailable, null);
@@ -243,11 +243,31 @@ namespace OpenRA
 				});
 		}
 
+		bool IsSuitableInitialMap(MapPreview map)
+		{
+			if (map.Status != MapStatus.Available || !map.Visibility.HasFlag(MapVisibility.Lobby))
+				return false;
+
+			// Other map types may have confusing settings or gameplay
+			if (!map.Categories.Contains("Conquest"))
+				return false;
+
+			// Maps with bots disabled confuse new players
+			if (map.Players.Players.Any(x => !x.Value.AllowBots))
+				return false;
+
+			// Large maps expose unfortunate performance problems
+			if (map.Bounds.Width > 128 || map.Bounds.Height > 128)
+				return false;
+
+			return true;
+		}
+
 		public string ChooseInitialMap(string initialUid, MersenneTwister random)
 		{
 			if (string.IsNullOrEmpty(initialUid) || previews[initialUid].Status != MapStatus.Available)
 			{
-				var selected = previews.Values.Where(x => x.SuitableForInitialMap).RandomOrDefault(random) ??
+				var selected = previews.Values.Where(IsSuitableInitialMap).RandomOrDefault(random) ??
 					previews.Values.First(m => m.Status == MapStatus.Available && m.Visibility.HasFlag(MapVisibility.Lobby));
 				return selected.Uid;
 			}

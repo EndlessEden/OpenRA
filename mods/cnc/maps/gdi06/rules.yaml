@@ -5,7 +5,6 @@ World:
 		BackgroundMusic: rain-ambient
 		StartingMusic: rain
 	WeatherOverlay:
-		ParticleDensityFactor: 0.0007625
 		ChangingWindLevel: true
 		WindLevels: -5, -3, -2, 0, 2, 3, 5
 		WindTick: 150, 550
@@ -31,9 +30,16 @@ World:
 		WinVideo: sabotage.vqa
 		LossVideo: gdilose.vqa
 	MapOptions:
-		Difficulties: Easy, Normal, Hard
 		ShortGameLocked: True
 		ShortGameEnabled: True
+	ScriptLobbyDropdown@difficulty:
+		ID: difficulty
+		Label: Difficulty
+		Values:
+			easy: Easy
+			normal: Normal
+			hard: Hard
+		Default: easy
 
 Player:
 	PlayerResources:

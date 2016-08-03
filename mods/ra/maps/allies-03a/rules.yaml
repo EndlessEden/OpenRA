@@ -6,8 +6,13 @@ World:
 		StartVideo: brdgtilt.vqa
 		WinVideo: toofar.vqa
 		LossVideo: sovtstar.vqa
-	MapOptions:
-		Difficulties: Easy, Normal
+	ScriptLobbyDropdown@difficulty:
+		ID: difficulty
+		Label: Difficulty
+		Values:
+			easy: Easy
+			normal: Normal
+		Default: easy
 
 ^Building:
 	Capturable:

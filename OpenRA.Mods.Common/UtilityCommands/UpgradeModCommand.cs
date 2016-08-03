@@ -26,7 +26,7 @@ namespace OpenRA.Mods.Common.UtilityCommands
 			return args.Length >= 2;
 		}
 
-		delegate void UpgradeAction(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth);
+		delegate void UpgradeAction(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth);
 
 		void ProcessYaml(string type, IEnumerable<string> files, ModData modData, int engineDate, UpgradeAction processFile)
 		{
@@ -43,7 +43,7 @@ namespace OpenRA.Mods.Common.UtilityCommands
 				}
 
 				var yaml = MiniYaml.FromStream(package.GetStream(name), name);
-				processFile(engineDate, ref yaml, null, 0);
+				processFile(modData, engineDate, ref yaml, null, 0);
 
 				// Generate the on-disk path
 				var path = Path.Combine(package.Name, name);
@@ -69,6 +69,7 @@ namespace OpenRA.Mods.Common.UtilityCommands
 
 			ProcessYaml("Rules", modData.Manifest.Rules, modData, engineDate, UpgradeRules.UpgradeActorRules);
 			ProcessYaml("Weapons", modData.Manifest.Weapons, modData, engineDate, UpgradeRules.UpgradeWeaponRules);
+			ProcessYaml("Sequences", modData.Manifest.Sequences, modData, engineDate, UpgradeRules.UpgradeSequences);
 			ProcessYaml("Tilesets", modData.Manifest.TileSets, modData, engineDate, UpgradeRules.UpgradeTileset);
 			ProcessYaml("Cursors", modData.Manifest.Cursors, modData, engineDate, UpgradeRules.UpgradeCursors);
 			ProcessYaml("Chrome Metrics", modData.Manifest.ChromeMetrics, modData, engineDate, UpgradeRules.UpgradeChromeMetrics);

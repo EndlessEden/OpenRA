@@ -235,7 +235,15 @@ namespace OpenRA.Mods.Common.Traits
 			if (!Ready)
 				return;
 
-			var power = Instances.FirstOrDefault(i => !InstanceDisabled(i));
+			var power = Instances.Where(i => !InstanceDisabled(i))
+				.MinByOrDefault(a =>
+				{
+					if (a.Self.OccupiesSpace == null)
+						return 0;
+
+					return (a.Self.CenterPosition - a.Self.World.Map.CenterOfCell(order.TargetLocation)).HorizontalLengthSquared;
+				});
+
 			if (power == null)
 				return;
 

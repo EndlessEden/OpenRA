@@ -78,15 +78,17 @@ namespace OpenRA.Mods.Common.Traits
 
 		public void Damaged(Actor self, AttackInfo e)
 		{
-			if (e.Damage > 0)
+			if (e.Damage.Value > 0)
 				Panic();
 		}
 
-		public void Attacking(Actor self, Target target, Armament a, Barrel barrel)
+		void INotifyAttack.Attacking(Actor self, Target target, Armament a, Barrel barrel)
 		{
 			if (self.World.SharedRandom.Next(100 / info.AttackPanicChance) == 0)
 				Panic();
 		}
+
+		void INotifyAttack.PreparingAttack(Actor self, Target target, Armament a, Barrel barrel) { }
 
 		public int GetSpeedModifier()
 		{

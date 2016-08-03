@@ -76,7 +76,6 @@ namespace OpenRA
 			public MapStatus Status;
 			public MapClassification Class;
 			public MapVisibility Visibility;
-			public bool SuitableForInitialMap;
 
 			Lazy<Ruleset> rules;
 			public Ruleset Rules { get { return rules != null ? rules.Value : null; } }
@@ -146,7 +145,6 @@ namespace OpenRA
 		public MapStatus Status { get { return innerData.Status; } }
 		public MapClassification Class { get { return innerData.Class; } }
 		public MapVisibility Visibility { get { return innerData.Visibility; } }
-		public bool SuitableForInitialMap { get { return innerData.SuitableForInitialMap; } }
 
 		public Ruleset Rules { get { return innerData.Rules; } }
 		public bool InvalidCustomRules { get { return innerData.InvalidCustomRules; } }
@@ -208,7 +206,6 @@ namespace OpenRA
 				Status = MapStatus.Unavailable,
 				Class = MapClassification.Unknown,
 				Visibility = MapVisibility.Lobby,
-				SuitableForInitialMap = false
 			};
 		}
 
@@ -295,7 +292,6 @@ namespace OpenRA
 				{
 					newData.Players = new MapPlayers(playerDefinitions.Nodes);
 					newData.PlayerCount = newData.Players.Players.Count(x => x.Value.Playable);
-					newData.SuitableForInitialMap = EvaluateUserFriendliness(newData.Players.Players);
 				}
 			}
 			catch (Exception)
@@ -333,26 +329,6 @@ namespace OpenRA
 				return null;
 
 			return node;
-		}
-
-		bool EvaluateUserFriendliness(Dictionary<string, PlayerReference> players)
-		{
-			if (Status != MapStatus.Available || !Visibility.HasFlag(MapVisibility.Lobby))
-				return false;
-
-			// Other map types may have confusing settings or gameplay
-			if (!Categories.Contains("Conquest"))
-				return false;
-
-			// Maps with bots disabled confuse new players
-			if (players.Any(x => !x.Value.AllowBots))
-				return false;
-
-			// Large maps expose unfortunate performance problems
-			if (Bounds.Width > 128 || Bounds.Height > 128)
-				return false;
-
-			return true;
 		}
 
 		public void PreloadRules()
@@ -468,13 +444,13 @@ namespace OpenRA
 					}
 
 					Action<DownloadProgressChangedEventArgs> onDownloadProgress = i => { DownloadBytes = i.BytesReceived; DownloadPercentage = i.ProgressPercentage; };
-					Action<DownloadDataCompletedEventArgs, bool> onDownloadComplete = (i, cancelled) =>
+					Action<DownloadDataCompletedEventArgs> onDownloadComplete = i =>
 					{
 						download = null;
 
-						if (cancelled || i.Error != null)
+						if (i.Error != null)
 						{
-							Log.Write("debug", "Remote map download failed with error: {0}", i.Error != null ? i.Error.Message : "cancelled");
+							Log.Write("debug", "Remote map download failed with error: {0}", Download.FormatErrorMessage(i.Error));
 							Log.Write("debug", "URL was: {0}", mapUrl);
 
 							innerData.Status = MapStatus.DownloadError;
@@ -511,7 +487,7 @@ namespace OpenRA
 			if (download == null)
 				return;
 
-			download.Cancel();
+			download.CancelAsync();
 			download = null;
 		}
 

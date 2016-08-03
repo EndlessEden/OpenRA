@@ -254,7 +254,7 @@ namespace OpenRA
 
 		public static List<MiniYamlNode> FromString(string text, string fileName = "<no filename available>")
 		{
-			return FromLines(text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries), fileName);
+			return FromLines(text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None), fileName);
 		}
 
 		public static List<MiniYamlNode> Merge(IEnumerable<List<MiniYamlNode>> sources)
@@ -275,7 +275,9 @@ namespace OpenRA
 				resolved.Add(kv.Key, new MiniYaml(kv.Value.Value, children));
 			}
 
-			return resolved.Select(kv => new MiniYamlNode(kv.Key, kv.Value)).ToList();
+			// Resolve any top-level removals (e.g. removing whole actor blocks)
+			var nodes = new MiniYaml("", resolved.Select(kv => new MiniYamlNode(kv.Key, kv.Value)).ToList());
+			return ResolveInherits("", nodes, tree, new Dictionary<string, MiniYamlNode.SourceLocation>());
 		}
 
 		static void MergeIntoResolved(MiniYamlNode overrideNode, List<MiniYamlNode> existingNodes,

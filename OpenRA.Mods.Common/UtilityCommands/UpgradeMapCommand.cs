@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using OpenRA.FileSystem;
 
@@ -25,9 +26,9 @@ namespace OpenRA.Mods.Common.UtilityCommands
 			return args.Length >= 3;
 		}
 
-		delegate void UpgradeAction(int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth);
+		delegate void UpgradeAction(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth);
 
-		static void ProcessYaml(Map map, MiniYaml yaml, int engineDate, UpgradeAction processYaml)
+		static void ProcessYaml(ModData modData, Map map, MiniYaml yaml, int engineDate, UpgradeAction processYaml)
 		{
 			if (yaml == null)
 				return;
@@ -35,15 +36,22 @@ namespace OpenRA.Mods.Common.UtilityCommands
 			if (yaml.Value != null)
 			{
 				var files = FieldLoader.GetValue<string[]>("value", yaml.Value);
-			    foreach (var filename in files)
-			    {
-			        var fileNodes = MiniYaml.FromStream(map.Package.GetStream(filename), filename);
-					processYaml(engineDate, ref fileNodes, null, 0);
-			        ((IReadWritePackage)map.Package).Update(filename, Encoding.ASCII.GetBytes(fileNodes.WriteToString()));
-			    }
+				foreach (var filename in files)
+				{
+					var fileNodes = MiniYaml.FromStream(map.Open(filename), filename);
+					processYaml(modData, engineDate, ref fileNodes, null, 0);
+
+					// HACK: Obtain the writable save path using knowledge of the underlying filesystem workings
+					var packagePath = filename;
+					var package = map.Package;
+					if (filename.Contains("|"))
+						modData.DefaultFileSystem.TryGetPackageContaining(filename, out package, out packagePath);
+
+					((IReadWritePackage)package).Update(packagePath, Encoding.ASCII.GetBytes(fileNodes.WriteToString()));
+				}
 			}
 
-			processYaml(engineDate, ref yaml.Nodes, null, 1);
+			processYaml(modData, engineDate, ref yaml.Nodes, null, 1);
 		}
 
 		public static void UpgradeMap(ModData modData, IReadWritePackage package, int engineDate)
@@ -58,10 +66,11 @@ namespace OpenRA.Mods.Common.UtilityCommands
 			}
 
 			var map = new Map(modData, package);
-			ProcessYaml(map, map.WeaponDefinitions, engineDate, UpgradeRules.UpgradeWeaponRules);
-			ProcessYaml(map, map.RuleDefinitions, engineDate, UpgradeRules.UpgradeActorRules);
-			UpgradeRules.UpgradePlayers(engineDate, ref map.PlayerDefinitions, null, 0);
-			UpgradeRules.UpgradeActors(engineDate, ref map.ActorDefinitions, null, 0);
+			ProcessYaml(modData, map, map.WeaponDefinitions, engineDate, UpgradeRules.UpgradeWeaponRules);
+			ProcessYaml(modData, map, map.RuleDefinitions, engineDate, UpgradeRules.UpgradeActorRules);
+			ProcessYaml(modData, map, map.SequenceDefinitions, engineDate, UpgradeRules.UpgradeSequences);
+			UpgradeRules.UpgradePlayers(modData, engineDate, ref map.PlayerDefinitions, null, 0);
+			UpgradeRules.UpgradeActors(modData, engineDate, ref map.ActorDefinitions, null, 0);
 			map.Save(package);
 		}
 
@@ -71,7 +80,11 @@ namespace OpenRA.Mods.Common.UtilityCommands
 			// HACK: The engine code assumes that Game.modData is set.
 			Game.ModData = modData;
 
-			var package = modData.ModFiles.OpenWritablePackage(args[1]);
+			// HACK: We know that maps can only be oramap or folders, which are ReadWrite
+			var package = modData.ModFiles.OpenPackage(args[1], new Folder(".")) as IReadWritePackage;
+			if (package == null)
+				throw new FileNotFoundException(args[1]);
+
 			var engineDate = Exts.ParseIntegerInvariant(args[2]);
 			UpgradeMap(modData, package, engineDate);
 		}

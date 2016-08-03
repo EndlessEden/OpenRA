@@ -22,10 +22,22 @@ namespace OpenRA.Mods.Common.Traits
 	{
 		[Desc("Types of actors that it can capture, as long as the type also exists in the Capturable Type: trait.")]
 		public readonly HashSet<string> CaptureTypes = new HashSet<string> { "building" };
+
 		[Desc("Unit will do damage to the actor instead of capturing it. Unit is destroyed when sabotaging.")]
 		public readonly bool Sabotage = true;
+
 		[Desc("Only used if Sabotage=true. Sabotage damage expressed as a percentage of enemy health removed.")]
 		public readonly int SabotageHPRemoval = 50;
+
+		[Desc("Experience granted to the capturing player.")]
+		public readonly int PlayerExperience = 0;
+
+		[Desc("Stance that the structure's previous owner needs to have for the capturing player to receive Experience.")]
+		public readonly Stance PlayerExperienceStances = Stance.Enemy;
+
+		public readonly string SabotageCursor = "capture";
+		public readonly string EnterCursor = "enter";
+		public readonly string EnterBlockedCursor = "enter-blocked";
 
 		[VoiceReference] public readonly string Voice = "Action";
 
@@ -93,10 +105,11 @@ namespace OpenRA.Mods.Common.Traits
 
 			public override bool CanTargetActor(Actor self, Actor target, TargetModifiers modifiers, ref string cursor)
 			{
+				var capturesInfo = self.Trait<Captures>().Info;
 				var c = target.Info.TraitInfoOrDefault<CapturableInfo>();
 				if (c == null || !c.CanBeTargetedBy(self, target.Owner))
 				{
-					cursor = "enter-blocked";
+					cursor = capturesInfo.EnterBlockedCursor;
 					return false;
 				}
 
@@ -104,16 +117,17 @@ namespace OpenRA.Mods.Common.Traits
 				var lowEnoughHealth = health.HP <= c.CaptureThreshold * health.MaxHP / 100;
 
 				cursor = !sabotage || lowEnoughHealth || target.Owner.NonCombatant
-					? "enter" : "capture";
+					? capturesInfo.EnterCursor : capturesInfo.SabotageCursor;
 				return true;
 			}
 
 			public override bool CanTargetFrozenActor(Actor self, FrozenActor target, TargetModifiers modifiers, ref string cursor)
 			{
+				var capturesInfo = self.Trait<Captures>().Info;
 				var c = target.Info.TraitInfoOrDefault<CapturableInfo>();
 				if (c == null || !c.CanBeTargetedBy(self, target.Owner))
 				{
-					cursor = "enter-blocked";
+					cursor = capturesInfo.EnterCursor;
 					return false;
 				}
 
@@ -121,7 +135,7 @@ namespace OpenRA.Mods.Common.Traits
 				var lowEnoughHealth = target.HP <= c.CaptureThreshold * health.HP / 100;
 
 				cursor = !sabotage || lowEnoughHealth || target.Owner.NonCombatant
-					? "enter" : "capture";
+					? capturesInfo.EnterCursor : capturesInfo.SabotageCursor;
 
 				return true;
 			}

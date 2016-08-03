@@ -57,10 +57,6 @@ namespace OpenRA.Mods.Common.Activities
 			nearEnough = WDist.Zero;
 		}
 
-		// HACK: for legacy code
-		public Move(Actor self, CPos destination, int nearEnough)
-			: this(self, destination, WDist.FromCells(nearEnough)) { }
-
 		public Move(Actor self, CPos destination, WDist nearEnough)
 		{
 			mobile = self.Trait<Mobile>();
@@ -430,24 +426,6 @@ namespace OpenRA.Mods.Common.Activities
 				mobile.SetPosition(self, mobile.ToCell);
 				return null;
 			}
-		}
-	}
-
-	public static class ActorExtensionsForMove
-	{
-		public static bool IsMoving(this Actor self)
-		{
-			var a = self.GetCurrentActivity();
-			if (a == null)
-				return false;
-
-			// HACK: Dirty, but it suffices until we do something better:
-			if (a.GetType() == typeof(Move)) return true;
-			if (a.GetType() == typeof(MoveAdjacentTo)) return true;
-			if (a.GetType() == typeof(AttackMoveActivity)) return true;
-
-			// Not a move:
-			return false;
 		}
 	}
 }

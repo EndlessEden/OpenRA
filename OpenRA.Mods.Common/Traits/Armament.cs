@@ -223,6 +223,9 @@ namespace OpenRA.Mods.Common.Traits
 				GuidedTarget = target
 			};
 
+			foreach (var na in self.TraitsImplementing<INotifyAttack>())
+				na.PreparingAttack(self, target, this, barrel);
+
 			ScheduleDelayedAction(Info.FireDelay, () =>
 			{
 				if (args.Weapon.Projectile != null)
@@ -259,6 +262,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public bool IsReloading { get { return FireDelay > 0 || IsTraitDisabled; } }
 		public bool ShouldExplode(Actor self) { return !IsReloading; }
+		public bool OutOfAmmo { get { return ammoPool != null && !ammoPool.Info.SelfReloads && !ammoPool.HasAmmo(); } }
 
 		public WVec MuzzleOffset(Actor self, Barrel b)
 		{

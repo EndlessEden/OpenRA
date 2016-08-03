@@ -3,6 +3,7 @@
 	UpdatesPlayerStatistics:
 	CombatDebugOverlay:
 	GivesExperience:
+		PlayerExperienceModifier: 1
 	ScriptTriggers:
 	UpgradeManager:
 	Huntable:
@@ -125,6 +126,7 @@
 	Capturable:
 	RepairableBuilding:
 		IndicatorPalette: mouse
+		PlayerExperience: 25
 	WithDeathAnimation:
 		DeathSequence: dead
 		UseDeathTypeSuffix: false
@@ -218,8 +220,10 @@
 	ScriptTriggers:
 	UpgradeManager:
 	Health:
-		Shape: Circle
-			Radius: 363
+		Shape: Rectangle
+			RotateToIsometry: true
+			TopLeft: -384, -384
+			BottomRight: 384, 384
 			VerticalTopOffset: 512
 
 ^BuildingPlug:
@@ -282,7 +286,11 @@
 		Voice: Move
 	HiddenUnderFog:
 	ActorLostNotification:
-	PoisonedByTiberium:
+	DamagedByTerrain:
+		Terrain: Tiberium, BlueTiberium
+		Damage: 2
+		DamageInterval: 16
+		DamageTypes: ExplosionDeath, TriggerVisceroid
 	Guard:
 		Voice: Move
 	Guardable:
@@ -370,6 +378,7 @@
 ^Cyborg:
 	Inherits@1: ^Infantry
 	Inherits@2: ^EmpDisableMobile
+	Inherits@3: ^HealsOnTiberium
 	ExplosionOnDamageTransition:
 		Weapon: CyborgExplode
 		DamageState: Critical
@@ -381,8 +390,6 @@
 	RevealsShroud:
 		Range: 4c0
 	MustBeDestroyed:
-	PoisonedByTiberium:
-		Weapon: TiberiumHeal
 	WithPermanentInjury:
 	WithInfantryBody:
 		AttackSequence: attack
@@ -403,12 +410,16 @@
 	Tooltip:
 		Name: Civilian
 	ScaredyCat:
+	Wanders:
+		MinMoveDelay: 150
+		MaxMoveDelay: 750
 
 ^Vehicle:
 	Inherits@1: ^GainsExperience
 	Inherits@2: ^ExistsInWorld
 	Inherits@3: ^EmpDisableMobile
 	Inherits@4: ^Cloakable
+	Inherits@5: ^DamagedByVeins
 	DrawLineToTarget:
 	Mobile:
 		Crushes: crate
@@ -460,9 +471,6 @@
 		Weapons: SmallDebris
 		Pieces: 3, 7
 		Range: 2c0, 5c0
-	PoisonedByTiberium:
-		Weapon: Veins
-		Resources: Veins
 	UpgradeOnDamage@DAMAGED:
 		Upgrades: damagedspeed
 		ValidDamageStates: Heavy
@@ -519,9 +527,9 @@
 	Inherits@3: ^Cloakable
 	DrawLineToTarget:
 	AppearsOnRadar:
-		UseLocation: yes
+		UseLocation: true
 	Targetable@GROUND:
-		TargetTypes: Ground
+		TargetTypes: Ground, Vehicle
 		UpgradeTypes: airborne
 		UpgradeMaxEnabledLevel: 0
 	Targetable@AIRBORNE:
@@ -536,7 +544,7 @@
 		CruisingUpgrades: cruising
 		RepairBuildings: gadept
 		RearmBuildings: gahpad, nahpad
-		LandWhenIdle: no
+		LandWhenIdle: false
 		Voice: Move
 		IdealSeparation: 853
 	Voiced:
@@ -559,7 +567,6 @@
 ^Helicopter:
 	Inherits: ^Aircraft
 	Aircraft:
-		LandWhenIdle: no
 		CruiseAltitude: 2048
 		CanHover: True
 	Hovers@CRUISING:
@@ -569,7 +576,6 @@
 ^Plane:
 	Inherits: ^Aircraft
 	Aircraft:
-		LandWhenIdle: no
 		CruiseAltitude: 2560
 	ReturnOnIdle:
 
@@ -601,6 +607,7 @@
 ^Visceroid:
 	Inherits@1: ^ExistsInWorld
 	Inherits@2: ^SpriteActor
+	Inherits@3: ^HealsOnTiberium
 	DrawLineToTarget:
 	Health:
 		Shape: Circle
@@ -627,11 +634,9 @@
 	Selectable:
 		Bounds: 26,26,0,-3
 	Targetable:
-		TargetTypes: Ground
+		TargetTypes: Ground, Creep
 	AttackMove:
 	HiddenUnderFog:
-	PoisonedByTiberium:
-		Weapon: TiberiumHeal
 	Guardable:
 	WithSpriteBody:
 
@@ -741,7 +746,7 @@
 		Palette: pips
 	Selectable:
 	Targetable:
-		TargetTypes: Ground, Repair
+		TargetTypes: Ground, Building, Repair
 	Guardable:
 	HiddenUnderFog:
 	ActorLostNotification:
@@ -806,9 +811,10 @@
 		QuantizedFacings: 1
 
 ^Railway:
+	Inherits: ^TerrainOverlay
 	EditorOnlyTooltip:
 		Name: Railway
-	Inherits: ^TerrainOverlay
+	AutoSelectionSize:
 
 ^Tunnel:
 	Inherits: ^TerrainOverlay
@@ -831,6 +837,7 @@
 	-MustBeDestroyed:
 	-WithSpriteBody:
 	WithGateSpriteBody:
+		OpenSequence: open
 	Tooltip:
 		Description: Automated barrier that opens for allied units.
 	Gate:
@@ -860,3 +867,23 @@
 		WallConnections: 0,-1, 0,3
 	LineBuildNode:
 		Connections: 0,-1, 0,1
+
+^HealsOnTiberium:
+	DamagedByTerrain:
+		Damage: -2
+		DamageInterval: 16
+		Terrain: Tiberium, BlueTiberium
+
+^DamagedByVeins:
+	DamagedByTerrain@VEINS:
+		Damage: 5
+		DamageInterval: 16
+		DamageTypes: BulletDeath
+		Terrain: Veins
+	UpgradeOnTerrain@VEINS:
+		TerrainTypes: Veins
+		Upgrades: veins
+	WithIdleOverlay@VEINS:
+		Sequence: veins
+		UpgradeTypes: veins
+		UpgradeMinEnabledLevel: 1

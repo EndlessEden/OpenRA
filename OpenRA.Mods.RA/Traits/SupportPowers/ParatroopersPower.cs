@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using OpenRA.Mods.Common;
 using OpenRA.Mods.Common.Activities;
 using OpenRA.Mods.Common.Effects;
 using OpenRA.Mods.Common.Traits;
@@ -152,8 +153,11 @@ namespace OpenRA.Mods.RA.Traits
 
 			self.World.AddFrameEndTask(w =>
 			{
-				var notification = self.Owner.IsAlliedWith(self.World.RenderPlayer) ? Info.LaunchSound : Info.IncomingSound;
-				Game.Sound.Play(notification);
+				var isAllied = self.Owner.IsAlliedWith(self.World.RenderPlayer);
+				Game.Sound.Play(isAllied ? Info.LaunchSound : Info.IncomingSound);
+
+				var speech = isAllied ? Info.LaunchSpeechNotification : Info.IncomingSpeechNotification;
+				Game.Sound.PlayNotification(self.World.Map.Rules, self.Owner, "Speech", speech, self.Owner.Faction.InternalName);
 
 				Actor distanceTestActor = null;
 

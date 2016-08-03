@@ -59,13 +59,8 @@ namespace OpenRA
 		[Desc("Set this to false to disable UPnP even if compatible devices are found.")]
 		public bool AllowPortForward = true;
 
-		public bool NatDeviceAvailable = false; // internal check if discovery succeeded
-
 		[Desc("Time in milliseconds to search for UPnP enabled NAT devices.")]
 		public int NatDiscoveryTimeout = 1000;
-
-		[Desc("Print very detailed logs for debugging issues with routers.")]
-		public bool VerboseNatDiscovery = false;
 
 		[Desc("Starts the game with a default map. Input as hash that can be obtained by the utility.")]
 		public string Map = null;
@@ -76,8 +71,8 @@ namespace OpenRA
 		[Desc("Value in milliseconds when to terminate the game. Needs to be at least 10000 (10 s) to enable the timer.")]
 		public int TimeOut = 0;
 
-		[Desc("Disallow games where only one player plays with bots.")]
-		public bool DisableSinglePlayer = false;
+		[Desc("For dedicated servers only, controls whether a game can be started with just one human player in the lobby.")]
+		public bool EnableSingleplayer = false;
 
 		[Desc("Query map information from the Resource Center if they are not available locally.")]
 		public bool QueryMapRepository = true;

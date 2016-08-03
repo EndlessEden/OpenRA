@@ -192,11 +192,9 @@ namespace OpenRA.Network
 			public int OrderLatency = 3; // net tick frames (x 120 = ms)
 			public int RandomSeed = 0;
 			public bool AllowSpectators = true;
-			public string Difficulty;
-			public string GameSpeedType = "default";
 			public bool AllowVersionMismatch;
 			public string GameUid;
-			public bool DisableSingleplayer;
+			public bool EnableSingleplayer;
 
 			[FieldLoader.Ignore]
 			public Dictionary<string, LobbyOptionState> LobbyOptions = new Dictionary<string, LobbyOptionState>();

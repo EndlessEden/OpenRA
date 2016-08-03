@@ -2,6 +2,7 @@
 	AppearsOnRadar:
 	CombatDebugOverlay:
 	GivesExperience:
+		PlayerExperienceModifier: 1
 	ScriptTriggers:
 	UpgradeManager:
 	Huntable:
@@ -290,6 +291,9 @@
 	ScaredyCat:
 	Voiced:
 		VoiceSet: CivilianMaleVoice
+	Wanders:
+		MinMoveDelay: 150
+		MaxMoveDelay: 750
 
 ^ArmedCivilian:
 	Armament:
@@ -386,6 +390,8 @@
 	Tooltip:
 		GenericName: Plane
 	WithShadow:
+		Offset: 43, 128, 0
+		ZOffset: -129
 	WithFacingSpriteBody:
 	MustBeDestroyed:
 	Voiced:
@@ -444,6 +450,7 @@
 	UpdatesPlayerStatistics:
 	GivesBuildableArea:
 	RepairableBuilding:
+		PlayerExperience: 25
 	EngineerRepairable:
 	AcceptsSupplies:
 	WithMakeAnimation:
@@ -690,6 +697,8 @@
 ^PlaneHusk:
 	Inherits: ^BasicHusk
 	WithShadow:
+		Offset: 43, 128, 0
+		ZOffset: -129
 	Tooltip:
 		GenericName: Destroyed Plane
 	Aircraft:
@@ -703,6 +712,8 @@
 ^HelicopterHusk:
 	Inherits: ^BasicHusk
 	WithShadow:
+		Offset: 43, 128, 0
+		ZOffset: -129
 	Tooltip:
 		GenericName: Destroyed Helicopter
 	Aircraft:

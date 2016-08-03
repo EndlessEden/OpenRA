@@ -3,6 +3,7 @@
 	UpdatesPlayerStatistics:
 	CombatDebugOverlay:
 	GivesExperience:
+		PlayerExperienceModifier: 1
 	ScriptTriggers:
 	UpgradeManager:
 	Huntable:
@@ -153,6 +154,8 @@
 		GenericName: Helicopter
 	WithFacingSpriteBody:
 	WithShadow:
+		Offset: 43, 128, 0
+		ZOffset: -129
 	Hovers@CRUISING:
 		UpgradeTypes: cruising
 		UpgradeMinEnabledLevel: 1
@@ -208,9 +211,13 @@
 	Passenger:
 		CargoType: Infantry
 	HiddenUnderFog:
-	PoisonedByTiberium:
+	DamagedByTerrain:
 		UpgradeTypes: hazmatsuits
 		UpgradeMaxEnabledLevel: 0
+		Terrain: Tiberium, BlueTiberium
+		Damage: 2
+		DamageInterval: 16
+		DamageTypes: TiberiumDeath
 	GlobalUpgradable@BIO:
 		Upgrades: hazmatsuits
 		Prerequisites: bio
@@ -299,6 +306,9 @@
 		CrushSound: squish2.aud
 	Voiced:
 		VoiceSet: CivilianMaleVoice
+	Wanders:
+		MinMoveDelay: 150
+		MaxMoveDelay: 750
 
 ^ArmedCivilian:
 	Armament:
@@ -341,7 +351,7 @@
 	Selectable:
 		Bounds: 24,24
 	Targetable:
-		TargetTypes: Ground
+		TargetTypes: Ground, Creep
 	HiddenUnderFog:
 	RenderSprites:
 		Palette: terrain
@@ -387,7 +397,7 @@
 	Selectable:
 		Bounds: 24,24
 	Targetable:
-		TargetTypes: Ground
+		TargetTypes: Ground, Creep
 	AutoTarget:
 		ScanRadius: 5
 	AttackMove:
@@ -411,8 +421,11 @@
 	Guard:
 		Voice: Move
 	Guardable:
-	PoisonedByTiberium:
-		Weapon: Heal
+	DamagedByTerrain:
+		Damage: -1
+		DamageInterval: 4
+		DamageTypes: TiberiumDeath
+		Terrain: Tiberium, BlueTiberium
 	Voiced:
 		VoiceSet: DinoVoice
 
@@ -427,6 +440,8 @@
 	ActorLostNotification:
 	AttackMove:
 	WithShadow:
+		Offset: 43, 128, 0
+		ZOffset: -129
 	WithFacingSpriteBody:
 	FlyAwayOnIdle:
 	RejectsOrders:
@@ -505,6 +520,7 @@
 	RepairableBuilding:
 		RepairPercent: 40
 		RepairStep: 14
+		PlayerExperience: 15
 	WithDeathAnimation:
 		DeathSequence: dead
 		UseDeathTypeSuffix: false
@@ -550,6 +566,7 @@
 	RepairableBuilding:
 		RepairPercent: 40
 		RepairStep: 14
+		PlayerExperience: 15
 	EngineerRepairable:
 	RevealsShroud:
 		Range: 3c0
@@ -746,6 +763,8 @@
 ^HelicopterHusk:
 	Inherits: ^CommonHuskDefaults
 	WithShadow:
+		Offset: 43, 128, 0
+		ZOffset: -129
 	Aircraft:
 		AirborneUpgrades: airborne
 		CanHover: True

@@ -254,7 +254,7 @@ Actors:
 		Location: 65,57
 		Owner: Allies
 	Actor80: apwr
-		Location: 68,53
+		Location: 68,54
 		Owner: Allies
 	Actor81: powr
 		Location: 65,53
@@ -356,7 +356,7 @@ Actors:
 		Location: 58,41
 		Owner: Allies
 	Actor104: apwr
-		Location: 71,47
+		Location: 71,48
 		Owner: Allies
 	Actor105: fact
 		Location: 59,51
@@ -1033,14 +1033,11 @@ Actors:
 	Actor346: t15
 		Location: 57,24
 		Owner: Neutral
-	Actor1000: camera.large
-		Location: 1,1
-		Owner: Soviets
 	FlameTower3: ftur
 		Location: 78,17
 		Owner: Soviets
 	AdvancedPowerPlant3: apwr
-		Location: 88,12
+		Location: 88,13
 		Owner: Soviets
 	Silo1: silo
 		Location: 84,13
@@ -1091,10 +1088,10 @@ Actors:
 		Location: 22,12
 		Owner: Soviets
 	AdvancedPowerPlant1: apwr
-		Location: 24,5
+		Location: 24,6
 		Owner: Soviets
 	AdvancedPowerPlant2: apwr
-		Location: 16,13
+		Location: 16,14
 		Owner: Soviets
 	BadgerEntryPoint1: waypoint
 		Location: 1,54

@@ -20,6 +20,7 @@ FireballLauncher:
 		DamageTypes: Prone100Percent, TriggerProne, FireDeath
 	Warhead@2Smu: LeaveSmudge
 		SmudgeType: SmallScorch
+		InvalidTargets: Vehicle, Building, Wall
 
 FiendShard:
 	ReloadDelay: 30
@@ -59,13 +60,6 @@ SlimeAttack:
 			Heavy: 40
 			Concrete: 20
 		DamageTypes: Prone100Percent, TriggerProne, SmallExplosionDeath
-
-Tiberium:
-	ReloadDelay: 16
-	Warhead@1Dam: SpreadDamage
-		Spread: 42
-		Damage: 2
-		DamageTypes: ExplosionDeath, TriggerVisceroid
 
 Veins:
 	ReloadDelay: 16

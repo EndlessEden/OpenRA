@@ -15,9 +15,9 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using OpenRA.FileSystem;
+using OpenRA.Mods.Common;
 using OpenRA.Mods.Common.FileFormats;
 using OpenRA.Mods.Common.Traits;
-using OpenRA.Traits;
 
 namespace OpenRA.Mods.TS.UtilityCommands
 {
@@ -186,8 +186,7 @@ namespace OpenRA.Mods.TS.UtilityCommands
 			map.PlayerDefinitions = mapPlayers.ToMiniYaml();
 
 			var dest = Path.GetFileNameWithoutExtension(args[1]) + ".oramap";
-			var package = new ZipFile(modData.DefaultFileSystem, dest, true);
-			map.Save(package);
+			map.Save(ZipFile.Create(dest, new Folder(".")));
 			Console.WriteLine(dest + " saved.");
 		}
 

@@ -4,9 +4,7 @@ GAWALL:
 		Queue: Defense
 		BuildPaletteOrder: 20
 		Prerequisites: ~structures.gdi
-	SoundOnDamageTransition:
-		DamagedSounds:
-		DestroyedSounds:
+	-SoundOnDamageTransition:
 	Valued:
 		Cost: 50
 	CustomSellValue:
@@ -85,17 +83,17 @@ GACTWR:
 	WithSpriteTurret@VULC:
 		UpgradeTypes: tower.vulcan
 		UpgradeMinEnabledLevel: 1
-		Recoils: no
+		Recoils: false
 		Sequence: turret-vulcan
 	WithSpriteTurret@ROCKET:
 		UpgradeTypes: tower.rocket
 		UpgradeMinEnabledLevel: 1
-		Recoils: no
+		Recoils: false
 		Sequence: turret-rocket
 	WithSpriteTurret@SAM:
 		UpgradeTypes: tower.sam
 		UpgradeMinEnabledLevel: 1
-		Recoils: no
+		Recoils: false
 		Sequence: turret-sam
 	Armament@VULCPRIMARY:
 		UpgradeTypes: tower.vulcan

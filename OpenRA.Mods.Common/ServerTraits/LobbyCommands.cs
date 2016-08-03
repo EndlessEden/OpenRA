@@ -60,7 +60,8 @@ namespace OpenRA.Mods.Common.Server
 
 		static void CheckAutoStart(S server)
 		{
-			var playerClients = server.LobbyInfo.Clients.Where(c => c.Bot == null && c.Slot != null);
+			// A spectating admin is included for checking these rules
+			var playerClients = server.LobbyInfo.Clients.Where(c => (c.Bot == null && c.Slot != null) || c.IsAdmin);
 
 			// Are all players ready?
 			if (!playerClients.Any() || playerClients.Any(c => c.State != Session.ClientState.Ready))
@@ -71,7 +72,7 @@ namespace OpenRA.Mods.Common.Server
 				return;
 
 			// Does server have only one player?
-			if (server.Settings.DisableSinglePlayer && playerClients.Count() == 1)
+			if (!server.LobbyInfo.GlobalSettings.EnableSingleplayer && playerClients.Count() == 1)
 				return;
 
 			server.StartGame();
@@ -122,10 +123,10 @@ namespace OpenRA.Mods.Common.Server
 							return true;
 						}
 
-						if (server.Settings.DisableSinglePlayer &&
+						if (!server.LobbyInfo.GlobalSettings.EnableSingleplayer &&
 							server.LobbyInfo.Clients.Where(c => c.Bot == null && c.Slot != null).Count() == 1)
 						{
-							server.SendOrderTo(conn, "Message", "Unable to start the game until another player joins.");
+							server.SendOrderTo(conn, "Message", "This server requires at least two human players to start match.");
 							return true;
 						}
 
@@ -188,6 +189,7 @@ namespace OpenRA.Mods.Common.Server
 							client.SpawnPoint = 0;
 							client.Color = HSLColor.FromRGB(255, 255, 255);
 							server.SyncLobbyClients();
+							CheckAutoStart(server);
 							return true;
 						}
 						else
@@ -356,7 +358,7 @@ namespace OpenRA.Mods.Common.Server
 								.Where(ss => ss != null)
 								.ToDictionary(ss => ss.PlayerReference, ss => ss);
 
-							LoadMapSettings(server.LobbyInfo.GlobalSettings, server.Map.Rules);
+							LoadMapSettings(server, server.LobbyInfo.GlobalSettings, server.Map.Rules);
 
 							// Reset client states
 							foreach (var c in server.LobbyInfo.Clients)
@@ -401,8 +403,8 @@ namespace OpenRA.Mods.Common.Server
 							if (server.Map.DefinesUnsafeCustomRules)
 								server.SendMessage("This map contains custom rules. Game experience may change.");
 
-							if (server.Settings.DisableSinglePlayer)
-								server.SendMessage("Singleplayer games have been disabled on this server.");
+							if (!server.LobbyInfo.GlobalSettings.EnableSingleplayer)
+								server.SendMessage("This server requires at least two human players to start match.");
 							else if (server.Map.Players.Players.Where(p => p.Value.Playable).All(p => !p.Value.AllowBots))
 								server.SendMessage("Bots have been disabled on this map.");
 						};
@@ -433,10 +435,14 @@ namespace OpenRA.Mods.Common.Server
 							return true;
 						}
 
-						var options = server.Map.Rules.Actors["player"].TraitInfos<ILobbyOptions>()
+						var allOptions = server.Map.Rules.Actors["player"].TraitInfos<ILobbyOptions>()
 							.Concat(server.Map.Rules.Actors["world"].TraitInfos<ILobbyOptions>())
-							.SelectMany(t => t.LobbyOptions(server.Map.Rules))
-							.ToDictionary(o => o.Id, o => o);
+							.SelectMany(t => t.LobbyOptions(server.Map.Rules));
+
+						// Overwrite keys with duplicate ids
+						var options = new Dictionary<string, LobbyOption>();
+						foreach (var o in allOptions)
+							options[o.Id] = o;
 
 						var split = s.Split(' ');
 						LobbyOption option;
@@ -458,6 +464,13 @@ namespace OpenRA.Mods.Common.Server
 							return true;
 
 						oo.Value = oo.PreferredValue = split[1];
+
+						if (option.Id == "gamespeed")
+						{
+							var speed = server.ModData.Manifest.Get<GameSpeeds>().Speeds[oo.Value];
+							server.LobbyInfo.GlobalSettings.Timestep = speed.Timestep;
+							server.LobbyInfo.GlobalSettings.OrderLatency = speed.OrderLatency;
+						}
 
 						server.SyncLobbyGlobalSettings();
 						server.SendMessage(option.ValueChangedMessage(client.Name, split[1]));
@@ -503,71 +516,6 @@ namespace OpenRA.Mods.Common.Server
 						}
 
 						server.SyncLobbyClients();
-						return true;
-					}
-				},
-				{ "difficulty",
-					s =>
-					{
-						if (server.LobbyInfo.GlobalSettings.Difficulty == s)
-							return true;
-
-						if (!client.IsAdmin)
-						{
-							server.SendOrderTo(conn, "Message", "Only the host can set that option.");
-							return true;
-						}
-
-						var mapOptions = server.Map.Rules.Actors["world"].TraitInfo<MapOptionsInfo>();
-						if (mapOptions.DifficultyLocked || !mapOptions.Difficulties.Any())
-						{
-							server.SendOrderTo(conn, "Message", "Map has disabled difficulty configuration.");
-							return true;
-						}
-
-						if (s != null && !mapOptions.Difficulties.Contains(s))
-						{
-							server.SendOrderTo(conn, "Message", "Invalid difficulty selected: {0}".F(s));
-							server.SendOrderTo(conn, "Message", "Supported values: {0}".F(mapOptions.Difficulties.JoinWith(", ")));
-							return true;
-						}
-
-						server.LobbyInfo.GlobalSettings.Difficulty = s;
-						server.SyncLobbyGlobalSettings();
-						server.SendMessage("{0} changed difficulty to {1}.".F(client.Name, s));
-
-						return true;
-					}
-				},
-				{ "gamespeed",
-					s =>
-					{
-						if (server.LobbyInfo.GlobalSettings.GameSpeedType == s)
-							return true;
-
-						if (!client.IsAdmin)
-						{
-							server.SendOrderTo(conn, "Message", "Only the host can set that option.");
-							return true;
-						}
-
-						var gameSpeeds = server.ModData.Manifest.Get<GameSpeeds>();
-
-						GameSpeed speed;
-						if (!gameSpeeds.Speeds.TryGetValue(s, out speed))
-						{
-							server.SendOrderTo(conn, "Message", "Invalid game speed selected.");
-							return true;
-						}
-
-						server.LobbyInfo.GlobalSettings.GameSpeedType = s;
-						server.LobbyInfo.GlobalSettings.Timestep = speed.Timestep;
-						server.LobbyInfo.GlobalSettings.OrderLatency =
-							server.LobbyInfo.IsSinglePlayer ? 1 : speed.OrderLatency;
-
-						server.SyncLobbyInfo();
-						server.SendMessage("{0} changed Game Speed to {1}.".F(client.Name, speed.Name));
-
 						return true;
 					}
 				},
@@ -815,7 +763,7 @@ namespace OpenRA.Mods.Common.Server
 				.Where(s => s != null)
 				.ToDictionary(s => s.PlayerReference, s => s);
 
-			LoadMapSettings(server.LobbyInfo.GlobalSettings, server.Map.Rules);
+			LoadMapSettings(server, server.LobbyInfo.GlobalSettings, server.Map.Rules);
 		}
 
 		static Session.Slot MakeSlotFromPlayerReference(PlayerReference pr)
@@ -834,7 +782,7 @@ namespace OpenRA.Mods.Common.Server
 			};
 		}
 
-		public static void LoadMapSettings(Session.Global gs, Ruleset rules)
+		public static void LoadMapSettings(S server, Session.Global gs, Ruleset rules)
 		{
 			var options = rules.Actors["player"].TraitInfos<ILobbyOptions>()
 				.Concat(rules.Actors["world"].TraitInfos<ILobbyOptions>())
@@ -865,6 +813,13 @@ namespace OpenRA.Mods.Common.Server
 				state.Value = value;
 				state.PreferredValue = preferredValue;
 				gs.LobbyOptions[o.Id] = state;
+
+				if (o.Id == "gamespeed")
+				{
+					var speed = server.ModData.Manifest.Get<GameSpeeds>().Speeds[value];
+					server.LobbyInfo.GlobalSettings.Timestep = speed.Timestep;
+					server.LobbyInfo.GlobalSettings.OrderLatency = speed.OrderLatency;
+				}
 			}
 		}
 

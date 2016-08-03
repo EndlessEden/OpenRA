@@ -92,7 +92,10 @@ namespace OpenRA.Mods.D2k.Activities
 			});
 
 			foreach (var notify in self.TraitsImplementing<INotifyAttack>())
+			{
+				notify.PreparingAttack(self, target, null, null);
 				notify.Attacking(self, target, null, null);
+			}
 
 			return true;
 		}
@@ -149,7 +152,7 @@ namespace OpenRA.Mods.D2k.Activities
 					sandworm.IsAttacking = false;
 
 					// There is a chance that the worm would just go away after attacking
-					if (self.World.SharedRandom.Next(100) <= sandworm.Info.ChanceToDisappear)
+					if (self.World.SharedRandom.Next(100) <= sandworm.WormInfo.ChanceToDisappear)
 					{
 						self.CancelActivity();
 						self.World.AddFrameEndTask(w => self.Dispose());

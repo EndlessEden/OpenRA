@@ -33,9 +33,18 @@ ListenPort="${ListenPort:-"1234"}"
 ExternalPort="${ExternalPort:-"1234"}"
 AdvertiseOnline="${AdvertiseOnline:-"False"}"
 AllowPortForward="${AllowPortForward:-"False"}"
+EnableSingleplayer="${EnableSingleplayer:-"False"}"
+Password="${Password:-""}"
 
 while true; do
+<<<<<<< HEAD
   cd $LPATH && mono --debug OpenRA.Server.exe Game.Mod=$Mod \
       Server.Name="$Name" Server.ListenPort=$ListenPort Server.ExternalPort=$ExternalPort \
       Server.AdvertiseOnline=$AdvertiseOnline Server.AllowPortForward=$AllowPortForward
+=======
+     mono --debug OpenRA.Server.exe Game.Mod=$Mod \
+     Server.Name="$Name" Server.ListenPort=$ListenPort Server.ExternalPort=$ExternalPort \
+     Server.AdvertiseOnline=$AdvertiseOnline Server.AllowPortForward=$AllowPortForward \
+     Server.EnableSingleplayer=$EnableSingleplayer Server.Password=$Password
+>>>>>>> 853ab798cb70c33290fe971826561687fa7c3b12
 done

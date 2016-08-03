@@ -95,6 +95,7 @@ JUMPJET:
 
 GHOST:
 	Inherits: ^Soldier
+	Inherits@2: ^HealsOnTiberium
 	Valued:
 		Cost: 1750
 	Tooltip:
@@ -113,8 +114,6 @@ GHOST:
 		Speed: 56
 	Health:
 		HP: 200
-	PoisonedByTiberium:
-		Weapon: TiberiumHeal
 	Passenger:
 	RevealsShroud:
 		Range: 6c0

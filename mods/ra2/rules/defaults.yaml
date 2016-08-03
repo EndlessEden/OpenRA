@@ -62,6 +62,17 @@
 	TimedUpgradeBar:
 		Upgrade: invulnerability
 
+^ChronoDisable:
+	DisableOnUpgrade@ChronoDisable:
+		UpgradeTypes: chronodisable
+		UpgradeMinEnabledLevel: 1
+	TimedUpgradeBar@ChronoDisable:
+		Upgrade: chronodisable
+		Color: FFFFFF
+	Mobile:
+		UpgradeTypes: notmobile
+		UpgradeMaxEnabledLevel: 0
+
 ^Building:
 	Inherits@1: ^ExistsInWorld
 	Inherits@2: ^SpriteActor
@@ -143,6 +154,17 @@
 	Tooltip:
 		Name: Civilian Building
 
+^Rubble:
+	Inherits@1: ^SpriteActor
+	Building:
+		Dimensions: 1,1
+		Footprint: x
+	RenderSprites:
+		Palette: terrain
+	WithSpriteBody:
+		Sequence: rubble
+	FrozenUnderFog:
+
 ^TechBuilding:
 	Inherits: ^Building
 	-MustBeDestroyed:
@@ -159,6 +181,9 @@
 		Range: 4c0
 	Tooltip:
 		Description: Tech Building
+	CaptureNotification:
+		Notification: TechBuildingCaptured
+		LoseNotification: TechBuildingLost
 
 ^Flag:
 	Inherits: ^CivBuilding
@@ -242,6 +267,7 @@
 	Inherits@1: ^ExistsInWorld
 	Inherits@2: ^SpriteActor
 	Inherits@3: ^GainsExperience
+	Inherits@4: ^ChronoDisable
 	Health:
 		Shape: Circle
 			Radius: 128
@@ -381,10 +407,48 @@
 	WithInfantryBody:
 		IdleSequences: idle1
 
+^Animal:
+	Inherits: ^Infantry
+	Valued:
+		Cost: 10
+	Armor:
+		Type: None
+	Health:
+		HP: 200
+	Targetable:
+		TargetTypes: Ground
+	RevealsShroud:
+		Range: 2c0
+	Mobile:
+		Speed: 40
+	Selectable:
+		Bounds: 45, 25, 0, -8
+	AttackFrontal:
+		Voice: Attack
+	DeathSounds@burned:
+		Voice: Die
+	DeathSounds@zapped:
+		Voice: Die
+	DeathSounds@radiation:
+		Voice: Die
+	-TakeCover:
+	WithDeathAnimation@effect:
+		DeathSequencePalette: player
+		DeathPaletteIsPlayerPalette: true
+		DeathTypes:
+			RadiationDeath: 1
+			ElectroDeath: 2
+	-SpawnActorOnDeath@flames:
+	WithDeathAnimation@flames:
+		DeathTypes:
+			FlameDeath: 1
+	-Crushable:
+
 ^Vehicle:
 	Inherits@1: ^ExistsInWorld
 	Inherits@2: ^GainsExperience
 	Inherits@3: ^IronCurtainable
+	Inherits@4: ^ChronoDisable
 	Mobile:
 		Voice: Move
 		Crushes: crate
@@ -544,6 +608,7 @@
 	Inherits@1: ^ExistsInWorld
 	Inherits@2: ^GainsExperience
 	Inherits@3: ^IronCurtainable
+	Inherits@4: ^ChronoDisable
 	Mobile:
 		Voice: Move
 		Crushes: crate

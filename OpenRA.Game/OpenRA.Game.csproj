@@ -63,11 +63,8 @@
       <HintPath>..\thirdparty\download\SharpFont.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Mono.Nat">
-      <SpecificVersion>False</SpecificVersion>
-      <Private>False</Private>
-      <Package>mono.nat</Package>
-      <HintPath>..\thirdparty\download\Mono.Nat.dll</HintPath>
+    <Reference Include="Open.Nat">
+      <HintPath>..\thirdparty\download\Open.Nat.dll</HintPath>
     </Reference>
     <Reference Include="Eluant">
       <HintPath>..\thirdparty\download\Eluant.dll</HintPath>
@@ -95,7 +92,6 @@
     <Compile Include="Activities\CallFunc.cs" />
     <Compile Include="Actor.cs" />
     <Compile Include="CacheStorage.cs" />
-    <Compile Include="FileFormats\VocLoader.cs" />
     <Compile Include="FileSystem\IdxEntry.cs" />
     <Compile Include="FileSystem\IPackage.cs" />
     <Compile Include="LogProxy.cs" />
@@ -103,7 +99,6 @@
     <Compile Include="FileSystem\BagFile.cs" />
     <Compile Include="Map\MapGrid.cs" />
     <Compile Include="Map\MapPlayers.cs" />
-    <Compile Include="ContentInstaller.cs" />
     <Compile Include="MPos.cs" />
     <Compile Include="Download.cs" />
     <Compile Include="Effects\AsyncAction.cs" />
@@ -249,11 +244,11 @@
     <Compile Include="Traits\ActivityUtils.cs" />
     <Compile Include="FileSystem\ZipFolder.cs" />
     <Compile Include="Primitives\float3.cs" />
+    <Compile Include="ModContent.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileSystem\D2kSoundResources.cs" />
     <Compile Include="FileSystem\Folder.cs" />
-    <Compile Include="FileSystem\InstallShieldCABExtractor.cs" />
     <Compile Include="FileSystem\InstallShieldPackage.cs" />
     <Compile Include="FileSystem\MixFile.cs" />
     <Compile Include="FileSystem\Pak.cs" />
@@ -266,13 +261,10 @@
     <Compile Include="FieldSaver.cs" />
     <Compile Include="Manifest.cs" />
     <Compile Include="Graphics\Vertex.cs" />
-    <Compile Include="FileFormats\ImaAdpcmLoader.cs" />
-    <Compile Include="FileFormats\AudLoader.cs" />
     <Compile Include="FileFormats\Blast.cs" />
     <Compile Include="FileFormats\Blowfish.cs" />
     <Compile Include="FileFormats\BlowfishKeyProvider.cs" />
     <Compile Include="FileFormats\CRC32.cs" />
-    <Compile Include="FileFormats\WavLoader.cs" />
     <Compile Include="FileFormats\XccGlobalDatabase.cs" />
     <Compile Include="FileFormats\XccLocalDatabase.cs" />
     <Compile Include="FileFormats\HvaReader.cs" />

@@ -13,8 +13,13 @@ World:
 		Scripts: evacuation.lua
 	MapOptions:
 		TechLevelLocked: True
-		Difficulties: Easy, Normal
-		Difficulty: Normal
+	ScriptLobbyDropdown@difficulty:
+		ID: difficulty
+		Label: Difficulty
+		Values:
+			easy: Easy
+			normal: Normal
+		Default: normal
 
 ^Tanks:
 	Demolishable:
@@ -195,11 +200,6 @@ MSUB:
 	Buildable:
 		Prerequisites: ~disabled
 
-CAMERA.Large:
-	Inherits: CAMERA
-	RevealsShroud:
-		Range: 1000c0
-
 Camera.SAM:
 	Inherits: CAMERA
 	RevealsShroud:
@@ -214,4 +214,3 @@ powerproxy.paras2:
 	AlwaysVisible:
 	ParatroopersPower:
 		DropItems: E1,E1,E1,E2,E2
-

@@ -27,6 +27,7 @@ namespace OpenRA.Mods.Common.AI
 		public class UnitCategories
 		{
 			public readonly HashSet<string> Mcv = new HashSet<string>();
+			public readonly HashSet<string> ExcludeFromSquads = new HashSet<string>();
 		}
 
 		public class BuildingCategories
@@ -125,10 +126,16 @@ namespace OpenRA.Mods.Common.AI
 		[Desc("Radius in cells around the center of the base to expand.")]
 		public readonly int MaxBaseRadius = 20;
 
+		[Desc("Should deployment of additional MCVs be restricted to MaxBaseRadius if explicit deploy locations are missing or occupied?")]
+		public readonly bool RestrictMCVDeploymentFallbackToBase = true;
+
 		[Desc("Radius in cells around each building with ProvideBuildableArea",
 			"to check for a 3x3 area of water where naval structures can be built.",
 			"Should match maximum adjacency of naval structures.")]
 		public readonly int CheckForWaterRadius = 8;
+
+		[Desc("Terrain types which are considered water for base building purposes.")]
+		public readonly HashSet<string> WaterTerrainTypes = new HashSet<string> { "Water" };
 
 		[Desc("Avoid enemy actors nearby when searching for a new resource patch. Should be somewhere near the max weapon range.")]
 		public readonly WDist HarvesterEnemyAvoidanceRadius = WDist.FromCells(8);
@@ -150,7 +157,7 @@ namespace OpenRA.Mods.Common.AI
 		[Desc("What buildings to the AI should build.", "What % of the total base must be this type of building.")]
 		public readonly Dictionary<string, float> BuildingFractions = null;
 
-		[Desc("Tells the AI what unit types fall under the same common name. Only supported entry is Mcv.")]
+		[Desc("Tells the AI what unit types fall under the same common name. Supported entries are Mcv and ExcludeFromSquads.")]
 		[FieldLoader.LoadUsing("LoadUnitCategories", true)]
 		public readonly UnitCategories UnitsCommonNames;
 
@@ -319,14 +326,13 @@ namespace OpenRA.Mods.Common.AI
 
 			foreach (var b in baseProviders)
 			{
-				// TODO: Unhardcode terrain type
-				// TODO2: Properly check building foundation rather than 3x3 area
+				// TODO: Properly check building foundation rather than 3x3 area
 				var playerWorld = Player.World;
 				var countWaterCells = Map.FindTilesInCircle(b.Location, Info.MaxBaseRadius)
 					.Where(c => playerWorld.Map.Contains(c)
-						&& playerWorld.Map.GetTerrainInfo(c).IsWater
+						&& Info.WaterTerrainTypes.Contains(playerWorld.Map.GetTerrainInfo(c).Type)
 						&& Util.AdjacentCells(playerWorld, Target.FromCell(playerWorld, c))
-							.All(a => playerWorld.Map.GetTerrainInfo(a).IsWater))
+							.All(a => Info.WaterTerrainTypes.Contains(playerWorld.Map.GetTerrainInfo(a).Type)))
 					.Count();
 
 				if (countWaterCells > 0)
@@ -344,14 +350,13 @@ namespace OpenRA.Mods.Common.AI
 
 			foreach (var a in areaProviders)
 			{
-				// TODO: Unhardcode terrain type
-				// TODO2: Properly check building foundation rather than 3x3 area
+				// TODO: Properly check building foundation rather than 3x3 area
 				var playerWorld = Player.World;
 				var adjacentWater = Map.FindTilesInCircle(a.Location, Info.CheckForWaterRadius)
 					.Where(c => playerWorld.Map.Contains(c)
-						&& playerWorld.Map.GetTerrainInfo(c).IsWater
+						&& Info.WaterTerrainTypes.Contains(playerWorld.Map.GetTerrainInfo(c).Type)
 						&& Util.AdjacentCells(playerWorld, Target.FromCell(playerWorld, c))
-							.All(b => playerWorld.Map.GetTerrainInfo(b).IsWater))
+							.All(ac => Info.WaterTerrainTypes.Contains(playerWorld.Map.GetTerrainInfo(ac).Type)))
 					.Count();
 
 				if (adjacentWater > 0)
@@ -678,7 +683,8 @@ namespace OpenRA.Mods.Common.AI
 		void FindNewUnits(Actor self)
 		{
 			var newUnits = self.World.ActorsHavingTrait<IPositionable>()
-				.Where(a => a.Owner == Player && !Info.UnitsCommonNames.Mcv.Contains(a.Info.Name) && !activeUnits.Contains(a));
+				.Where(a => a.Owner == Player && !Info.UnitsCommonNames.Mcv.Contains(a.Info.Name) &&
+					!Info.UnitsCommonNames.ExcludeFromSquads.Contains(a.Info.Name) && !activeUnits.Contains(a));
 
 			foreach (var a in newUnits)
 			{
@@ -817,7 +823,7 @@ namespace OpenRA.Mods.Common.AI
 		}
 
 		// Find any newly constructed MCVs and deploy them at a sensible
-		// backup location within the main base.
+		// backup location.
 		void FindAndDeployBackupMcv(Actor self)
 		{
 			var mcvs = self.World.Actors.Where(a => a.Owner == Player &&
@@ -825,11 +831,11 @@ namespace OpenRA.Mods.Common.AI
 
 			foreach (var mcv in mcvs)
 			{
-				if (mcv.IsMoving())
+				if (!mcv.IsIdle)
 					continue;
 
 				var factType = mcv.Info.TraitInfo<TransformsInfo>().IntoActor;
-				var desiredLocation = ChooseBuildLocation(factType, false, BuildingType.Building);
+				var desiredLocation = ChooseBuildLocation(factType, Info.RestrictMCVDeploymentFallbackToBase, BuildingType.Building);
 				if (desiredLocation == null)
 					continue;
 

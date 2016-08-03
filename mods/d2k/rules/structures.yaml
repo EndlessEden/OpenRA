@@ -43,7 +43,7 @@ concreteb:
 
 construction_yard:
 	Inherits: ^Building
-	-DamagedWithoutFoundation:
+	-DamagedByTerrain:
 	Building:
 		Footprint: xxx xxx
 		Dimensions: 3,2
@@ -97,10 +97,9 @@ construction_yard:
 		ZOffset: 256
 		UpgradeTypes: stardecoration
 		UpgradeMinEnabledLevel: 1
-	WithDecoration@primary:
+	WithTextDecoration@primary:
 		RequiresSelection: true
-		Image: pips
-		Sequence: tag-primary
+		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
 		UpgradeTypes: primary
@@ -212,10 +211,9 @@ barracks:
 		ZOffset: 256
 		UpgradeTypes: stardecoration
 		UpgradeMinEnabledLevel: 1
-	WithDecoration@primary:
+	WithTextDecoration@primary:
 		RequiresSelection: true
-		Image: pips
-		Sequence: tag-primary
+		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
 		UpgradeTypes: primary
@@ -394,10 +392,9 @@ light_factory:
 		ZOffset: 256
 		UpgradeTypes: stardecoration
 		UpgradeMinEnabledLevel: 1
-	WithDecoration@primary:
+	WithTextDecoration@primary:
 		RequiresSelection: true
-		Image: pips
-		Sequence: tag-primary
+		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
 		UpgradeTypes: primary
@@ -476,10 +473,9 @@ heavy_factory:
 		ZOffset: 256
 		UpgradeTypes: stardecoration
 		UpgradeMinEnabledLevel: 1
-	WithDecoration@primary:
+	WithTextDecoration@primary:
 		RequiresSelection: true
-		Image: pips
-		Sequence: tag-primary
+		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
 		UpgradeTypes: primary
@@ -593,10 +589,9 @@ starport:
 	Power:
 		Amount: -150
 	ProvidesPrerequisite@buildingname:
-	WithDecoration@primary:
+	WithTextDecoration@primary:
 		RequiresSelection: true
-		Image: pips
-		Sequence: tag-primary
+		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
 		UpgradeTypes: primary
@@ -774,6 +769,7 @@ repair_pad:
 		Interval: 10
 		HpPerStep: 80
 		FinishRepairingNotification: UnitRepaired
+		PlayerExperience: 15
 	RallyPoint:
 		Offset: 1,3
 	RenderSprites:
@@ -838,7 +834,6 @@ high_tech_factory:
 		SquadSize: 3
 		LongDesc: Ornithopters hit the target with bombs
 		UnitType: ornithopter
-		SelectTargetSound:
 		DisplayBeacon: True
 		CameraActor: camera
 	WithProductionOverlay@WELDING:
@@ -951,11 +946,9 @@ palace:
 		ChargeTime: 300
 		Description: Death Hand
 		LongDesc: Launches an atomic missile at a target location
-		BeginChargeSound: HI_PREP.AUD
-		EndChargeSound: HI_DHRDY.AUD
-		SelectTargetSound:
-		LaunchSound:
-		IncomingSound:
+		BeginChargeSpeechNotification: DeathHandMissilePrepping
+		EndChargeSpeechNotification: DeathHandMissileReady
+		MissileLaunchDetected: MissileLaunchDetected
 		MissileWeapon: atomic
 		SpawnOffset: -512,1c171,0
 		DisplayBeacon: True
