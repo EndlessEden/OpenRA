@@ -7,7 +7,7 @@
 		Length: 12
 		UseTilesetExtension: true
 		ZOffset: 1023
-		Offset: 0, -12
+		Offset: 0, -12, 24
 
 mcv.gdi:
 	Inherits: ^VehicleOverlays
@@ -47,23 +47,22 @@ hvr:
 lpst.gdi:
 	Inherits: ^VehicleOverlays
 	idle: gadpsa
-		Offset: 0, -12
+		DepthSprite: isodepth.shp
+		DepthSpriteOffset: -6, -6
+		Offset: 0, -12, 12
+		UseTilesetCode: true
 		ShadowStart: 3
 	make: gadpsamk
-		Offset: 0, -12
+		DepthSprite: isodepth.shp
+		DepthSpriteOffset: -6, -6
+		Offset: 0, -12, 12
+		UseTilesetCode: true
 		Length: 36
 		ShadowStart: 36
 	icon: sidebar-gdi|lpsticon
 
 lpst.nod:
-	Inherits: ^VehicleOverlays
-	idle: gadpsa
-		Offset: 0, -12
-		ShadowStart: 3
-	make: gadpsamk
-		Offset: 0, -12
-		Length: 36
-		ShadowStart: 36
+	Inherits: lpst.gdi
 	icon: sidebar-nod|lpsticon
 
 repair:
@@ -90,6 +89,7 @@ bggy:
 	Inherits: ^VehicleOverlays
 	Defaults:
 		Length: *
+		Offset: 0, 0, 24
 	muzzle0: mgun-n
 	muzzle1: mgun-nw
 	muzzle2: mgun-w
@@ -99,6 +99,7 @@ bggy:
 	muzzle6: mgun-e
 	muzzle7: mgun-ne
 	icon: bggyicon
+		Offset: 0, 0
 
 sapc:
 	Inherits: ^VehicleOverlays
@@ -127,6 +128,7 @@ ttnk:
 		Offset: 0, -12, 12
 	muzzle: gunfire
 		Length: *
+		Offset: 0, 0, 24
 	icon: tickicon
 
 stnk:
@@ -151,6 +153,7 @@ mmch:
 		Offset: 0, 0, 12
 	muzzle: gunfire
 		Length: *
+		Offset: 0, 0, 12
 	icon: mmchicon
 
 gghunt:
