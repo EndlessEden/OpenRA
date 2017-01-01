@@ -1,5 +1,6 @@
 E1:
 	Inherits: ^Soldier
+	Inherits@EXPERIENCE: ^GainsExperience
 	Buildable:
 		Queue: Infantry
 		BuildPaletteOrder: 10
@@ -15,13 +16,10 @@ E1:
 		Speed: 71
 	Armament@PRIMARY:
 		Weapon: Minigun
-		UpgradeTypes: eliteweapon
-		UpgradeMaxEnabledLevel: 0
-		UpgradeMaxAcceptedLevel: 1
+		RequiresCondition: !rank-elite
 	Armament@ELITE:
 		Weapon: M1Carbine
-		UpgradeTypes: eliteweapon
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: rank-elite
 	AttackFrontal:
 		Voice: Attack
 	WithInfantryBody:
@@ -60,7 +58,6 @@ ENGINEER:
 		CaptureTypes: building
 		PlayerExperience: 50
 	-AutoTarget:
-	-GainsExperience:
 	RenderSprites:
 		Image: engineer.gdi
 		FactionImages:

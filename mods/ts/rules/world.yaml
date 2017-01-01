@@ -59,6 +59,7 @@
 		TerrainType: Veins
 	TerrainGeometryOverlay:
 	ExitsDebugOverlayManager:
+	CliffBackImpassabilityLayer:
 
 World:
 	Inherits: ^BaseWorld
@@ -98,6 +99,7 @@ World:
 		SmokeType: largesmoke
 		Sequence: largecraters
 	ResourceLayer:
+	BridgeLayer:
 	CustomTerrainDebugOverlay:
 	ResourceClaimLayer:
 	WarheadDebugOverlay:

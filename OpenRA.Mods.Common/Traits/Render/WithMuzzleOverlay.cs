@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -18,7 +18,7 @@ using OpenRA.Traits;
 namespace OpenRA.Mods.Common.Traits.Render
 {
 	[Desc("Renders the MuzzleSequence from the Armament trait.")]
-	class WithMuzzleOverlayInfo : UpgradableTraitInfo, Requires<RenderSpritesInfo>, Requires<AttackBaseInfo>, Requires<ArmamentInfo>
+	class WithMuzzleOverlayInfo : ConditionalTraitInfo, Requires<RenderSpritesInfo>, Requires<AttackBaseInfo>, Requires<ArmamentInfo>
 	{
 		[Desc("Ignore the weapon position, and always draw relative to the center of the actor")]
 		public readonly bool IgnoreOffset = false;
@@ -26,7 +26,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 		public override object Create(ActorInitializer init) { return new WithMuzzleOverlay(init.Self, this); }
 	}
 
-	class WithMuzzleOverlay : UpgradableTrait<WithMuzzleOverlayInfo>, INotifyAttack, IRender, ITick
+	class WithMuzzleOverlay : ConditionalTrait<WithMuzzleOverlayInfo>, INotifyAttack, IRender, ITick
 	{
 		readonly Dictionary<Barrel, bool> visible = new Dictionary<Barrel, bool>();
 		readonly Dictionary<Barrel, AnimationWithOffset> anims = new Dictionary<Barrel, AnimationWithOffset>();

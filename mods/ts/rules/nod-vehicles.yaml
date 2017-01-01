@@ -1,5 +1,7 @@
 BGGY:
-	Inherits: ^VoxelVehicle
+	Inherits: ^Vehicle
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 500
 	Tooltip:
@@ -18,6 +20,7 @@ BGGY:
 		Type: Light
 	RevealsShroud:
 		Range: 6c0
+		MaxHeightDelta: 3
 	Armament:
 		Weapon: RaiderCannon
 		LocalOffset: 0,-43,384, 0,43,384
@@ -28,11 +31,13 @@ BGGY:
 	AutoTarget:
 	WithMuzzleOverlay:
 	-DamagedByTerrain@VEINS:
-	-UpgradeOnTerrain@VEINS:
+	-GrantConditionOnTerrain@VEINS:
 	-WithIdleOverlay@VEINS:
 
 BIKE:
-	Inherits: ^VoxelVehicle
+	Inherits: ^Vehicle
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 600
 	Tooltip:
@@ -51,33 +56,31 @@ BIKE:
 		Type: Wood
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Armament@PRIMARY:
 		Weapon: BikeMissile
-		UpgradeTypes: eliteweapon
-		UpgradeMaxEnabledLevel: 0
-		UpgradeMaxAcceptedLevel: 1
+		RequiresCondition: !rank-elite
 		LocalOffset: -108,-144,360, -108,144,360
 	Armament@ELITE:
 		Weapon: HoverMissile
-		UpgradeTypes: eliteweapon
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: rank-elite
 		LocalOffset: -108,-144,360, -108,144,360
 	AttackFrontal:
 		Voice: Attack
 	AutoTarget:
 
 TTNK:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 800
 	Tooltip:
 		Name: Tick Tank
-		UpgradeTypes: deployed
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !deployed
 	Tooltip@DEPLOYED:
 		Name: Tick Tank (deployed)
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	Buildable:
 		Queue: Vehicle
 		BuildPaletteOrder: 60
@@ -87,49 +90,45 @@ TTNK:
 		TurnSpeed: 5
 		Speed: 85
 		Crushes: wall, crate, infantry
+		RequiresCondition: !empdisable && undeployed
 	Health:
 		HP: 350
 	Armor:
 		Type: Light
-		UpgradeTypes: undeployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: undeployed
 	Armament@PRIMARY:
 		Weapon: 90mm
 		LocalOffset: 288,0,256
-		UpgradeTypes: eliteweapon
-		UpgradeMaxEnabledLevel: 0
-		UpgradeMaxAcceptedLevel: 1
+		RequiresCondition: !rank-elite
 		MuzzleSequence: muzzle
 	Armament@ELITE:
 		Weapon: 120mmx
 		LocalOffset: 288,0,256
-		UpgradeTypes: eliteweapon
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: rank-elite
 		MuzzleSequence: muzzle
 	WithMuzzleOverlay:
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	RenderSprites:
 		Image: ttnk
-	DeployToUpgrade:
-		DeployedUpgrades: deployed, notmobile
-		UndeployedUpgrades: undeployed
+	GrantConditionOnDeploy:
+		DeployedCondition: deployed
+		UndeployedCondition: undeployed
 		DeployAnimation: make
 		Facing: 160
 		AllowedTerrainTypes: Clear, Road, DirtRoad, Rough
 		DeploySound: place2.aud
 		UndeploySound: clicky1.aud
+	GrantCondition@PREVIEWWORKAROUND:
+		Condition: real-actor
 	WithVoxelBody:
-		UpgradeTypes: undeployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: undeployed
 	WithSpriteBody@deployed:
-		UpgradeTypes: undeployed
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !undeployed && real-actor
 	AttackFrontal:
 		Voice: Attack
-		UpgradeTypes: undeployed
-		UpgradeMinEnabledLevel: 1
-		UpgradeMaxAcceptedLevel: 1
+		RequiresCondition: undeployed
 	Turreted:
 		TurnSpeed: 6
 		Turret: deployed
@@ -138,42 +137,39 @@ TTNK:
 	WithVoxelBarrel:
 		Armament: deployed
 		LocalOffset: 128, 0, 256
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	WithVoxelTurret@deployed:
 		Turret: deployed
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	AttackTurreted@deployed:
 		Voice: Attack
 		Armaments: deployed
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	Armament@deployed:
 		Name: deployed
 		Turret: deployed
 		Weapon: 90mm
 		LocalOffset: 384,0,256
-		UpgradeTypes: eliteweapon
-		UpgradeMaxEnabledLevel: 0
-		UpgradeMaxAcceptedLevel: 1
+		RequiresCondition: !rank-elite
 		MuzzleSequence: muzzle
 	Armament@deployedElite:
 		Name: deployed
 		Turret: deployed
 		Weapon: 120mmx
 		LocalOffset: 384,0,256
-		UpgradeTypes: eliteweapon
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: rank-elite
 		MuzzleSequence: muzzle
 	Armor@deployed:
 		Type: Concrete
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	AutoTarget:
+	Carryable:
+		RequiresCondition: undeployed
 
 ART2:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 975
 	Tooltip:
@@ -192,6 +188,7 @@ ART2:
 		TurnSpeed: 2
 	RevealsShroud:
 		Range: 9c0
+		MaxHeightDelta: 3
 	RenderVoxels:
 		LightAmbientColor: 0.4, 0.4, 0.4
 	Transforms:
@@ -202,7 +199,8 @@ ART2:
 		Voice: Move
 
 REPAIR:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
 	Buildable:
 		Queue: Vehicle
 		BuildPaletteOrder: 70
@@ -219,6 +217,7 @@ REPAIR:
 		TurnSpeed: 5
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Armament:
 		Weapon: Repair
 		Cursor: repair
@@ -229,7 +228,8 @@ REPAIR:
 		Voice: Attack
 
 WEED:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
 	Valued:
 		Cost: 1400
 	Tooltip:
@@ -262,15 +262,16 @@ WEED:
 		Type: Heavy
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	-WithVoxelBody:
 	WithVoxelUnloadBody:
-	-GainsExperience:
 	-DamagedByTerrain@VEINS:
-	-UpgradeOnTerrain@VEINS:
+	-GrantConditionOnTerrain@VEINS:
 	-WithIdleOverlay@VEINS:
 
 SAPC:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
 	Valued:
 		Cost: 800
 	Tooltip:
@@ -283,22 +284,26 @@ SAPC:
 	Mobile:
 		TurnSpeed: 5
 		Speed: 71
+		RequiresCondition: !empdisable && !loading
 	Health:
 		HP: 175
 	Armor:
 		Type: Heavy
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Cargo:
 		Types: Infantry
 		MaxWeight: 5
 		PipCount: 5
 		UnloadVoice: Unload
-		LoadingUpgrades: notmobile
+		LoadingCondition: loading
 		EjectOnDeath: true
 
 SUBTANK:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 750
 	Tooltip:
@@ -318,6 +323,7 @@ SUBTANK:
 		Type: Light
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Armament:
 		Weapon: FireballLauncher
 	AttackFrontal:
@@ -325,7 +331,9 @@ SUBTANK:
 	AutoTarget:
 
 STNK:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 1100
 	Tooltip:
@@ -345,6 +353,7 @@ STNK:
 		Type: Light
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Cloak:
 		InitialDelay: 90
 		CloakDelay: 90

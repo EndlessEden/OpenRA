@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -33,7 +33,7 @@ namespace OpenRA.Mods.Common.Traits
 	}
 
 	[Desc("This unit can cloak and uncloak in specific situations.")]
-	public class CloakInfo : UpgradableTraitInfo
+	public class CloakInfo : ConditionalTraitInfo
 	{
 		[Desc("Measured in game ticks.")]
 		public readonly int InitialDelay = 10;
@@ -53,23 +53,24 @@ namespace OpenRA.Mods.Common.Traits
 
 		public readonly HashSet<string> CloakTypes = new HashSet<string> { "Cloak" };
 
-		[UpgradeGrantedReference]
-		[Desc("The upgrades to grant to self while cloaked.")]
-		public readonly string[] WhileCloakedUpgrades = { };
+		[GrantedConditionReference]
+		[Desc("The condition to grant to self while cloaked.")]
+		public readonly string CloakedCondition = null;
 
 		public override object Create(ActorInitializer init) { return new Cloak(this); }
 	}
 
-	public class Cloak : UpgradableTrait<CloakInfo>, IRenderModifier, INotifyDamage,
+	public class Cloak : ConditionalTrait<CloakInfo>, IRenderModifier, INotifyDamage,
 	INotifyAttack, ITick, IVisibilityModifier, IRadarColorModifier, INotifyCreated, INotifyHarvesterAction
 	{
 		[Sync] int remainingTime;
 		[Sync] bool damageDisabled;
 		bool isDocking;
-		UpgradeManager upgradeManager;
+		ConditionManager conditionManager;
 
 		CPos? lastPos;
 		bool wasCloaked = false;
+		int cloakedToken = ConditionManager.InvalidConditionToken;
 
 		public Cloak(CloakInfo info)
 			: base(info)
@@ -79,14 +80,13 @@ namespace OpenRA.Mods.Common.Traits
 
 		void INotifyCreated.Created(Actor self)
 		{
-			upgradeManager = self.TraitOrDefault<UpgradeManager>();
+			conditionManager = self.TraitOrDefault<ConditionManager>();
 
-			// The upgrade manager exists, but may not have finished being created yet.
-			// We'll defer the upgrades until the end of the tick, at which point it will be ready.
 			if (Cloaked)
 			{
 				wasCloaked = true;
-				self.World.AddFrameEndTask(_ => GrantUpgrades(self));
+				if (conditionManager != null && cloakedToken == ConditionManager.InvalidConditionToken && !string.IsNullOrEmpty(Info.CloakedCondition))
+					cloakedToken = conditionManager.GrantCondition(self, Info.CloakedCondition);
 			}
 		}
 
@@ -144,15 +144,19 @@ namespace OpenRA.Mods.Common.Traits
 			var isCloaked = Cloaked;
 			if (isCloaked && !wasCloaked)
 			{
-				GrantUpgrades(self);
+				if (conditionManager != null && cloakedToken == ConditionManager.InvalidConditionToken && !string.IsNullOrEmpty(Info.CloakedCondition))
+					cloakedToken = conditionManager.GrantCondition(self, Info.CloakedCondition);
+
 				if (!self.TraitsImplementing<Cloak>().Any(a => a != this && a.Cloaked))
-					Game.Sound.Play(Info.CloakSound, self.CenterPosition);
+					Game.Sound.Play(SoundType.World, Info.CloakSound, self.CenterPosition);
 			}
 			else if (!isCloaked && wasCloaked)
 			{
-				RevokeUpgrades(self);
+				if (cloakedToken != ConditionManager.InvalidConditionToken)
+					cloakedToken = conditionManager.RevokeCondition(self, cloakedToken);
+
 				if (!self.TraitsImplementing<Cloak>().Any(a => a != this && a.Cloaked))
-					Game.Sound.Play(Info.UncloakSound, self.CenterPosition);
+					Game.Sound.Play(SoundType.World, Info.UncloakSound, self.CenterPosition);
 			}
 
 			wasCloaked = isCloaked;
@@ -174,20 +178,6 @@ namespace OpenRA.Mods.Common.Traits
 				color = Color.FromArgb(128, color);
 
 			return color;
-		}
-
-		void GrantUpgrades(Actor self)
-		{
-			if (upgradeManager != null)
-				foreach (var u in Info.WhileCloakedUpgrades)
-					upgradeManager.GrantUpgrade(self, u, this);
-		}
-
-		void RevokeUpgrades(Actor self)
-		{
-			if (upgradeManager != null)
-				foreach (var u in Info.WhileCloakedUpgrades)
-					upgradeManager.RevokeUpgrade(self, u, this);
 		}
 
 		void INotifyHarvesterAction.MovingToResources(Actor self, CPos targetCell, Activity next) { }

@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -25,7 +25,7 @@ namespace OpenRA.Mods.Common.Traits
 	}
 
 	[Desc("Allows you to attach weapons to the unit (use @IdentifierSuffix for > 1)")]
-	public class ArmamentInfo : UpgradableTraitInfo, IRulesetLoaded, Requires<AttackBaseInfo>
+	public class ArmamentInfo : ConditionalTraitInfo, Requires<AttackBaseInfo>
 	{
 		public readonly string Name = "primary";
 
@@ -79,7 +79,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public override object Create(ActorInitializer init) { return new Armament(init.Self, this); }
 
-		public void RulesetLoaded(Ruleset rules, ActorInfo ai)
+		public override void RulesetLoaded(Ruleset rules, ActorInfo ai)
 		{
 			WeaponInfo weaponInfo;
 
@@ -91,10 +91,12 @@ namespace OpenRA.Mods.Common.Traits
 			ModifiedRange = new WDist(Util.ApplyPercentageModifiers(
 				WeaponInfo.Range.Length,
 				ai.TraitInfos<IRangeModifierInfo>().Select(m => m.GetRangeModifierDefault())));
+
+			base.RulesetLoaded(rules, ai);
 		}
 	}
 
-	public class Armament : UpgradableTrait<ArmamentInfo>, INotifyCreated, ITick, IExplodeModifier
+	public class Armament : ConditionalTrait<ArmamentInfo>, ITick, IExplodeModifier
 	{
 		public readonly WeaponInfo Weapon;
 		public readonly Barrel[] Barrels;
@@ -139,12 +141,14 @@ namespace OpenRA.Mods.Common.Traits
 			return new WDist(Util.ApplyPercentageModifiers(Weapon.Range.Length, rangeModifiers));
 		}
 
-		protected virtual void Created(Actor self)
+		protected override void Created(Actor self)
 		{
 			turret = self.TraitsImplementing<Turreted>().FirstOrDefault(t => t.Name == Info.Turret);
 			ammoPool = self.TraitsImplementing<AmmoPool>().FirstOrDefault(la => la.Info.Name == Info.AmmoPoolName);
 			coords = self.Trait<BodyOrientation>();
 			rangeModifiers = self.TraitsImplementing<IRangeModifier>().ToArray().Select(m => m.GetRangeModifier());
+
+			base.Created(self);
 		}
 
 		protected virtual void Tick(Actor self)
@@ -166,12 +170,6 @@ namespace OpenRA.Mods.Common.Traits
 			}
 
 			delayedActions.RemoveAll(a => a.First <= 0);
-		}
-
-		void INotifyCreated.Created(Actor self)
-		{
-			// Split into a protected method to allow subclassing
-			Created(self);
 		}
 
 		void ITick.Tick(Actor self)
@@ -247,7 +245,7 @@ namespace OpenRA.Mods.Common.Traits
 						self.World.Add(projectile);
 
 					if (args.Weapon.Report != null && args.Weapon.Report.Any())
-						Game.Sound.Play(args.Weapon.Report.Random(self.World.SharedRandom), self.CenterPosition);
+						Game.Sound.Play(SoundType.World, args.Weapon.Report.Random(self.World.SharedRandom), self.CenterPosition);
 
 					foreach (var na in self.TraitsImplementing<INotifyAttack>())
 						na.Attacking(self, target, this, barrel);

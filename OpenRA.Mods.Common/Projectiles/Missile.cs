@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -135,6 +135,10 @@ namespace OpenRA.Mods.Common.Projectiles
 
 		[Desc("Explodes when leaving the following terrain type, e.g., Water for torpedoes.")]
 		public readonly string BoundToTerrainType = "";
+
+		[Desc("Allow the missile to snap to the target, meaning jumping to the target immediately when",
+			"the missile enters the radius of the current speed around the target.")]
+		public readonly bool AllowSnapping = false;
 
 		[Desc("Explodes when inside this proximity radius to target.",
 			"Note: If this value is lower than the missile speed, this check might",
@@ -813,7 +817,10 @@ namespace OpenRA.Mods.Common.Projectiles
 
 			// Move the missile
 			var lastPos = pos;
-			pos += move;
+			if (info.AllowSnapping && state != States.Freefall && relTarDist < move.Length)
+				pos = targetPosition + offset;
+			else
+				pos += move;
 
 			// Check for walls or other blocking obstacles
 			var shouldExplode = false;

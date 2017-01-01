@@ -1,6 +1,6 @@
-﻿#region Copyright & License Information
+#region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -14,7 +14,7 @@ using OpenRA.Traits;
 namespace OpenRA.Mods.Common.Traits.Sound
 {
 	[Desc("Plays a looping audio file at the actor position. Attach this to the `World` actor to cover the whole map.")]
-	class AmbientSoundInfo : UpgradableTraitInfo
+	class AmbientSoundInfo : ConditionalTraitInfo
 	{
 		[FieldLoader.Require]
 		public readonly string SoundFile = null;
@@ -25,7 +25,7 @@ namespace OpenRA.Mods.Common.Traits.Sound
 		public override object Create(ActorInitializer init) { return new AmbientSound(init.Self, this); }
 	}
 
-	class AmbientSound : UpgradableTrait<AmbientSoundInfo>, ITick
+	class AmbientSound : ConditionalTrait<AmbientSoundInfo>, ITick
 	{
 		ISound currentSound;
 		bool wasDisabled = true;
@@ -50,9 +50,9 @@ namespace OpenRA.Mods.Common.Traits.Sound
 			if (wasDisabled && Info.Interval <= 0)
 			{
 				if (self.OccupiesSpace != null)
-					currentSound = Game.Sound.PlayLooped(Info.SoundFile, self.CenterPosition);
+					currentSound = Game.Sound.PlayLooped(SoundType.World, Info.SoundFile, self.CenterPosition);
 				else
-					currentSound = Game.Sound.PlayLooped(Info.SoundFile);
+					currentSound = Game.Sound.PlayLooped(SoundType.World, Info.SoundFile);
 			}
 
 			wasDisabled = false;
@@ -66,9 +66,9 @@ namespace OpenRA.Mods.Common.Traits.Sound
 			interval = Info.Interval;
 
 			if (self.OccupiesSpace != null)
-				Game.Sound.Play(Info.SoundFile, self.CenterPosition);
+				Game.Sound.Play(SoundType.World, Info.SoundFile, self.CenterPosition);
 			else
-				Game.Sound.Play(Info.SoundFile);
+				Game.Sound.Play(SoundType.World, Info.SoundFile);
 		}
 	}
 }

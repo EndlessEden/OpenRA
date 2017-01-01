@@ -85,9 +85,10 @@ fi
 
 if [ ! -f Open.Nat.dll ]; then
 	echo "Fetching Open.Nat from NuGet"
-	get Open.NAT 2.1.0
-	cp ./Open.NAT/lib/net45/Open.Nat.dll .
-	rm -rf Open.NAT
+	get Open.Nat 2.1.0
+	if [ -d ./Open.NAT ]; then mv Open.NAT Open.Nat; fi
+	cp ./Open.Nat/lib/net45/Open.Nat.dll .
+	rm -rf Open.Nat
 fi
 
 if [ ! -f FuzzyLogicLibrary.dll ]; then

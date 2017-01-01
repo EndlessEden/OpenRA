@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -52,13 +52,13 @@ namespace OpenRA.Mods.Common.Traits
 
 		[VoiceReference] public readonly string Voice = "Action";
 
-		[UpgradeGrantedReference]
-		[Desc("The upgrades to grant to self while airborne.")]
-		public readonly string[] AirborneUpgrades = { };
+		[GrantedConditionReference]
+		[Desc("The condition to grant to self while airborne.")]
+		public readonly string AirborneCondition = null;
 
-		[UpgradeGrantedReference]
-		[Desc("The upgrades to grant to self while at cruise altitude.")]
-		public readonly string[] CruisingUpgrades = { };
+		[GrantedConditionReference]
+		[Desc("The condition to grant to self while at cruise altitude.")]
+		public readonly string CruisingCondition = null;
 
 		[Desc("Can the actor hover in place mid-air? If not, then the actor will have to remain in motion (circle around).")]
 		public readonly bool CanHover = false;
@@ -105,7 +105,7 @@ namespace OpenRA.Mods.Common.Traits
 		public readonly AircraftInfo Info;
 		readonly Actor self;
 
-		UpgradeManager um;
+		ConditionManager conditionManager;
 		IDisposable reservation;
 		IEnumerable<int> speedModifiers;
 
@@ -119,6 +119,8 @@ namespace OpenRA.Mods.Common.Traits
 		bool airborne;
 		bool cruising;
 		bool firstTick = true;
+		int airborneToken = ConditionManager.InvalidConditionToken;
+		int cruisingToken = ConditionManager.InvalidConditionToken;
 
 		bool isMoving;
 		bool isMovingVertically;
@@ -144,7 +146,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public void Created(Actor self)
 		{
-			um = self.TraitOrDefault<UpgradeManager>();
+			conditionManager = self.TraitOrDefault<ConditionManager>();
 			speedModifiers = self.TraitsImplementing<ISpeedModifier>().ToArray().Select(sm => sm.GetSpeedModifier());
 			cachedPosition = self.CenterPosition;
 		}
@@ -226,6 +228,15 @@ namespace OpenRA.Mods.Common.Traits
 					continue;
 
 				repulsionForce += GetRepulsionForce(actor);
+			}
+
+			// Actors outside the map bounds receive an extra nudge towards the center of the map
+			if (!self.World.Map.Contains(self.Location))
+			{
+				// The map bounds are in projected coordinates, which is technically wrong for this,
+				// but we avoid the issues in practice by guessing the middle of the map instead of the edge
+				var center = WPos.Lerp(self.World.Map.ProjectedTopLeft, self.World.Map.ProjectedBottomRight, 1, 2);
+				repulsionForce += new WVec(1024, 0, 0).Rotate(WRot.FromYaw((self.CenterPosition - center).Yaw));
 			}
 
 			if (Info.CanHover)
@@ -650,40 +661,40 @@ namespace OpenRA.Mods.Common.Traits
 			OnAirborneAltitudeLeft();
 		}
 
-		#region Airborne upgrades
+		#region Airborne conditions
 
 		void OnAirborneAltitudeReached()
 		{
 			if (airborne)
 				return;
+
 			airborne = true;
-			if (um != null)
-				foreach (var u in Info.AirborneUpgrades)
-					um.GrantUpgrade(self, u, this);
+			if (conditionManager != null && !string.IsNullOrEmpty(Info.AirborneCondition) && airborneToken == ConditionManager.InvalidConditionToken)
+				airborneToken = conditionManager.GrantCondition(self, Info.AirborneCondition);
 		}
 
 		void OnAirborneAltitudeLeft()
 		{
 			if (!airborne)
 				return;
+
 			airborne = false;
-			if (um != null)
-				foreach (var u in Info.AirborneUpgrades)
-					um.RevokeUpgrade(self, u, this);
+			if (conditionManager != null && airborneToken != ConditionManager.InvalidConditionToken)
+				airborneToken = conditionManager.RevokeCondition(self, airborneToken);
 		}
 
 		#endregion
 
-		#region Cruising upgrades
+		#region Cruising conditions
 
 		void OnCruisingAltitudeReached()
 		{
 			if (cruising)
 				return;
+
 			cruising = true;
-			if (um != null)
-				foreach (var u in Info.CruisingUpgrades)
-					um.GrantUpgrade(self, u, this);
+			if (conditionManager != null && !string.IsNullOrEmpty(Info.CruisingCondition) && cruisingToken == ConditionManager.InvalidConditionToken)
+				cruisingToken = conditionManager.GrantCondition(self, Info.CruisingCondition);
 		}
 
 		void OnCruisingAltitudeLeft()
@@ -691,9 +702,8 @@ namespace OpenRA.Mods.Common.Traits
 			if (!cruising)
 				return;
 			cruising = false;
-			if (um != null)
-				foreach (var u in Info.CruisingUpgrades)
-					um.RevokeUpgrade(self, u, this);
+			if (conditionManager != null && cruisingToken != ConditionManager.InvalidConditionToken)
+				cruisingToken = conditionManager.RevokeCondition(self, cruisingToken);
 		}
 
 		#endregion

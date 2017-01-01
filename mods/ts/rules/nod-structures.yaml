@@ -22,6 +22,7 @@ NAPOWR:
 		Type: Wood
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	WithIdleOverlay@LIGHTS:
 		Sequence: idle-lights
 	Power:
@@ -60,6 +61,7 @@ NAAPWR:
 		Type: Wood
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	WithIdleOverlay@LIGHTS:
 		Sequence: idle-lights
 	Power:
@@ -98,6 +100,7 @@ NAHAND:
 		Type: Wood
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Exit@1:
 		SpawnOffset: 384,768,0
 		ExitCell: 3,2
@@ -109,6 +112,7 @@ NAHAND:
 	Production:
 		Produces: Infantry
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	WithIdleOverlay@LIGHTS:
 		Sequence: idle-lights
@@ -125,8 +129,7 @@ NAHAND:
 		ReferencePoint: Top
 		Color: E0D048
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 NAWEAP:
 	Inherits: ^Building
@@ -152,6 +155,7 @@ NAWEAP:
 		Type: Heavy
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	RallyPoint:
 		Offset: 4,1
 		Palette: mouse
@@ -164,6 +168,7 @@ NAWEAP:
 	Production:
 		Produces: Vehicle
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	WithIdleOverlay@ROOF:
 		Sequence: idle-roof
@@ -183,8 +188,7 @@ NAWEAP:
 		ReferencePoint: Top
 		Color: E0D048
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 NAHPAD:
 	Inherits: ^Building
@@ -204,6 +208,7 @@ NAHPAD:
 		HP: 600
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Exit@1:
 		SpawnOffset: 0,-256,0
 	ExitsDebugOverlay:
@@ -213,6 +218,7 @@ NAHPAD:
 	Production:
 		Produces: Air
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	Reservable:
 	RepairsUnits:
 		PlayerExperience: 15
@@ -237,8 +243,7 @@ NAHPAD:
 		ReferencePoint: Top
 		Color: E0D048
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 NARADR:
 	Inherits: ^Building
@@ -274,6 +279,7 @@ NARADR:
 	RenderDetectionCircle:
 	RevealsShroud:
 		Range: 10c0
+		MaxHeightDelta: 3
 	WithIdleOverlay@DISH:
 		Sequence: idle-dish
 		PauseOnLowPower: true
@@ -309,6 +315,7 @@ NATECH:
 		Type: Wood
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	WithIdleOverlay@LIGHTS:
 		Sequence: idle-lights
 	Power:
@@ -341,6 +348,7 @@ NATMPL:
 		Type: Wood
 	RevealsShroud:
 		Range: 6c0
+		MaxHeightDelta: 3
 	Power:
 		Amount: -200
 	WithIdleOverlay@LIGHTS:
@@ -377,6 +385,7 @@ NASTLH:
 		Type: Wood
 	RevealsShroud:
 		Range: 6c0
+		MaxHeightDelta: 3
 	WithIdleOverlay@pulse:
 		Sequence: pulse
 		PauseOnLowPower: true
@@ -390,8 +399,8 @@ NASTLH:
 		PowerupSpeech: EnablePower
 		PowerdownSpeech: DisablePower
 		IndicatorPalette: mouse
-	UpgradeActorsNear:
-		Upgrades: cloakgenerator
+	ProximityExternalCondition:
+		Condition: cloakgenerator
 		Range: 12c0
 		EnableSound: cloak5.aud
 		DisableSound: cloak5.aud
@@ -422,6 +431,7 @@ NAWAST:
 		HP: 400
 	RevealsShroud:
 		Range: 6c0
+		MaxHeightDelta: 3
 	TiberianSunRefinery:
 		DockAngle: 160
 		DockOffset: 2,1

@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -92,6 +92,28 @@ namespace OpenRA.Mods.Common.UtilityCommands
 			catch { }
 		}
 
+		static void RenameNodeKey(MiniYamlNode node, string key)
+		{
+			var parts = node.Key.Split('@');
+			node.Key = key;
+			if (parts.Length > 1)
+				node.Key += "@" + parts[1];
+		}
+
+		static void ConvertUpgradesToCondition(MiniYamlNode parent, MiniYamlNode node, string upgradesKey, string conditionKey)
+		{
+			var upgradesNode = node.Value.Nodes.FirstOrDefault(n => n.Key == upgradesKey);
+			if (upgradesNode != null)
+			{
+				var conditions = FieldLoader.GetValue<string[]>("", upgradesNode.Value.Value);
+				if (conditions.Length > 1)
+					Console.WriteLine("Unable to automatically migrate {0}:{1} {2} to {3}. This must be corrected manually",
+						parent.Key, node.Key, upgradesKey, conditionKey);
+				else
+					upgradesNode.Key = conditionKey;
+			}
+		}
+
 		internal static void UpgradeActorRules(ModData modData, int engineVersion, ref List<MiniYamlNode> nodes, MiniYamlNode parent, int depth)
 		{
 			var addNodes = new List<MiniYamlNode>();
@@ -118,10 +140,7 @@ namespace OpenRA.Mods.Common.UtilityCommands
 						if (s != null)
 							s.Key = "Image";
 
-						var parts = node.Key.Split('@');
-						node.Key = "WithDamageOverlay";
-						if (parts.Length > 1)
-							node.Key += "@" + parts[1];
+						RenameNodeKey(node, "WithDamageOverlay");
 					}
 				}
 
@@ -135,13 +154,9 @@ namespace OpenRA.Mods.Common.UtilityCommands
 				if (engineVersion < 20160611)
 				{
 					// Deprecated WithSpriteRotorOverlay
-					if (depth == 1 && node.Key.StartsWith("WithSpriteRotorOverlay"))
+					if (depth == 1 && node.Key.StartsWith("WithSpriteRotorOverlay", StringComparison.Ordinal))
 					{
-						var parts = node.Key.Split('@');
-						node.Key = "WithIdleOverlay";
-						if (parts.Length > 1)
-							node.Key += "@" + parts[1];
-
+						RenameNodeKey(node, "WithIdleOverlay");
 						Console.WriteLine("The 'WithSpriteRotorOverlay' trait has been removed.");
 						Console.WriteLine("Its functionality can be fully replicated with 'WithIdleOverlay' + upgrades.");
 						Console.WriteLine("Look at the helicopters in our RA / C&C1  mods for implementation details.");
@@ -282,13 +297,8 @@ namespace OpenRA.Mods.Common.UtilityCommands
 
 				if (engineVersion < 20160818)
 				{
-					if (depth == 1 && node.Key.StartsWith("UpgradeOnDamage"))
-					{
-						var parts = node.Key.Split('@');
-						node.Key = "UpgradeOnDamageState";
-						if (parts.Length > 1)
-							node.Key += "@" + parts[1];
-					}
+					if (depth == 1 && node.Key.StartsWith("UpgradeOnDamage", StringComparison.Ordinal))
+						RenameNodeKey(node, "UpgradeOnDamageState");
 				}
 
 				// DisplayTimer was replaced by DisplayTimerStances
@@ -435,6 +445,281 @@ namespace OpenRA.Mods.Common.UtilityCommands
 					}
 				}
 
+				// Replaced upgrade consumers with conditions
+				if (engineVersion < 20161117)
+				{
+					var upgradeTypesNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "UpgradeTypes");
+					if (upgradeTypesNode != null)
+					{
+						var upgradeMinEnabledLevel = 0;
+						var upgradeMaxEnabledLevel = int.MaxValue;
+						var upgradeMaxAcceptedLevel = 1;
+						var upgradeTypes = FieldLoader.GetValue<string[]>("", upgradeTypesNode.Value.Value);
+						var minEnabledNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "UpgradeMinEnabledLevel");
+						if (minEnabledNode != null)
+							upgradeMinEnabledLevel = FieldLoader.GetValue<int>("", minEnabledNode.Value.Value);
+
+						var maxEnabledNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "UpgradeMaxEnabledLevel");
+						if (maxEnabledNode != null)
+							upgradeMaxEnabledLevel = FieldLoader.GetValue<int>("", maxEnabledNode.Value.Value);
+
+						var maxAcceptedNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "UpgradeMaxAcceptedLevel");
+						if (maxAcceptedNode != null)
+							upgradeMaxAcceptedLevel = FieldLoader.GetValue<int>("", maxAcceptedNode.Value.Value);
+
+						var processed = false;
+						if (upgradeTypes.Length == 1 && upgradeMinEnabledLevel == 0 && upgradeMaxEnabledLevel == 0 && upgradeMaxAcceptedLevel == 1)
+						{
+							node.Value.Nodes.Add(new MiniYamlNode("RequiresCondition", "!" + upgradeTypes.First()));
+							processed = true;
+						}
+						else if (upgradeTypes.Length == 1 && upgradeMinEnabledLevel == 1 && upgradeMaxEnabledLevel == int.MaxValue && upgradeMaxAcceptedLevel == 1)
+						{
+							node.Value.Nodes.Add(new MiniYamlNode("RequiresCondition", upgradeTypes.First()));
+							processed = true;
+						}
+
+						if (processed)
+							node.Value.Nodes.RemoveAll(n => n.Key == "UpgradeTypes" || n.Key == "UpgradeMinEnabledLevel" ||
+								n.Key == "UpgradeMaxEnabledLevel" || n.Key == "UpgradeMaxAcceptedLevel");
+						else
+							Console.WriteLine("Unable to automatically migrate {0}:{1} UpgradeTypes to RequiresCondition. This must be corrected manually", parent.Key, node.Key);
+					}
+				}
+
+				if (engineVersion < 20161119)
+				{
+					// Migrated carryalls over to new conditions system
+					ConvertUpgradesToCondition(parent, node, "CarryableUpgrades", "CarriedCondition");
+
+					if (node.Key == "WithDecorationCarryable")
+					{
+						node.Key = "WithDecoration@CARRYALL";
+						node.Value.Nodes.Add(new MiniYamlNode("RequiresCondition", "carryall-reserved"));
+					}
+				}
+
+				if (engineVersion < 20161120)
+				{
+					if (node.Key.StartsWith("TimedUpgradeBar", StringComparison.Ordinal))
+					{
+						RenameNodeKey(node, "TimedConditionBar");
+						ConvertUpgradesToCondition(parent, node, "Upgrade", "Condition");
+					}
+
+					if (node.Key.StartsWith("GrantUpgradePower", StringComparison.Ordinal))
+					{
+						Console.WriteLine("GrantUpgradePower Condition must be manually added to all target actor's ExternalConditions list.");
+						RenameNodeKey(node, "GrantExternalConditionPower");
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "Condition");
+
+						var soundNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "GrantUpgradeSound");
+						if (soundNode != null)
+							soundNode.Key = "OnFireSound";
+						else
+							node.Value.Nodes.Add(new MiniYamlNode("OnFireSound", "ironcur9.aud"));
+
+						var sequenceNode = node.Value.Nodes.FirstOrDefault(n => n.Key == "GrantUpgradeSequence");
+						if (sequenceNode != null)
+							sequenceNode.Key = "Sequence";
+					}
+
+					if (node.Key.StartsWith("GrantUpgradeCrateAction", StringComparison.Ordinal))
+					{
+						Console.WriteLine("GrantUpgradeCrateAction Condition must be manually added to all target actor's ExternalConditions list.");
+						RenameNodeKey(node, "GrantExternalConditionCrateAction");
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "Condition");
+					}
+				}
+
+				// Reworking bridge logic
+				if (engineVersion < 20161210)
+				{
+					if (node.Key == "BridgeHut")
+						RenameNodeKey(node, "LegacyBridgeHut");
+
+					if (node.Key == "BridgeLayer")
+						RenameNodeKey(node, "LegacyBridgeLayer");
+				}
+
+				// Removed WithBuildingExplosion
+				if (engineVersion < 20161210)
+				{
+					if (node.Key == "WithBuildingExplosion")
+					{
+						node.Value.Nodes.Add(new MiniYamlNode("Type", "Footprint"));
+						node.Value.Nodes.Add(new MiniYamlNode("Weapon", "UnitExplodeSmall"));
+						node.Key = "Explodes";
+						Console.WriteLine("The trait WithBuildingExplosion has been removed and superseded by additional 'Explodes' functionality.");
+						Console.WriteLine("If you need a delayed building explosion, use 'Explodes' with 'Type: Footprint' and a cosmetic weapon with warhead delay.");
+					}
+				}
+
+				if (engineVersion < 20161210)
+				{
+					// Migrated lua upgrades to conditions
+					if (node.Key.StartsWith("ScriptUpgradesCache", StringComparison.Ordinal))
+					{
+						RenameNodeKey(node, "ExternalConditions");
+						var conditions = node.Value.Nodes.FirstOrDefault(n => n.Key == "Upgrades");
+						if (conditions != null)
+							conditions.Key = "Conditions";
+					}
+				}
+
+				if (engineVersion < 20161212)
+				{
+					if (node.Key.StartsWith("UpgradeActorsNear", StringComparison.Ordinal))
+					{
+						RenameNodeKey(node, "ProximityExternalCondition");
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "Condition");
+					}
+
+					if (node.Key == "Cargo")
+						ConvertUpgradesToCondition(parent, node, "LoadingUpgrades", "LoadingCondition");
+
+					if (node.Key == "Passenger" && node.Value.Nodes.Any(n => n.Key == "GrantUpgrades"))
+					{
+						Console.WriteLine("Passenger.GrantUpgrades support has been removed.");
+						Console.WriteLine("Define passenger-conditions using Cargo.PassengerConditions on the transports instead.");
+						node.Value.Nodes.RemoveAll(n => n.Key == "GrantUpgrades");
+					}
+				}
+
+				if (engineVersion < 20161213)
+				{
+					if (node.Key == "Aircraft")
+					{
+						ConvertUpgradesToCondition(parent, node, "AirborneUpgrades", "AirborneCondition");
+						ConvertUpgradesToCondition(parent, node, "CruisingUpgrades", "CruisingCondition");
+					}
+
+					if (node.Key.StartsWith("Cloak", StringComparison.Ordinal))
+						ConvertUpgradesToCondition(parent, node, "WhileCloakedUpgrades", "CloakedCondition");
+
+					if (node.Key == "Disguise")
+					{
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "DisguisedCondition");
+						if (!node.Value.Nodes.Any(n => n.Key == "DisguisedCondition"))
+							node.Value.Nodes.Add(new MiniYamlNode("DisguisedCondition", "disguise"));
+					}
+
+					if (node.Key == "Parachutable")
+					{
+						ConvertUpgradesToCondition(parent, node, "ParachuteUpgrade", "ParachutingCondition");
+						if (!node.Value.Nodes.Any(n => n.Key == "ParachutingCondition"))
+							node.Value.Nodes.Add(new MiniYamlNode("ParachutingCondition", "parachute"));
+					}
+
+					if (node.Key == "PrimaryBuilding")
+					{
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "PrimaryCondition");
+						if (!node.Value.Nodes.Any(n => n.Key == "PrimaryCondition"))
+							node.Value.Nodes.Add(new MiniYamlNode("PrimaryCondition", "primary"));
+					}
+
+					if (node.Key.StartsWith("UpgradeOnDamageState", StringComparison.Ordinal))
+					{
+						RenameNodeKey(node, "GrantConditionOnDamageState");
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "Condition");
+					}
+
+					if (node.Key.StartsWith("UpgradeOnMovement", StringComparison.Ordinal))
+					{
+						RenameNodeKey(node, "GrantConditionOnMovement");
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "Condition");
+					}
+
+					if (node.Key.StartsWith("UpgradeOnTerrain", StringComparison.Ordinal))
+					{
+						RenameNodeKey(node, "GrantConditionOnTerrain");
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "Condition");
+						if (!node.Value.Nodes.Any(n => n.Key == "Condition"))
+							node.Value.Nodes.Add(new MiniYamlNode("Condition", "terrain"));
+					}
+
+					if (node.Key == "AttackSwallow")
+					{
+						ConvertUpgradesToCondition(parent, node, "AttackingUpgrades", "AttackingCondition");
+						if (!node.Value.Nodes.Any(n => n.Key == "AttackingCondition"))
+							node.Value.Nodes.Add(new MiniYamlNode("AttackingCondition", "attacking"));
+					}
+
+					if (node.Key.StartsWith("Pluggable", StringComparison.Ordinal))
+					{
+						var upgrades = node.Value.Nodes.FirstOrDefault(n => n.Key == "Upgrades");
+						if (upgrades != null)
+						{
+							upgrades.Key = "Conditions";
+							foreach (var n in upgrades.Value.Nodes)
+							{
+								var conditions = FieldLoader.GetValue<string[]>("", n.Value.Value);
+								if (conditions.Length > 1)
+									Console.WriteLine("Unable to automatically migrate multiple Pluggable upgrades to a condition. This must be corrected manually");
+							}
+						}
+					}
+
+					if (node.Key.StartsWith("GlobalUpgradable", StringComparison.Ordinal))
+					{
+						RenameNodeKey(node, "GrantConditionOnPrerequisite");
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "Condition");
+					}
+
+					if (node.Key.StartsWith("GlobalUpgradeManager", StringComparison.Ordinal))
+						RenameNodeKey(node, "GrantConditionOnPrerequisiteManager");
+
+					if (node.Key.StartsWith("DeployToUpgrade", StringComparison.Ordinal))
+					{
+						RenameNodeKey(node, "GrantConditionOnDeploy");
+						ConvertUpgradesToCondition(parent, node, "UndeployedUpgrades", "UndeployedCondition");
+						ConvertUpgradesToCondition(parent, node, "DeployedUpgrades", "DeployedCondition");
+					}
+
+					if (node.Key == "GainsExperience")
+					{
+						var upgrades = node.Value.Nodes.FirstOrDefault(n => n.Key == "Upgrades");
+						if (upgrades != null)
+						{
+							upgrades.Key = "Conditions";
+							foreach (var n in upgrades.Value.Nodes)
+							{
+								var conditions = FieldLoader.GetValue<string[]>("", n.Value.Value);
+								if (conditions.Length > 1)
+									Console.WriteLine("Unable to automatically migrate multiple GainsExperience upgrades to a condition. This must be corrected manually");
+							}
+						}
+					}
+
+					if (node.Key.StartsWith("DisableOnUpgrade", StringComparison.Ordinal))
+						RenameNodeKey(node, "DisableOnCondition");
+				}
+
+				if (engineVersion < 20161223)
+				{
+					if (node.Key.StartsWith("UpgradeManager", StringComparison.Ordinal))
+						RenameNodeKey(node, "ConditionManager");
+
+					if (node.Key.StartsWith("-UpgradeManager", StringComparison.Ordinal))
+						RenameNodeKey(node, "-ConditionManager");
+				}
+
+				// Replaced NukePower CameraActor with CameraRange (effect-based reveal)
+				if (engineVersion < 20161227)
+				{
+					var nukePower = node.Value.Nodes.FirstOrDefault(n => n.Key.StartsWith("NukePower"));
+					if (nukePower != null)
+					{
+						var cameraActor = nukePower.Value.Nodes.FirstOrDefault(n => n.Key == "CameraActor");
+						if (cameraActor != null)
+						{
+							nukePower.Value.Nodes.Remove(cameraActor);
+							nukePower.Value.Nodes.Add(new MiniYamlNode("CameraRange", "10"));
+							Console.WriteLine("If your camera actor had a different reveal range than 10, you'll need to correct that manually");
+						}
+					}
+				}
+
 				UpgradeActorRules(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 
@@ -491,17 +776,34 @@ namespace OpenRA.Mods.Common.UtilityCommands
 				}
 
 				// Rename LaserZap BeamDuration to just Duration
-				if (engineVersion < 20161009)
+				if (engineVersion < 20161020)
 				{
 					if (node.Key == "BeamDuration")
 						node.Key = "Duration";
 				}
 
 				// Rename Bullet Angle to LaunchAngle
-				if (engineVersion < 20161016)
+				if (engineVersion < 20161020)
 				{
 					if (node.Key == "Angle")
 						node.Key = "LaunchAngle";
+				}
+
+				if (engineVersion < 20161120)
+				{
+					if (node.Key.StartsWith("Warhead", StringComparison.Ordinal) && node.Value.Value == "GrantUpgrade")
+					{
+						node.Value.Value = "GrantExternalCondition";
+						Console.WriteLine("GrantExternalCondition Condition must be manually added to all target actor's ExternalConditions list.");
+						ConvertUpgradesToCondition(parent, node, "Upgrades", "Condition");
+					}
+				}
+
+				// Rename LaserZap TracksTarget to TrackTarget
+				if (engineVersion < 20161217)
+				{
+					if (node.Key == "TracksTarget")
+						node.Key = "TrackTarget";
 				}
 
 				UpgradeWeaponRules(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);

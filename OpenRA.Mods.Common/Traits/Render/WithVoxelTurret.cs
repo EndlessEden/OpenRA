@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -18,7 +18,7 @@ using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits.Render
 {
-	public class WithVoxelTurretInfo : UpgradableTraitInfo, IRenderActorPreviewVoxelsInfo, Requires<RenderVoxelsInfo>, Requires<TurretedInfo>
+	public class WithVoxelTurretInfo : ConditionalTraitInfo, IRenderActorPreviewVoxelsInfo, Requires<RenderVoxelsInfo>, Requires<TurretedInfo>
 	{
 		[Desc("Voxel sequence name to use")]
 		public readonly string Sequence = "turret";
@@ -34,7 +34,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 		public IEnumerable<VoxelAnimation> RenderPreviewVoxels(
 			ActorPreviewInitializer init, RenderVoxelsInfo rv, string image, Func<WRot> orientation, int facings, PaletteReference p)
 		{
-			if (UpgradeMinEnabledLevel > 0)
+			if (!EnabledByDefault)
 				yield break;
 
 			var body = init.Actor.TraitInfo<BodyOrientationInfo>();
@@ -51,7 +51,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 		}
 	}
 
-	public class WithVoxelTurret : UpgradableTrait<WithVoxelTurretInfo>, INotifyBuildComplete, INotifySold, INotifyTransform
+	public class WithVoxelTurret : ConditionalTrait<WithVoxelTurretInfo>, INotifyBuildComplete, INotifySold, INotifyTransform
 	{
 		readonly Actor self;
 		readonly Turreted turreted;

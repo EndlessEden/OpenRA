@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -19,6 +19,8 @@ using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
 {
+	public enum VisibilityType { Footprint, CenterPosition, GroundPosition }
+
 	public enum AttackDelayType { Preparation, Attack }
 
 	public interface IQuantizeBodyOrientationInfo : ITraitInfo
@@ -85,7 +87,7 @@ namespace OpenRA.Mods.Common.Traits
 	public interface INotifyOtherProduction { void UnitProducedByOther(Actor self, Actor producer, Actor produced); }
 	public interface INotifyDelivery { void IncomingDelivery(Actor self); void Delivered(Actor self); }
 	public interface INotifyDocking { void Docked(Actor self, Actor harvester); void Undocked(Actor self, Actor harvester); }
-	public interface INotifyParachuteLanded { void OnLanded(Actor ignore); }
+	public interface INotifyParachute { void OnParachute(Actor self); void OnLanded(Actor self, Actor ignore); }
 	public interface INotifyCapture { void OnCapture(Actor self, Actor captor, Player oldOwner, Player newOwner); }
 	public interface INotifyDiscovered { void OnDiscovered(Actor self, Player discoverer, bool playNotification); }
 	public interface IRenderActorPreviewInfo : ITraitInfo { IEnumerable<IActorPreview> RenderPreview(ActorPreviewInitializer init); }
@@ -103,15 +105,14 @@ namespace OpenRA.Mods.Common.Traits
 	[RequireExplicitImplementation]
 	public interface INotifyPassengerExited { void OnPassengerExited(Actor self, Actor passenger); }
 
-	public interface IUpgradable
-	{
-		IEnumerable<string> UpgradeTypes { get; }
-		bool AcceptsUpgradeLevel(Actor self, string type, int level);
-		void UpgradeLevelChanged(Actor self, string type, int oldLevel, int newLevel);
-	}
+	[RequireExplicitImplementation]
+	public interface IConditionConsumerInfo : ITraitInfo { }
 
-	// Implement to construct before UpgradeManager
-	public interface IUpgradableInfo : ITraitInfo { }
+	public interface IConditionConsumer
+	{
+		IEnumerable<string> Conditions { get; }
+		void ConditionsChanged(Actor self, IReadOnlyDictionary<string, bool> conditions);
+	}
 
 	public interface INotifyHarvesterAction
 	{

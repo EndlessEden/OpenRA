@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -18,14 +18,19 @@ namespace OpenRA.Mods.RA.Effects
 {
 	class GpsSatellite : IEffect
 	{
+		readonly Player launcher;
 		readonly Animation anim;
 		readonly string palette;
+		readonly int revealDelay;
 		WPos pos;
+		int tick;
 
-		public GpsSatellite(World world, WPos pos, string image, string sequence, string palette)
+		public GpsSatellite(World world, WPos pos, string image, string sequence, string palette, int revealDelay, Player launcher)
 		{
 			this.palette = palette;
 			this.pos = pos;
+			this.launcher = launcher;
+			this.revealDelay = revealDelay;
 
 			anim = new Animation(world, image);
 			anim.PlayRepeating(sequence);
@@ -36,8 +41,12 @@ namespace OpenRA.Mods.RA.Effects
 			anim.Tick();
 			pos += new WVec(0, 0, 427);
 
-			if (pos.Z > pos.Y)
+			if (++tick > revealDelay)
+			{
+				var watcher = launcher.PlayerActor.Trait<GpsWatcher>();
+				watcher.ReachedOrbit(launcher);
 				world.AddFrameEndTask(w => w.Remove(this));
+			}
 		}
 
 		public IEnumerable<IRenderable> Render(WorldRenderer wr)

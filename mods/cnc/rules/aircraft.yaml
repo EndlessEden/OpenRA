@@ -22,27 +22,23 @@ TRAN:
 		Type: Light
 	RevealsShroud:
 		Range: 10c0
-		Type: CenterPosition
+		Type: GroundPosition
 	WithIdleOverlay@ROTOR1AIR:
 		Offset: 597,0,85
 		Sequence: rotor
-		UpgradeTypes: airborne
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: airborne
 	WithIdleOverlay@ROTOR1GROUND:
 		Offset: 597,0,85
 		Sequence: slow-rotor
-		UpgradeTypes: airborne
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !airborne
 	WithIdleOverlay@ROTOR2AIR:
 		Offset: -597,0,171
 		Sequence: rotor2
-		UpgradeTypes: airborne
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: airborne
 	WithIdleOverlay@ROTOR2GROUND:
 		Offset: -597,0,171
 		Sequence: slow-rotor2
-		UpgradeTypes: airborne
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !airborne
 	Cargo:
 		Types: Infantry
 		MaxWeight: 10
@@ -57,6 +53,7 @@ TRAN:
 
 HELI:
 	Inherits: ^Helicopter
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 1200
 	Tooltip:
@@ -77,7 +74,7 @@ HELI:
 		Type: Light
 	RevealsShroud:
 		Range: 10c0
-		Type: CenterPosition
+		Type: GroundPosition
 	Armament@PRIMARY:
 		Weapon: HeliAGGun
 		LocalOffset: 128,-213,-85, 128,213,-85
@@ -98,13 +95,11 @@ HELI:
 	WithIdleOverlay@ROTORAIR:
 		Offset: 0,0,85
 		Sequence: rotor
-		UpgradeTypes: airborne
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: airborne
 	WithIdleOverlay@ROTORGROUND:
 		Offset: 0,0,85
 		Sequence: slow-rotor
-		UpgradeTypes: airborne
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !airborne
 	WithMuzzleOverlay:
 	SpawnActorOnDeath:
 		Actor: HELI.Husk
@@ -117,6 +112,7 @@ HELI:
 
 ORCA:
 	Inherits: ^Helicopter
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 1200
 	Tooltip:
@@ -137,7 +133,7 @@ ORCA:
 		Type: Light
 	RevealsShroud:
 		Range: 10c0
-		Type: CenterPosition
+		Type: GroundPosition
 	Armament@PRIMARY:
 		Weapon: OrcaAGMissiles
 		LocalOffset: 427,-171,-213, 427,171,-213
@@ -173,7 +169,6 @@ C17:
 		TurnSpeed: 5
 		Speed: 326
 		Repulsable: False
-		AirborneUpgrades: airborne
 		MaximumPitch: 36
 	Health:
 		HP: 25
@@ -212,7 +207,6 @@ A10:
 		TurnSpeed: 4
 		Speed: 373
 		Repulsable: False
-		AirborneUpgrades: airborne
 	Health:
 		HP: 150
 	Armor:
@@ -248,7 +242,7 @@ TRAN.Husk:
 		Speed: 140
 	RevealsShroud:
 		Range: 10c0
-		Type: CenterPosition
+		Type: GroundPosition
 	WithIdleOverlay@ROTOR1:
 		Offset: 597,0,85
 		Sequence: rotor
@@ -267,7 +261,7 @@ HELI.Husk:
 		Speed: 186
 	RevealsShroud:
 		Range: 10c0
-		Type: CenterPosition
+		Type: GroundPosition
 	WithIdleOverlay:
 		Offset: 0,0,85
 		Sequence: rotor
@@ -283,6 +277,6 @@ ORCA.Husk:
 		Speed: 186
 	RevealsShroud:
 		Range: 10c0
-		Type: CenterPosition
+		Type: GroundPosition
 	RenderSprites:
 		Image: orca

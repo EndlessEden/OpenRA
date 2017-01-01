@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -86,7 +86,7 @@ namespace OpenRA.Mods.Common.Traits
 
 						if (playSounds)
 							foreach (var s in buildingInfo.BuildSounds)
-								Game.Sound.PlayToPlayer(order.Player, s, building.CenterPosition);
+								Game.Sound.PlayToPlayer(SoundType.World, order.Player, s, building.CenterPosition);
 
 						playSounds = false;
 					}
@@ -110,7 +110,7 @@ namespace OpenRA.Mods.Common.Traits
 
 					pluggable.EnablePlug(host, plugInfo.Type);
 					foreach (var s in buildingInfo.BuildSounds)
-						Game.Sound.PlayToPlayer(order.Player, s, host.CenterPosition);
+						Game.Sound.PlayToPlayer(SoundType.World, order.Player, s, host.CenterPosition);
 				}
 				else
 				{
@@ -126,7 +126,7 @@ namespace OpenRA.Mods.Common.Traits
 					});
 
 					foreach (var s in buildingInfo.BuildSounds)
-						Game.Sound.PlayToPlayer(order.Player, s, building.CenterPosition);
+						Game.Sound.PlayToPlayer(SoundType.World, order.Player, s, building.CenterPosition);
 				}
 
 				if (producer.Actor != null)

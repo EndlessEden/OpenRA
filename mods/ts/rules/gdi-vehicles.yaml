@@ -1,5 +1,6 @@
 APC:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
 	Valued:
 		Cost: 800
 	Tooltip:
@@ -14,12 +15,14 @@ APC:
 		Speed: 113
 		TerrainSpeeds:
 			Water: 80
+		RequiresCondition: !empdisable && !loading
 	Health:
 		HP: 200
 	Armor:
 		Type: Heavy
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Turreted:
 		TurnSpeed: 10
 	Cargo:
@@ -27,18 +30,16 @@ APC:
 		MaxWeight: 5
 		PipCount: 5
 		UnloadVoice: Unload
-		LoadingUpgrades: notmobile
+		LoadingCondition: loading
 		EjectOnDeath: true
-	UpgradeOnTerrain:
-		Upgrades: inwater
+	GrantConditionOnTerrain:
+		Condition: inwater
 		TerrainTypes: Water
 	WithVoxelBody:
-		UpgradeTypes: inwater
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !inwater
 	WithVoxelBody@water:
 		Sequence: water
-		UpgradeTypes: inwater
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: inwater
 	LeavesTrails:
 		Image: wake
 		Palette: effect
@@ -47,7 +48,9 @@ APC:
 		MovingInterval: 6
 
 HVR:
-	Inherits: ^VoxelVehicle
+	Inherits: ^Vehicle
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 900
 	Tooltip:
@@ -76,6 +79,7 @@ HVR:
 		Type: Wood
 	RevealsShroud:
 		Range: 7c0
+		MaxHeightDelta: 3
 	Armament:
 		Weapon: HoverMissile
 		LocalOffset: 0,171,384, 0,-171,384
@@ -95,11 +99,12 @@ HVR:
 		StationaryInterval: 18
 		MovingInterval: 6
 	-DamagedByTerrain@VEINS:
-	-UpgradeOnTerrain@VEINS:
+	-GrantConditionOnTerrain@VEINS:
 	-WithIdleOverlay@VEINS:
 
 SMECH:
 	Inherits: ^Vehicle
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 500
 	Tooltip:
@@ -118,6 +123,7 @@ SMECH:
 		Type: Light
 	RevealsShroud:
 		Range: 6c0
+		MaxHeightDelta: 3
 	AttackFrontal:
 		Voice: Attack
 	AutoTarget:
@@ -136,11 +142,12 @@ SMECH:
 	Selectable:
 		Bounds: 20, 32, 0, -8
 	-DamagedByTerrain@VEINS:
-	-UpgradeOnTerrain@VEINS:
+	-GrantConditionOnTerrain@VEINS:
 	-WithIdleOverlay@VEINS:
 
 MMCH:
 	Inherits: ^Tank
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 800
 	Tooltip:
@@ -160,6 +167,7 @@ MMCH:
 		Type: Heavy
 	RevealsShroud:
 		Range: 8c0
+		MaxHeightDelta: 3
 	BodyOrientation:
 		QuantizedFacings: 32
 		UseClassicPerspectiveFudge: False
@@ -187,7 +195,9 @@ MMCH:
 		LocalOffset: 0, 0, 408
 
 HMEC:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 3000
 	Tooltip:
@@ -209,6 +219,7 @@ HMEC:
 		Type: Heavy
 	RevealsShroud:
 		Range: 8c0
+		MaxHeightDelta: 3
 	AttackFrontal:
 		Voice: Attack
 	AutoTarget:
@@ -227,7 +238,9 @@ HMEC:
 		LocalOffset: 0, 0, 360
 
 SONIC:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 1300
 	Tooltip:
@@ -249,6 +262,7 @@ SONIC:
 		Type: Heavy
 	RevealsShroud:
 		Range: 7c0
+		MaxHeightDelta: 3
 	Armament:
 		Weapon: SonicZap
 		LocalOffset: -50,0,410

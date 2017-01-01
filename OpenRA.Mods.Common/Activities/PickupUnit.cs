@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -60,7 +60,7 @@ namespace OpenRA.Mods.Common.Activities
 			if (cargo != carryall.Carryable)
 				return NextActivity;
 
-			if (cargo.IsDead || IsCanceled)
+			if (cargo.IsDead || IsCanceled || carryable.IsTraitDisabled)
 			{
 				carryall.UnreserveCarryable(self);
 				return NextActivity;
@@ -157,12 +157,12 @@ namespace OpenRA.Mods.Common.Activities
 			});
 		}
 
-		public override void Cancel(Actor self)
+		public override bool Cancel(Actor self)
 		{
-			if (innerActivity != null)
-				innerActivity.Cancel(self);
+			if (!IsCanceled && innerActivity != null && !innerActivity.Cancel(self))
+				return false;
 
-			base.Cancel(self);
+			return base.Cancel(self);
 		}
 	}
 }

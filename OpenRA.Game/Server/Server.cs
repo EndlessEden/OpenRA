@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -21,8 +21,6 @@ using OpenRA.Graphics;
 using OpenRA.Network;
 using OpenRA.Primitives;
 using OpenRA.Support;
-
-using XTimer = System.Timers.Timer;
 
 namespace OpenRA.Server
 {
@@ -59,8 +57,6 @@ namespace OpenRA.Server
 		readonly int randomSeed;
 		readonly TcpListener listener;
 		readonly TypeDictionary serverTraits = new TypeDictionary();
-
-		XTimer gameTimeout;
 
 		protected volatile ServerState internalState = ServerState.WaitingPlayers;
 
@@ -590,8 +586,10 @@ namespace OpenRA.Server
 
 				DispatchOrders(toDrop, frame, new byte[] { 0xbf });
 
+				// All clients have left: clean up
 				if (!Conns.Any())
-					TempBans.Clear();
+					foreach (var t in serverTraits.WithInterface<INotifyServerEmpty>())
+						t.ServerEmpty(this);
 
 				if (Conns.Any() || Dedicated)
 					SyncLobbyClients();
@@ -701,18 +699,6 @@ namespace OpenRA.Server
 
 			foreach (var t in serverTraits.WithInterface<IStartGame>())
 				t.GameStarted(this);
-
-			// Check TimeOut
-			if (Settings.TimeOut > 10000)
-			{
-				gameTimeout = new XTimer(Settings.TimeOut);
-				gameTimeout.Elapsed += (_, e) =>
-				{
-					Console.WriteLine("Timeout at {0}!!!", e.SignalTime);
-					Environment.Exit(0);
-				};
-				gameTimeout.Enabled = true;
-			}
 		}
 	}
 }

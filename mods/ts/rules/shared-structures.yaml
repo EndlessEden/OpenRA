@@ -15,6 +15,7 @@ GACNST:
 		Type: Wood
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Production:
 		Produces: Building,Defense
 	Valued:
@@ -73,6 +74,7 @@ PROC:
 		HP: 900
 	RevealsShroud:
 		Range: 6c0
+		MaxHeightDelta: 3
 	TiberianSunRefinery:
 		DockAngle: 160
 		DockOffset: 2,1
@@ -105,6 +107,8 @@ PROC:
 		FactionImages:
 			gdi: proc.gdi
 			nod: proc.nod
+	Explodes:
+		Weapon: TiberiumExplosion
 
 GASILO:
 	Inherits: ^Building
@@ -129,6 +133,7 @@ GASILO:
 		Type: Wood
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	RenderSprites:
 		Image: gasilo.gdi
 		FactionImages:
@@ -147,6 +152,8 @@ GASILO:
 		Amount: -10
 	SelectionDecorations:
 		VisualBounds: 80, 48, -5, 0
+	Explodes:
+		Weapon: TiberiumExplosion
 
 ANYPOWER:
 	AlwaysVisible:

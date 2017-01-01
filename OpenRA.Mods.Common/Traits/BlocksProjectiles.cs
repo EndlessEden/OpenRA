@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -21,14 +21,14 @@ namespace OpenRA.Mods.Common.Traits
 	}
 
 	[Desc("This actor blocks bullets and missiles with 'Blockable' property.")]
-	public class BlocksProjectilesInfo : UpgradableTraitInfo
+	public class BlocksProjectilesInfo : ConditionalTraitInfo
 	{
 		public readonly WDist Height = WDist.FromCells(1);
 
 		public override object Create(ActorInitializer init) { return new BlocksProjectiles(init.Self, this); }
 	}
 
-	public class BlocksProjectiles : UpgradableTrait<BlocksProjectilesInfo>, IBlocksProjectiles
+	public class BlocksProjectiles : ConditionalTrait<BlocksProjectilesInfo>, IBlocksProjectiles
 	{
 		public BlocksProjectiles(Actor self, BlocksProjectilesInfo info)
 			: base(info) { }

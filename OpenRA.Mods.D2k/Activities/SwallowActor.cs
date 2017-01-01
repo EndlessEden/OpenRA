@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -28,7 +28,7 @@ namespace OpenRA.Mods.D2k.Activities
 
 		readonly Target target;
 		readonly Sandworm sandworm;
-		readonly UpgradeManager manager;
+		readonly ConditionManager conditionManager;
 		readonly WeaponInfo weapon;
 		readonly RadarPings radarPings;
 		readonly AttackSwallow swallow;
@@ -37,6 +37,7 @@ namespace OpenRA.Mods.D2k.Activities
 		int countdown;
 		CPos burrowLocation;
 		AttackState stance;
+		int attackingToken = ConditionManager.InvalidConditionToken;
 
 		public SwallowActor(Actor self, Target target, WeaponInfo weapon)
 		{
@@ -45,7 +46,7 @@ namespace OpenRA.Mods.D2k.Activities
 			sandworm = self.Trait<Sandworm>();
 			positionable = self.Trait<Mobile>();
 			swallow = self.Trait<AttackSwallow>();
-			manager = self.Trait<UpgradeManager>();
+			conditionManager = self.TraitOrDefault<ConditionManager>();
 			radarPings = self.World.WorldActor.TraitOrDefault<RadarPings>();
 		}
 
@@ -75,7 +76,7 @@ namespace OpenRA.Mods.D2k.Activities
 
 			var attackPosition = self.CenterPosition;
 			var affectedPlayers = targets.Select(x => x.Owner).Distinct().ToList();
-			Game.Sound.Play(swallow.Info.WormAttackSound, self.CenterPosition);
+			Game.Sound.Play(SoundType.World, swallow.Info.WormAttackSound, self.CenterPosition);
 
 			Game.RunAfterDelay(1000, () =>
 			{
@@ -105,10 +106,12 @@ namespace OpenRA.Mods.D2k.Activities
 			switch (stance)
 			{
 				case AttackState.Uninitialized:
-					GrantUpgrades(self);
 					stance = AttackState.Burrowed;
 					countdown = swallow.Info.AttackDelay;
 					burrowLocation = self.Location;
+					if (conditionManager != null && attackingToken == ConditionManager.InvalidConditionToken &&
+							!string.IsNullOrEmpty(swallow.Info.AttackingCondition))
+						attackingToken = conditionManager.GrantCondition(self, swallow.Info.AttackingCondition);
 					break;
 				case AttackState.Burrowed:
 					if (--countdown > 0)
@@ -119,14 +122,14 @@ namespace OpenRA.Mods.D2k.Activities
 					// The target has moved too far away
 					if ((burrowLocation - targetLocation).Length > NearEnough)
 					{
-						RevokeUpgrades(self);
+						RevokeCondition(self);
 						return NextActivity;
 					}
 
 					// The target reached solid ground
 					if (!positionable.CanEnterCell(targetLocation, null, false))
 					{
-						RevokeUpgrades(self);
+						RevokeCondition(self);
 						return NextActivity;
 					}
 
@@ -135,7 +138,7 @@ namespace OpenRA.Mods.D2k.Activities
 
 					if (!targets.Any())
 					{
-						RevokeUpgrades(self);
+						RevokeCondition(self);
 						return NextActivity;
 					}
 
@@ -158,23 +161,17 @@ namespace OpenRA.Mods.D2k.Activities
 						self.World.AddFrameEndTask(w => self.Dispose());
 					}
 
-					RevokeUpgrades(self);
+					RevokeCondition(self);
 					return NextActivity;
 			}
 
 			return this;
 		}
 
-		void GrantUpgrades(Actor self)
+		void RevokeCondition(Actor self)
 		{
-			foreach (var up in swallow.Info.AttackingUpgrades)
-				manager.GrantUpgrade(self, up, this);
-		}
-
-		void RevokeUpgrades(Actor self)
-		{
-			foreach (var up in swallow.Info.AttackingUpgrades)
-				manager.RevokeUpgrade(self, up, this);
+			if (attackingToken != ConditionManager.InvalidConditionToken)
+				attackingToken = conditionManager.RevokeCondition(self, attackingToken);
 		}
 	}
 }

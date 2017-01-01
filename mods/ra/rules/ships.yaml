@@ -21,19 +21,17 @@ SS:
 		Range: 6c0
 	Targetable:
 		TargetTypes: Ground, Water, Repair
-		UpgradeTypes: underwater
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !underwater
 	Targetable@UNDERWATER:
 		TargetTypes: Underwater, Repair
-		UpgradeTypes: underwater
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: underwater
 	Cloak:
 		CloakTypes: Underwater
 		InitialDelay: 0
 		CloakDelay: 50
 		CloakSound: subshow1.aud
 		UncloakSound: subshow1.aud
-		WhileCloakedUpgrades: underwater
+		CloakedCondition: underwater
 		Palette: submerged
 	Armament:
 		Weapon: TorpTube
@@ -77,19 +75,17 @@ MSUB:
 		Range: 6c0
 	Targetable:
 		TargetTypes: Ground, Water, Repair
-		UpgradeTypes: underwater
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !underwater
 	Targetable@UNDERWATER:
 		TargetTypes: Underwater, Repair
-		UpgradeTypes: underwater
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: underwater
 	Cloak:
 		CloakTypes: Underwater
 		InitialDelay: 0
 		CloakDelay: 100
 		CloakSound: subshow1.aud
 		UncloakSound: subshow1.aud
-		WhileCloakedUpgrades: underwater
+		CloakedCondition: underwater
 		Palette: submerged
 	Armament@PRIMARY:
 		Weapon: SubMissile
@@ -230,12 +226,11 @@ LST:
 	Armor:
 		Type: Heavy
 	Mobile:
-		UpgradeTypes: notmobile
-		UpgradeMaxEnabledLevel: 0
 		TurnSpeed: 10
 		Speed: 113
 		TerrainSpeeds:
 			Beach: 70
+		RequiresCondition: !notmobile
 	RevealsShroud:
 		Range: 6c0
 	SelectionDecorations:
@@ -247,7 +242,7 @@ LST:
 		MaxWeight: 5
 		PipCount: 5
 		PassengerFacing: 0
-		LoadingUpgrades: notmobile
+		LoadingCondition: notmobile
 	-Chronoshiftable:
 
 PT:

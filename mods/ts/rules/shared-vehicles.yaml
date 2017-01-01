@@ -1,5 +1,6 @@
 MCV:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
 	Buildable:
 		Queue: Vehicle
 		BuildPaletteOrder: 110
@@ -19,6 +20,7 @@ MCV:
 		Speed: 85
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	MustBeDestroyed:
 		RequiredForShortGame: true
 	BaseBuilding:
@@ -38,7 +40,8 @@ MCV:
 			nod: mcv.nod
 
 HARV:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
 	Valued:
 		Cost: 1400
 	Tooltip:
@@ -82,7 +85,7 @@ HARV:
 		Type: Heavy
 	RevealsShroud:
 		Range: 4c0
-	-GainsExperience:
+		MaxHeightDelta: 3
 	-WithVoxelBody:
 	WithVoxelUnloadBody:
 	Explodes:
@@ -98,13 +101,13 @@ HARV:
 			gdi: harv.gdi
 			nod: harv.nod
 	-DamagedByTerrain@VEINS:
-	-UpgradeOnTerrain@VEINS:
+	-GrantConditionOnTerrain@VEINS:
 	-WithIdleOverlay@VEINS:
 
 LPST:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
 	-AppearsOnRadar:
-	-GainsExperience:
 	Buildable:
 		Queue: Vehicle
 		BuildPaletteOrder: 100
@@ -114,12 +117,10 @@ LPST:
 		Cost: 950
 	Tooltip:
 		Name: Mobile Sensor Array
-		UpgradeTypes: deployed
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !deployed
 	Tooltip@DEPLOYED:
 		Name: Mobile Sensor Array (deployed)
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	Health:
 		HP: 600
 	Armor:
@@ -127,16 +128,20 @@ LPST:
 	Mobile:
 		Speed: 85
 		TurnSpeed: 5
+		RequiresCondition: !empdisable && undeployed
 	RevealsShroud:
 		Range: 7c0
+		MaxHeightDelta: 3
+	GrantCondition@PREVIEWWORKAROUND:
+		Condition: real-actor
 	RenderSprites:
 		Image: lpst.gdi
 		FactionImages:
 			gdi: lpst.gdi
 			nod: lpst.nod
-	DeployToUpgrade:
-		DeployedUpgrades: deployed, notmobile
-		UndeployedUpgrades: undeployed
+	GrantConditionOnDeploy:
+		DeployedCondition: deployed
+		UndeployedCondition: undeployed
 		DeployAnimation: make
 		Facing: 160
 		AllowedTerrainTypes: Clear, Road, DirtRoad, Rough
@@ -144,14 +149,13 @@ LPST:
 		UndeploySound: clicky1.aud
 	WithVoxelBody:
 		Image: lpst
-		UpgradeTypes: undeployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: undeployed
 	WithSpriteBody@deployed:
-		UpgradeTypes: undeployed
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !undeployed && real-actor
 	DetectCloaked:
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 		Range: 18c0
 	RenderDetectionCircle:
 		TrailCount: 3
+	Carryable:
+		RequiresCondition: undeployed

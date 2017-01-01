@@ -338,8 +338,7 @@ JEEP:
 	Mobile:
 		TurnSpeed: 10
 		Speed: 170
-		UpgradeTypes: notmobile
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !notmobile
 	RevealsShroud:
 		Range: 8c0
 	Turreted:
@@ -356,7 +355,7 @@ JEEP:
 		Types: Infantry
 		MaxWeight: 1
 		PipCount: 1
-		LoadingUpgrades: notmobile
+		LoadingCondition: notmobile
 	ProducibleWithLevel:
 		Prerequisites: vehicles.upgraded
 
@@ -378,8 +377,7 @@ APC:
 	Mobile:
 		Speed: 142
 		Crushes: wall, mine, crate, infantry
-		UpgradeTypes: notmobile
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !notmobile
 	RevealsShroud:
 		Range: 5c0
 	Armament:
@@ -393,7 +391,7 @@ APC:
 		Types: Infantry
 		MaxWeight: 5
 		PipCount: 5
-		LoadingUpgrades: notmobile
+		LoadingCondition: notmobile
 	ProducibleWithLevel:
 		Prerequisites: vehicles.upgraded
 
@@ -651,8 +649,7 @@ DTRK:
 	AttackSuicides:
 	-DamageMultiplier@IRONCURTAIN:
 	KillsSelf:
-		UpgradeTypes: invulnerability
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: invulnerability
 	Chronoshiftable:
 		ExplodeInstead: yes
 
@@ -738,8 +735,7 @@ STNK:
 	Mobile:
 		Speed: 142
 		Crushes: wall, mine, crate, infantry
-		UpgradeTypes: notmobile
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !notmobile
 	RevealsShroud:
 		Range: 7c0
 	AutoTarget:
@@ -756,7 +752,7 @@ STNK:
 		Types: Infantry
 		MaxWeight: 4
 		PipCount: 4
-		LoadingUpgrades: notmobile
+		LoadingCondition: notmobile
 	Cloak:
 		InitialDelay: 125
 		CloakDelay: 250

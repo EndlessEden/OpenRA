@@ -106,8 +106,6 @@ HOSP:
 	WithDeathAnimation:
 		DeathSequence: dead
 		UseDeathTypeSuffix: false
-	WithBuildingExplosion:
-		Delay: 1
 	ProvidesPrerequisite@buildingname:
 	GpsDot:
 		String: Hospital
@@ -330,8 +328,6 @@ MISS:
 	WithDeathAnimation:
 		DeathSequence: dead
 		UseDeathTypeSuffix: false
-	WithBuildingExplosion:
-		Delay: 1
 	ProvidesPrerequisite@buildingname:
 
 BIO:
@@ -349,8 +345,6 @@ BIO:
 	WithDeathAnimation:
 		DeathSequence: dead
 		UseDeathTypeSuffix: false
-	WithBuildingExplosion:
-		Delay: 1
 	ProvidesPrerequisite@buildingname:
 	GpsDot:
 		String: Biohazard
@@ -522,7 +516,7 @@ BRIDGEHUT:
 	Selectable:
 		Bounds: 48,48
 		Priority: 2
-	BridgeHut:
+	LegacyBridgeHut:
 	Targetable:
 		TargetTypes: BridgeHut, C4
 
@@ -534,7 +528,7 @@ BRIDGEHUT.small:
 	Selectable:
 		Bounds: 24,24
 		Priority: 2
-	BridgeHut:
+	LegacyBridgeHut:
 	Targetable:
 		TargetTypes: BridgeHut, C4
 

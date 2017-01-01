@@ -20,6 +20,7 @@ GAPOWR:
 		Type: Wood
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	WithIdleOverlay@LIGHTS:
 		Sequence: idle-lights
 	WithIdleOverlay@PLUG:
@@ -37,27 +38,23 @@ GAPOWR:
 	DisabledOverlay:
 	Pluggable@pluga:
 		Offset: 0,1
-		Upgrades:
+		Conditions:
 			powrup: powrup.a
 	Power@pluga:
-		UpgradeTypes: powrup.a
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: powrup.a
 		Amount: 50
 	WithIdleOverlay@pluga:
-		UpgradeTypes: powrup.a
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: powrup.a
 		Sequence: idle-powrupa
 	Pluggable@plugb:
 		Offset: 1,1
-		Upgrades:
+		Conditions:
 			powrup: powrup.b
 	WithIdleOverlay@plugb:
-		UpgradeTypes: powrup.b
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: powrup.b
 		Sequence: idle-powrupb
 	Power@plugb:
-		UpgradeTypes: powrup.b
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: powrup.b
 		Amount: 50
 	ProvidesPrerequisite@buildingname:
 	SelectionDecorations:
@@ -87,6 +84,7 @@ GAPILE:
 		Type: Wood
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	RallyPoint:
 		Offset: 2,3
 		Palette: mouse
@@ -98,6 +96,7 @@ GAPILE:
 	Production:
 		Produces: Infantry
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	WithProductionOverlay@LIGHTS:
 		Sequence: production-lights
@@ -116,8 +115,7 @@ GAPILE:
 		ReferencePoint: Top
 		Color: E0D048
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 GAWEAP:
 	Inherits: ^Building
@@ -141,6 +139,7 @@ GAWEAP:
 		HP: 1000
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	Armor:
 		Type: Heavy
 	RallyPoint:
@@ -155,6 +154,7 @@ GAWEAP:
 	Production:
 		Produces: Vehicle
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	WithIdleOverlay@ROOF:
 		Sequence: idle-roof
@@ -178,8 +178,7 @@ GAWEAP:
 		ReferencePoint: Top
 		Color: E0D048
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 GAHPAD:
 	Inherits: ^Building
@@ -199,6 +198,7 @@ GAHPAD:
 		HP: 600
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Exit@1:
 		SpawnOffset: 0,-256,0
 	ExitsDebugOverlay:
@@ -208,6 +208,7 @@ GAHPAD:
 	Production:
 		Produces: Air
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	Reservable:
 	RepairsUnits:
 		PlayerExperience: 15
@@ -232,8 +233,7 @@ GAHPAD:
 		ReferencePoint: Top
 		Color: E0D048
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 GADEPT:
 	Inherits: ^Building
@@ -255,6 +255,7 @@ GADEPT:
 		HP: 1100
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Reservable:
 	RepairsUnits:
 		PlayerExperience: 15
@@ -319,6 +320,7 @@ GARADR:
 	RenderDetectionCircle:
 	RevealsShroud:
 		Range: 10c0
+		MaxHeightDelta: 3
 	WithIdleOverlay@DISH:
 		Sequence: idle-dish
 		PauseOnLowPower: yes
@@ -354,6 +356,7 @@ GATECH:
 		Type: Wood
 	RevealsShroud:
 		Range: 4c0
+		MaxHeightDelta: 3
 	WithIdleOverlay@LIGHTS:
 		Sequence: idle-lights
 	Power:
@@ -396,10 +399,10 @@ GAPLUG:
 		Type: Wood
 	RevealsShroud:
 		Range: 6c0
+		MaxHeightDelta: 3
 	IonCannonPower:
 		Cursor: ioncannon
-		UpgradeTypes: plug.ioncannon
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: plug.ioncannona || plug.ioncannonb
 		Icon: ioncannon
 		Effect: explosion
 		EffectSequence: ionring
@@ -413,8 +416,7 @@ GAPLUG:
 		DisplayRadarPing: True
 		CameraActor: camera
 	ProduceActorPower:
-		UpgradeTypes: plug.hunterseeker
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: plug.hunterseekera || plug.hunterseekerb
 		Description: Hunter Seeker
 		LongDesc: Releases a drone that will acquire and destroy an enemy target.
 		Icon: hunterseeker
@@ -429,38 +431,32 @@ GAPLUG:
 	Power:
 		Amount: -150
 	Power@ioncannon:
-		UpgradeTypes: plug.ioncannon
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: plug.ioncannona || plug.ioncannonb
 		Amount: -100
 	Power@hunterseeker:
-		UpgradeTypes: plug.hunterseeker
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: plug.hunterseekera || plug.hunterseekerb
 		Amount: -50
 	Pluggable@pluga:
 		Offset: 0,2
-		Upgrades:
-			plug.ioncannon: plug.ioncannon, plug.ioncannona
-			plug.hunterseeker: plug.hunterseeker, plug.hunterseekera
+		Conditions:
+			plug.ioncannon: plug.ioncannona
+			plug.hunterseeker: plug.hunterseekera
 	WithIdleOverlay@ioncannona:
-		UpgradeTypes: plug.ioncannona
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: plug.ioncannona
 		Sequence: idle-ioncannona
 	WithIdleOverlay@hunterseekera:
-		UpgradeTypes: plug.hunterseekera
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: plug.hunterseekera
 		Sequence: idle-hunterseekera
 	Pluggable@plugb:
 		Offset: 1,2
-		Upgrades:
-			plug.ioncannon: plug.ioncannon, plug.ioncannonb
-			plug.hunterseeker: plug.hunterseeker, plug.hunterseekerb
+		Conditions:
+			plug.ioncannon: plug.ioncannonb
+			plug.hunterseeker: plug.hunterseekerb
 	WithIdleOverlay@ioncannonb:
-		UpgradeTypes: plug.ioncannonb
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: plug.ioncannonb
 		Sequence: idle-ioncannonb
 	WithIdleOverlay@hunterseekerb:
-		UpgradeTypes: plug.hunterseekerb
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: plug.hunterseekerb
 		Sequence: idle-hunterseekerb
 	ProvidesPrerequisite@buildingname:
 	SelectionDecorations:

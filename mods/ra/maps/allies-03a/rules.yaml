@@ -33,8 +33,9 @@ HACKE6:
 	Captures:
 		CaptureTypes: building
 	Targetable:
-		UpgradeTypes: jail
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !jail
+	ExternalConditions@JAIL:
+		Conditions: jail
 	Targetable@PRISONER:
 		TargetTypes: Prisoner
 	RenderSprites:
@@ -42,8 +43,9 @@ HACKE6:
 
 MEDI:
 	Targetable:
-		UpgradeTypes: jail
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !jail
+	ExternalConditions@JAIL:
+		Conditions: jail
 	Targetable@PRISONER:
 		TargetTypes: Prisoner
 
@@ -52,8 +54,8 @@ PRISON:
 		Type: CenterPosition
 	Immobile:
 		OccupiesSpace: false
-	UpgradeActorsNear:
-		Upgrades: jail
+	ProximityExternalCondition:
+		Condition: jail
 		Range: 1c0
 
 CAMERA:

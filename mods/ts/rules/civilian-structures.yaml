@@ -645,19 +645,6 @@ CAARMR:
 		Prerequisite: barracks.upgraded
 	Capturable:
 
-CABHUT:
-	Inherits: ^CivBuilding
-	Tooltip:
-		Name: Bridge repair hut
-	Building:
-		Adjacent: 0
-		Footprint: x
-		Dimensions: 1, 1
-	Health:
-		HP: 2000
-	RenderSprites:
-		Palette: player
-
 CACRSH01:
 	Inherits: ^Decoration
 	Tooltip:
@@ -1240,6 +1227,7 @@ GASPOT:
 		HP: 400
 	RevealsShroud:
 		Range: 6c0
+		MaxHeightDelta: 3
 	WithIdleOverlay@LIGHTS:
 		Sequence: idle-lights
 	SelectionDecorations:
@@ -1261,6 +1249,7 @@ GALITE:
 		Type: Wood
 	RevealsShroud:
 		Range: 2c0
+		MaxHeightDelta: 3
 	Power:
 		Amount: 0
 # TODO: should use terrain lighting instead, depends on https://github.com/OpenRA/OpenRA/issues/3605
@@ -1274,7 +1263,8 @@ GALITE:
 		Prerequisites: ~disabled
 	SelectionDecorations:
 		VisualBounds: 25, 35, 0, -12
-	-Cloak@CLOAKGENERATOR:
+	-Cloak@EXTERNALCLOAK:
+	-ExternalConditions@EXTERNALCLOAK:
 
 TSTLAMP:
 	Inherits: GALITE
@@ -1298,6 +1288,7 @@ GAICBM:
 		Type: Wood
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Transforms:
 		IntoActor: icbm
 		Offset: 1,1

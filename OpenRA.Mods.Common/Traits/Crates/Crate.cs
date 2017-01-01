@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -41,7 +41,7 @@ namespace OpenRA.Mods.Common.Traits
 	}
 
 	class Crate : ITick, IPositionable, ICrushable, ISync,
-		INotifyParachuteLanded, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyCrushed
+		INotifyParachute, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyCrushed
 	{
 		readonly Actor self;
 		readonly CrateInfo info;
@@ -70,7 +70,8 @@ namespace OpenRA.Mods.Common.Traits
 			OnCrushInner(crusher);
 		}
 
-		void INotifyParachuteLanded.OnLanded(Actor ignore)
+		void INotifyParachute.OnParachute(Actor self) { }
+		void INotifyParachute.OnLanded(Actor self, Actor ignore)
 		{
 			// Check whether the crate landed on anything
 			var landedOn = self.World.ActorMap.GetActorsAt(self.Location)

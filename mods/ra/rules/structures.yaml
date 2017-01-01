@@ -36,8 +36,8 @@ MSLO:
 		DisplayBeacon: True
 		DisplayRadarPing: True
 		BeaconPoster: atomicon
-		CameraActor: camera
 		FlashType: Nuke
+		CameraRange: 10c0
 	CanPowerDown:
 		PowerupSound: EnablePower
 		PowerdownSound: DisablePower
@@ -84,8 +84,9 @@ GAP:
 		Amount: -60
 	MustBeDestroyed:
 		RequiredForShortGame: false
-	WithBuildingExplosion:
-		Sequences: building, building_napalm, large_explosion, self_destruct
+	Explodes:
+		Weapon: SmallBuildingExplode
+		EmptyWeapon: SmallBuildingExplode
 
 SPEN:
 	Inherits: ^Building
@@ -133,6 +134,7 @@ SPEN:
 	Production:
 		Produces: Ship, Submarine
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	-EmitInfantryOnSell:
 	RepairsUnits:
 		FinishRepairingNotification: UnitRepaired
@@ -174,8 +176,7 @@ SPEN:
 		Sequence: tag-primary
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 SYRD:
 	Inherits: ^Building
@@ -189,7 +190,7 @@ SYRD:
 	Valued:
 		Cost: 1000
 	Tooltip:
-		Name: Shipyard
+		Name: Naval Yard
 	Targetable:
 		TargetTypes: Ground, Water, Structure, C4, DetonateAttack, SpyInfiltrate
 	Building:
@@ -223,6 +224,7 @@ SYRD:
 	Production:
 		Produces: Ship, Boat
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	-EmitInfantryOnSell:
 	RepairsUnits:
 		FinishRepairingNotification: UnitRepaired
@@ -270,8 +272,7 @@ SYRD:
 		Sequence: tag-primary
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 IRON:
 	Inherits: ^ScienceBuilding
@@ -305,7 +306,7 @@ IRON:
 		Range: 10c0
 	Bib:
 		HasMinibib: Yes
-	GrantUpgradePower@IRONCURTAIN:
+	GrantExternalConditionPower@IRONCURTAIN:
 		Icon: invuln
 		ChargeTime: 120
 		Description: Invulnerability
@@ -316,7 +317,8 @@ IRON:
 		BeginChargeSpeechNotification: IronCurtainCharging
 		EndChargeSpeechNotification: IronCurtainReady
 		DisplayRadarPing: True
-		Upgrades: invulnerability
+		Condition: invulnerability
+		OnFireSound: ironcur9.aud
 	SupportPowerChargeBar:
 	Power:
 		Amount: -200
@@ -435,8 +437,6 @@ TSLA:
 	DetectCloaked:
 		Range: 8c0
 	ProvidesPrerequisite@buildingname:
-	WithBuildingExplosion:
-		Sequences: building, building_napalm, large_explosion, self_destruct
 
 AGUN:
 	Inherits: ^Defense
@@ -483,8 +483,6 @@ AGUN:
 		Amount: -50
 	DetectCloaked:
 		Range: 6c0
-	WithBuildingExplosion:
-		Sequences: building, building_napalm, large_explosion, self_destruct
 	BodyOrientation:
 		UseClassicFacingFudge: True
 
@@ -536,7 +534,9 @@ PBOX:
 		Prerequisites: tent, ~structures.allies, ~techlevel.low
 		Description: Static defense with a fireport for a\ngarrisoned soldier.\nCan detect cloaked units.\n  Strong vs Infantry, Light armor\n  Weak vs Tanks, Aircraft
 	Valued:
-		Cost: 400
+		Cost: 600
+	CustomSellValue:
+		Value: 400
 	Health:
 		HP: 400
 	Armor:
@@ -567,8 +567,6 @@ PBOX:
 		Amount: -15
 	DetectCloaked:
 		Range: 6c0
-	WithBuildingExplosion:
-		Sequences: building, building_napalm, large_explosion, self_destruct
 
 HBOX:
 	Inherits: ^Defense
@@ -581,7 +579,9 @@ HBOX:
 		Prerequisites: tent, ~structures.allies, ~techlevel.medium
 		Description: Camouflaged static defense with a fireport\nfor a garrisoned soldier.\nCan detect cloaked units.\n  Strong vs Infantry, Light armor\n  Weak vs Tanks, Aircraft
 	Valued:
-		Cost: 600
+		Cost: 800
+	CustomSellValue:
+		Value: 600
 	Health:
 		HP: 450
 	Armor:
@@ -615,8 +615,6 @@ HBOX:
 	Power:
 		Amount: -15
 	-MustBeDestroyed:
-	WithBuildingExplosion:
-		Sequences: building, building_napalm, large_explosion, self_destruct
 
 GUN:
 	Inherits: ^Defense
@@ -626,7 +624,7 @@ GUN:
 		Prerequisites: tent, ~structures.allies, ~techlevel.medium
 		Description: Anti-Armor base defense.\nCan detect cloaked units.\n  Strong vs Vehicles\n  Weak vs Infantry, Aircraft
 	Valued:
-		Cost: 600
+		Cost: 800
 	Tooltip:
 		Name: Turret
 	Building:
@@ -653,8 +651,6 @@ GUN:
 		Amount: -40
 	DetectCloaked:
 		Range: 7c0
-	WithBuildingExplosion:
-		Sequences: building, building_napalm, large_explosion, self_destruct
 	BodyOrientation:
 		UseClassicFacingFudge: True
 
@@ -693,8 +689,9 @@ FTUR:
 	DetectCloaked:
 		Range: 6c0
 	ProvidesPrerequisite@buildingname:
-	WithBuildingExplosion:
-		Sequences: building, building_napalm, large_explosion, self_destruct
+	Explodes:
+		Weapon: BuildingExplode
+		EmptyWeapon: BuildingExplode
 
 SAM:
 	Inherits: ^Defense
@@ -863,6 +860,7 @@ WEAP:
 		RequiresPrerequisites: structures.ukraine
 		Prerequisite: vehicles.ukraine
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	Power:
 		Amount: -30
@@ -877,8 +875,7 @@ WEAP:
 		Sequence: tag-primary
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 FACT:
 	Inherits: ^Building
@@ -952,8 +949,6 @@ FACT:
 	WithDeathAnimation:
 		DeathSequence: dead
 		UseDeathTypeSuffix: false
-	WithBuildingExplosion:
-		Delay: 1
 	ProvidesPrerequisite@buildingname:
 
 PROC:
@@ -1006,8 +1001,6 @@ PROC:
 	WithDeathAnimation:
 		DeathSequence: dead
 		UseDeathTypeSuffix: false
-	WithBuildingExplosion:
-		Delay: 1
 	ProvidesPrerequisite@buildingname:
 
 SILO:
@@ -1038,8 +1031,9 @@ SILO:
 	-EmitInfantryOnSell:
 	Power:
 		Amount: -10
-	WithBuildingExplosion:
-		Sequences: building, building_napalm, large_explosion, self_destruct
+	Explodes:
+		Weapon: SmallBuildingExplode
+		EmptyWeapon: SmallBuildingExplode
 
 HPAD:
 	Inherits: ^Building
@@ -1073,6 +1067,7 @@ HPAD:
 	Reservable:
 	ProductionBar:
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	Power:
 		Amount: -10
 	ProvidesPrerequisite@allies:
@@ -1116,8 +1111,7 @@ HPAD:
 		Sequence: tag-primary
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 	WithRearmAnimation:
 
 AFLD:
@@ -1220,6 +1214,7 @@ AFLD:
 	ProductionBar:
 	SupportPowerChargeBar:
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	Power:
 		Amount: -20
 	ProvidesPrerequisite@buildingname:
@@ -1233,8 +1228,7 @@ AFLD:
 		Sequence: tag-primary
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 	WithRearmAnimation:
 
 POWR:
@@ -1271,8 +1265,6 @@ POWR:
 	WithDeathAnimation:
 		DeathSequence: dead
 		UseDeathTypeSuffix: false
-	WithBuildingExplosion:
-		Delay: 1
 
 APWR:
 	Inherits: ^Building
@@ -1312,8 +1304,6 @@ APWR:
 	WithDeathAnimation:
 		DeathSequence: dead
 		UseDeathTypeSuffix: false
-	WithBuildingExplosion:
-		Delay: 1
 
 STEK:
 	Inherits: ^ScienceBuilding
@@ -1373,6 +1363,7 @@ BARR:
 	Production:
 		Produces: Infantry, Soldier
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	ProvidesPrerequisite:
 		Prerequisite: barracks
@@ -1413,8 +1404,7 @@ BARR:
 		Sequence: tag-primary
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 KENN:
 	Inherits: ^Building
@@ -1448,21 +1438,19 @@ KENN:
 	Production:
 		Produces: Infantry, Dog
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	-EmitInfantryOnSell:
 	Power:
 		Amount: -10
 	ProvidesPrerequisite@buildingname:
-	WithBuildingExplosion:
-		Sequences: building, building_napalm, large_explosion, self_destruct
 	WithDecoration@primary:
 		RequiresSelection: true
 		Image: pips
 		Sequence: tag-primary
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 TENT:
 	Inherits: ^Building
@@ -1495,6 +1483,7 @@ TENT:
 	Production:
 		Produces: Infantry, Soldier
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	ProvidesPrerequisite@barracks:
 		Prerequisite: barracks
@@ -1541,8 +1530,7 @@ TENT:
 		Sequence: tag-primary
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 FIX:
 	Inherits: ^Building

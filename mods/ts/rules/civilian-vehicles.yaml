@@ -1,5 +1,7 @@
 4TNK:
-	Inherits: ^VoxelTank
+	Inherits: ^Tank
+	Inherits@VOXELS: ^VoxelActor
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 1700
 	Tooltip:
@@ -14,6 +16,7 @@
 		Type: Heavy
 	RevealsShroud:
 		Range: 6c0
+		MaxHeightDelta: 3
 	Turreted:
 		TurnSpeed: 3
 	Armament@PRIMARY:
@@ -48,6 +51,7 @@
 		Speed: 56
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 
 TRUCKA:
 	Inherits: ^TRUCK
@@ -70,6 +74,7 @@ ICBM:
 		TurnSpeed: 5
 	RevealsShroud:
 		Range: 7c0
+		MaxHeightDelta: 3
 	Transforms:
 		IntoActor: gaicbm
 		Offset: -1,-1
@@ -87,18 +92,20 @@ BUS:
 	Mobile:
 		TurnSpeed: 5
 		Speed: 113
+		RequiresCondition: !empdisable && !loading
 	Health:
 		HP: 100
 	Armor:
 		Type: Light
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Cargo:
 		Types: Infantry
 		MaxWeight: 20
 		PipCount: 5
 		UnloadVoice: Unload
-		LoadingUpgrades: notmobile
+		LoadingCondition: loading
 		EjectOnDeath: true
 
 PICK:
@@ -110,18 +117,20 @@ PICK:
 	Mobile:
 		TurnSpeed: 5
 		Speed: 113
+		RequiresCondition: !empdisable && !loading
 	Health:
 		HP: 100
 	Armor:
 		Type: Light
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Cargo:
 		Types: Infantry
 		MaxWeight: 2
 		PipCount: 5
 		UnloadVoice: Unload
-		LoadingUpgrades: notmobile
+		LoadingCondition: loading
 		EjectOnDeath: true
 
 CAR:
@@ -133,18 +142,20 @@ CAR:
 	Mobile:
 		TurnSpeed: 5
 		Speed: 113
+		RequiresCondition: !empdisable && !loading
 	Health:
 		HP: 100
 	Armor:
 		Type: Light
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Cargo:
 		Types: Infantry
 		MaxWeight: 4
 		PipCount: 5
 		UnloadVoice: Unload
-		LoadingUpgrades: notmobile
+		LoadingCondition: loading
 		EjectOnDeath: true
 
 WINI:
@@ -156,18 +167,20 @@ WINI:
 	Mobile:
 		TurnSpeed: 5
 		Speed: 113
+		RequiresCondition: !empdisable && !loading
 	Health:
 		HP: 200
 	Armor:
 		Type: Light
 	RevealsShroud:
 		Range: 5c0
+		MaxHeightDelta: 3
 	Cargo:
 		Types: Infantry
 		MaxWeight: 5
 		PipCount: 5
 		UnloadVoice: Unload
-		LoadingUpgrades: notmobile
+		LoadingCondition: loading
 		EjectOnDeath: true
 
 LOCOMOTIVE:

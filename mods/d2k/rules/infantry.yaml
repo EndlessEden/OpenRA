@@ -94,34 +94,28 @@ thumper:
 	RevealsShroud:
 		Range: 2c768
 	Mobile:
-		UpgradeTypes: deployed
-		UpgradeMaxEnabledLevel: 0
 		Speed: 43
-	DeployToUpgrade:
-		DeployedUpgrades: deployed
+		RequiresCondition: !deployed
+	GrantConditionOnDeploy:
+		DeployedCondition: deployed
 		Facing: 128
 		AllowedTerrainTypes: Sand, Spice, Dune, SpiceSand
 	WithInfantryBody:
-		UpgradeTypes: deployed
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !deployed
 	WithSpriteBody@DEPLOYED:
 		Sequence: thump
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	WithIdleOverlay@DEPLOYED:
 		Sequence: thump-sand
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	AmbientSound:
 		SoundFile: THUMPER1.WAV
 		Interval: 60
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	AttractsWorms:
 		Intensity: 1000
 		Falloff: 0, 0, 0, 100, 100, 100, 25, 11, 6, 4, 3, 2, 1, 0
-		UpgradeTypes: deployed
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: deployed
 	Passenger:
 		PipType: Blue
 	Voiced:
@@ -158,6 +152,7 @@ fremen:
 	Cloak:
 		InitialDelay: 85
 		CloakDelay: 85
+		UncloakOn: Attack, Unload, Infiltrate, Demolish, Dock, Damage
 		CloakSound: STEALTH1.WAV
 		UncloakSound: STEALTH2.WAV
 		IsPlayerPalette: true
@@ -251,7 +246,7 @@ saboteur:
 		CloakDelay: 85
 		CloakSound: STEALTH1.WAV
 		UncloakSound: STEALTH2.WAV
-		UncloakOn: Attack, Unload, Infiltrate, Demolish, Move
+		UncloakOn: Attack, Unload, Infiltrate, Demolish, Move, Damage
 		IsPlayerPalette: true
 	Voiced:
 		VoiceSet: SaboteurVoice

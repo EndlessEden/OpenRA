@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -14,16 +14,19 @@ using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
 {
-	public abstract class AffectsShroudInfo : UpgradableTraitInfo
+	public abstract class AffectsShroudInfo : ConditionalTraitInfo
 	{
 		public readonly WDist Range = WDist.Zero;
+
+		[Desc("If >= 0, prevent cells that are this much higher than the actor from being revealed.")]
+		public readonly int MaxHeightDelta = -1;
 
 		[Desc("Possible values are CenterPosition (measure range from the center) and ",
 			"Footprint (measure range from the footprint)")]
 		public readonly VisibilityType Type = VisibilityType.Footprint;
 	}
 
-	public abstract class AffectsShroud : UpgradableTrait<AffectsShroudInfo>, ITick, ISync, INotifyAddedToWorld, INotifyRemovedFromWorld
+	public abstract class AffectsShroud : ConditionalTrait<AffectsShroudInfo>, ITick, ISync, INotifyAddedToWorld, INotifyRemovedFromWorld
 	{
 		static readonly PPos[] NoCells = { };
 
@@ -47,10 +50,14 @@ namespace OpenRA.Mods.Common.Traits
 
 			if (Info.Type == VisibilityType.Footprint)
 				return self.OccupiesSpace.OccupiedCells()
-					.SelectMany(kv => Shroud.ProjectedCellsInRange(map, kv.First, range))
+					.SelectMany(kv => Shroud.ProjectedCellsInRange(map, kv.First, range, Info.MaxHeightDelta))
 					.Distinct().ToArray();
 
-			return Shroud.ProjectedCellsInRange(map, self.CenterPosition, range)
+			var pos = self.CenterPosition;
+			if (Info.Type == VisibilityType.GroundPosition)
+				pos -= new WVec(WDist.Zero, WDist.Zero, self.World.Map.DistanceAboveTerrain(pos));
+
+			return Shroud.ProjectedCellsInRange(map, pos, range, Info.MaxHeightDelta)
 				.ToArray();
 		}
 

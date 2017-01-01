@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -64,14 +64,14 @@ namespace OpenRA.Mods.RA.Traits
 	{
 		[VoiceReference] public readonly string Voice = "Action";
 
-		[UpgradeGrantedReference]
-		[Desc("Upgrades to grant when disguised.")]
-		public readonly string[] Upgrades = { "disguise" };
+		[GrantedConditionReference]
+		[Desc("The condition to grant to self while disguised.")]
+		public readonly string DisguisedCondition = null;
 
 		public object Create(ActorInitializer init) { return new Disguise(init.Self, this); }
 	}
 
-	class Disguise : IEffectiveOwner, IIssueOrder, IResolveOrder, IOrderVoice, IRadarColorModifier, INotifyAttack
+	class Disguise : INotifyCreated, IEffectiveOwner, IIssueOrder, IResolveOrder, IOrderVoice, IRadarColorModifier, INotifyAttack
 	{
 		public Player AsPlayer { get; private set; }
 		public string AsSprite { get; private set; }
@@ -82,14 +82,19 @@ namespace OpenRA.Mods.RA.Traits
 
 		readonly Actor self;
 		readonly DisguiseInfo info;
-		readonly Lazy<UpgradeManager> um;
+
+		ConditionManager conditionManager;
+		int disguisedToken = ConditionManager.InvalidConditionToken;
 
 		public Disguise(Actor self, DisguiseInfo info)
 		{
 			this.self = self;
 			this.info = info;
+		}
 
-			um = Exts.Lazy(() => self.TraitOrDefault<UpgradeManager>());
+		void INotifyCreated.Created(Actor self)
+		{
+			conditionManager = self.TraitOrDefault<ConditionManager>();
 		}
 
 		public IEnumerable<IOrderTargeter> Orders
@@ -182,18 +187,12 @@ namespace OpenRA.Mods.RA.Traits
 			foreach (var t in self.TraitsImplementing<INotifyEffectiveOwnerChanged>())
 				t.OnEffectiveOwnerChanged(self, oldEffectiveOwner, AsPlayer);
 
-			if (Disguised != oldDisguiseSetting && um.Value != null)
+			if (Disguised != oldDisguiseSetting && conditionManager != null)
 			{
-				foreach (var u in info.Upgrades)
-				{
-					if (!um.Value.AcknowledgesUpgrade(self, u))
-						continue;
-
-					if (Disguised)
-						um.Value.GrantUpgrade(self, u, this);
-					else
-						um.Value.RevokeUpgrade(self, u, this);
-				}
+				if (Disguised && disguisedToken == ConditionManager.InvalidConditionToken && !string.IsNullOrEmpty(info.DisguisedCondition))
+					disguisedToken = conditionManager.GrantCondition(self, info.DisguisedCondition);
+				else if (!Disguised && disguisedToken != ConditionManager.InvalidConditionToken)
+					disguisedToken = conditionManager.RevokeCondition(self, disguisedToken);
 			}
 		}
 

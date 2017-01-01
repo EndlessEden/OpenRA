@@ -64,6 +64,7 @@ DSHP:
 
 ORCA:
 	Inherits: ^Helicopter
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 1000
 	Tooltip:
@@ -104,7 +105,8 @@ ORCA:
 		Actor: ORCA.Husk
 
 ORCAB:
-	Inherits: ^Plane
+	Inherits: ^Aircraft
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 1600
 	Tooltip:
@@ -121,10 +123,11 @@ ORCAB:
 		MaximumPitch: 120
 		TurnSpeed: 3
 		Speed: 96
-		AirborneUpgrades: airborne
+		CruisingCondition: cruising
 		MoveIntoShroud: false
 		TakeoffSound: orcaup1.aud
 		LandingSound: orcadwn1.aud
+	ReturnOnIdle:
 	Health:
 		HP: 260
 	Armor:
@@ -147,8 +150,7 @@ ORCAB:
 	AutoTarget:
 	RenderSprites:
 	Hovers@CRUISING:
-		UpgradeTypes: cruising
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: cruising
 	SpawnActorOnDeath:
 		Actor: ORCAB.Husk
 
@@ -226,7 +228,8 @@ TRNSPORT:
 		Actor: TRNSPORT.Husk
 
 SCRIN:
-	Inherits: ^Plane
+	Inherits: ^Aircraft
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 1500
 	Tooltip:
@@ -241,13 +244,15 @@ SCRIN:
 	Voiced:
 		VoiceSet: Scrin
 	Aircraft:
+		CruiseAltitude: 2560
 		MaximumPitch: 90
 		TurnSpeed: 3
 		Speed: 168
-		AirborneUpgrades: airborne
+		AirborneCondition: airborne
 		MoveIntoShroud: false
 		TakeoffSound: dropup1.aud
 		LandingSound: dropdwn1.aud
+	ReturnOnIdle:
 	Health:
 		HP: 280
 	Armor:
@@ -274,6 +279,7 @@ SCRIN:
 
 APACHE:
 	Inherits: ^Helicopter
+	Inherits@EXPERIENCE: ^GainsExperience
 	Valued:
 		Cost: 1000
 	Tooltip:
@@ -310,19 +316,16 @@ APACHE:
 	WithIdleOverlay@ROTORAIR:
 		Offset: 85,0,384
 		Sequence: rotor
-		UpgradeTypes: airborne
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: airborne
 	WithIdleOverlay@ROTORGROUND:
 		Offset: 85,0,384
 		Sequence: slow-rotor
-		UpgradeTypes: airborne
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !airborne
 	RenderSprites:
 	SpawnActorOnDeath:
 		Actor: APACHE.Husk
 
 HUNTER:
-	Inherits@1: ^GainsExperience
 	Inherits@2: ^ExistsInWorld
 	Valued:
 		Cost: 1000
@@ -341,6 +344,7 @@ HUNTER:
 		Speed: 355
 		CruiseAltitude: 256
 		CanHover: True
+		CruisingCondition: cruising
 	Targetable:
 		TargetTypes: Ground, Vehicle
 	HiddenUnderFog:
@@ -351,8 +355,7 @@ HUNTER:
 		Image: GGHUNT
 	WithFacingSpriteBody:
 	Hovers@CRUISING:
-		UpgradeTypes: cruising
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: cruising
 	QuantizeFacingsFromSequence:
 	AutoSelectionSize:
 	DrawLineToTarget:

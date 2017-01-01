@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2016 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -48,30 +48,26 @@ namespace OpenRA.Mods.RA.Traits
 		public void GpsRemove(Actor atek)
 		{
 			actors.Remove(atek);
-			RefreshGps(atek);
+			RefreshGps(atek.Owner);
 		}
 
 		public void GpsAdd(Actor atek)
 		{
 			actors.Add(atek);
-			RefreshGps(atek);
+			RefreshGps(atek.Owner);
 		}
 
-		public void Launch(Actor atek, GpsPowerInfo info)
+		public void ReachedOrbit(Player launcher)
 		{
-			atek.World.Add(new DelayedAction(info.RevealDelay * 25,
-				() =>
-				{
-					Launched = true;
-					RefreshGps(atek);
-				}));
+			Launched = true;
+			RefreshGps(launcher);
 		}
 
-		public void RefreshGps(Actor atek)
+		public void RefreshGps(Player launcher)
 		{
 			RefreshGranted();
 
-			foreach (var i in atek.World.ActorsWithTrait<GpsWatcher>())
+			foreach (var i in launcher.World.ActorsWithTrait<GpsWatcher>())
 				i.Trait.RefreshGranted();
 		}
 

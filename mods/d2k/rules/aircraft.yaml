@@ -16,16 +16,14 @@ carryall.reinforce:
 		LandableTerrainTypes: Sand, Rock, Transition, Spice, SpiceSand, Dune
 		Repulsable: False
 		LandWhenIdle: False
-		AirborneUpgrades: airborne
+		AirborneCondition: airborne
 		CanHover: True
 	Targetable@GROUND:
 		TargetTypes: Ground, Vehicle
-		UpgradeTypes: airborne
-		UpgradeMaxEnabledLevel: 0
+		RequiresCondition: !airborne
 	Targetable@AIRBORNE:
 		TargetTypes: Air
-		UpgradeTypes: airborne
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: airborne
 	SpawnActorOnDeath:
 		Actor: carryall.husk
 	Carryall:

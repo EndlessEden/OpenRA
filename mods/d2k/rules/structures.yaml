@@ -88,25 +88,24 @@ construction_yard:
 	WithBuildingPlacedOverlay:
 		Palette: d2k
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProvidesPrerequisite@buildingname:
-	GlobalUpgradable:
+	GrantConditionOnPrerequisite:
 		Prerequisites: upgrade.conyard
-		Upgrades: stardecoration
+		Condition: stardecoration
 	WithDecoration@upgraded:
 		RequiresSelection: true
 		Image: pips
 		Sequence: tag-upgraded
 		ReferencePoint: Top, Right
 		ZOffset: 256
-		UpgradeTypes: stardecoration
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: stardecoration
 	WithTextDecoration@primary:
 		RequiresSelection: true
 		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 wind_trap:
 	Inherits: ^Building
@@ -183,6 +182,7 @@ barracks:
 	Production:
 		Produces: Infantry
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	ProvidesPrerequisite@atreides:
 		Prerequisite: barracks.atreides
@@ -203,24 +203,22 @@ barracks:
 			smuggler: barracks.ordos
 			mercenary: barracks.ordos
 	ProvidesPrerequisite@buildingname:
-	GlobalUpgradable:
+	GrantConditionOnPrerequisite:
 		Prerequisites: upgrade.barracks
-		Upgrades: stardecoration
+		Condition: stardecoration
 	WithDecoration@upgraded:
 		RequiresSelection: true
 		Image: pips
 		Sequence: tag-upgraded
 		ReferencePoint: Top, Right
 		ZOffset: 256
-		UpgradeTypes: stardecoration
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: stardecoration
 	WithTextDecoration@primary:
 		RequiresSelection: true
 		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 refinery:
 	Inherits: ^Building
@@ -364,6 +362,7 @@ light_factory:
 	Production:
 		Produces: Vehicle
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	ProvidesPrerequisite@atreides:
 		Prerequisite: light.atreides
@@ -384,24 +383,22 @@ light_factory:
 		Sequence: idle-top
 	Power:
 		Amount: -125
-	GlobalUpgradable:
+	GrantConditionOnPrerequisite:
 		Prerequisites: upgrade.light
-		Upgrades: stardecoration
+		Condition: stardecoration
 	WithDecoration@upgraded:
 		RequiresSelection: true
 		Image: pips
 		Sequence: tag-upgraded
 		ReferencePoint: Top, Right
 		ZOffset: 256
-		UpgradeTypes: stardecoration
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: stardecoration
 	WithTextDecoration@primary:
 		RequiresSelection: true
 		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 heavy_factory:
 	Inherits: ^Building
@@ -436,6 +433,7 @@ heavy_factory:
 	Production:
 		Produces: Armor
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	ProductionBar:
 	ProvidesPrerequisite@atreides:
 		Prerequisite: heavy.atreides
@@ -465,24 +463,22 @@ heavy_factory:
 	ProvidesPrerequisite@buildingname:
 	SelectionDecorations:
 		VisualBounds: 96,96
-	GlobalUpgradable:
+	GrantConditionOnPrerequisite:
 		Prerequisites: upgrade.heavy
-		Upgrades: stardecoration
+		Condition: stardecoration
 	WithDecoration@upgraded:
 		RequiresSelection: true
 		Image: pips
 		Sequence: tag-upgraded
 		ReferencePoint: Top, Right
 		ZOffset: 256
-		UpgradeTypes: stardecoration
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: stardecoration
 	WithTextDecoration@primary:
 		RequiresSelection: true
 		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 outpost:
 	Inherits: ^Building
@@ -575,6 +571,7 @@ starport:
 		Palette: starportlights
 	ProductionBar:
 	PrimaryBuilding:
+		PrimaryCondition: primary
 	RequiresPower:
 	CanPowerDown:
 		PowerupSound: EnablePower
@@ -597,8 +594,7 @@ starport:
 		Text: PRIMARY
 		ReferencePoint: Top
 		ZOffset: 256
-		UpgradeTypes: primary
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: primary
 
 wall:
 	Inherits@1: ^SpriteActor
@@ -845,17 +841,16 @@ high_tech_factory:
 		Amount: -75
 	SelectionDecorations:
 		VisualBounds: 96,96
-	GlobalUpgradable:
+	GrantConditionOnPrerequisite:
 		Prerequisites: upgrade.hightech
-		Upgrades: stardecoration
+		Condition: stardecoration
 	WithDecoration@upgraded:
 		RequiresSelection: true
 		Image: pips
 		Sequence: tag-upgraded
 		ReferencePoint: Top, Right
 		ZOffset: 256
-		UpgradeTypes: stardecoration
-		UpgradeMinEnabledLevel: 1
+		RequiresCondition: stardecoration
 
 research_centre:
 	Inherits: ^Building
@@ -956,7 +951,7 @@ palace:
 		SpawnOffset: -512,1c171,0
 		DisplayBeacon: True
 		DisplayRadarPing: True
-		CameraActor: camera
+		CameraRange: 10c0
 		ActivationSequence:
 	ProduceActorPower@fremen:
 		Description: Recruit Fremen
