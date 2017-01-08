@@ -147,6 +147,7 @@
     <Compile Include="Effects\SpriteEffect.cs" />
     <Compile Include="Projectiles\AreaBeam.cs" />
     <Compile Include="Projectiles\Bullet.cs" />
+    <Compile Include="Projectiles\InstantHit.cs" />
     <Compile Include="Projectiles\GravityBomb.cs" />
     <Compile Include="Projectiles\LaserZap.cs" />
     <Compile Include="Projectiles\Missile.cs" />
@@ -331,6 +332,7 @@
     <Compile Include="Traits\ExternalCapturableBar.cs" />
     <Compile Include="Traits\ExternalCaptures.cs" />
     <Compile Include="Traits\GainsExperience.cs" />
+    <Compile Include="Traits\GivesCashOnCapture.cs" />
     <Compile Include="Traits\GivesBounty.cs" />
     <Compile Include="Traits\GivesExperience.cs" />
     <Compile Include="Traits\GrantConditionOnPrerequisite.cs" />
