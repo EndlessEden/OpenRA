@@ -173,6 +173,7 @@ mod_d2k_LIBS = $(COMMON_LIBS) $(STD_MOD_LIBS) $(mod_common_TARGET)
 PROGRAMS += mod_d2k
 mod_d2k: $(mod_d2k_TARGET)
 
+<<<<<<< HEAD
 # Tiberian Sun
 mod_ts_SRCS := $(shell find OpenRA.Mods.TS/ -iname '*.cs')
 mod_ts_TARGET = mods/ts/OpenRA.Mods.TS.dll
@@ -191,6 +192,8 @@ mod_ra2_LIBS = $(COMMON_LIBS) $(STD_MOD_LIBS) $(mod_common_TARGET)
 PROGRAMS += mod_ra2
 mod_ra2: $(mod_ra2_TARGET)
 
+=======
+>>>>>>> 958d1cd3652a45668a7d9fb4890afb4d708911c2
 check-scripts:
 	@echo
 	@echo "Checking for Lua syntax errors..."
@@ -223,12 +226,15 @@ check: utility mods
 	@echo "Checking for code style violations in OpenRA.Mods.D2k..."
 	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.D2k
 	@echo
+<<<<<<< HEAD
 	@echo "Checking for code style violations in OpenRA.Mods.TS..."
 	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.TS
 	@echo
 	@echo "Checking for code style violations in OpenRA.Mods.RA2..."
 	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.RA2
 	@echo
+=======
+>>>>>>> 958d1cd3652a45668a7d9fb4890afb4d708911c2
 	@echo "Checking for code style violations in OpenRA.Utility..."
 	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.Utility
 	@echo
@@ -337,7 +343,11 @@ tools: gamemonitor
 
 package: all-dependencies core tools docs version
 
+<<<<<<< HEAD
 mods: mod_common mod_ra mod_cnc mod_d2k mod_ts mod_ra2
+=======
+mods: mod_common mod_ra mod_cnc mod_d2k
+>>>>>>> 958d1cd3652a45668a7d9fb4890afb4d708911c2
 
 all: dependencies core tools
 
