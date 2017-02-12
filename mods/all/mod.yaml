@@ -16,10 +16,13 @@ Chrome:
 
 Assemblies:
 	./mods/common/OpenRA.Mods.Common.dll
+<<<<<<< HEAD
 	./mods/ra/OpenRA.Mods.RA.dll
 	./mods/ra2/OpenRA.Mods.RA2.dll
+=======
+	./mods/common/OpenRA.Mods.Cnc.dll
+>>>>>>> 5999a028ad591275e84d2b8264ae13fde8150006
 	./mods/d2k/OpenRA.Mods.D2k.dll
-	./mods/cnc/OpenRA.Mods.Cnc.dll
 
 ChromeLayout:
 

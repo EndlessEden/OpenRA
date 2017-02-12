@@ -146,18 +146,9 @@ test_dll: $(test_dll_TARGET)
 STD_MOD_LIBS	= $(game_TARGET)
 STD_MOD_DEPS	= $(STD_MOD_LIBS)
 
-# Red Alert
-mod_ra_SRCS := $(shell find OpenRA.Mods.RA/ -iname '*.cs')
-mod_ra_TARGET = mods/ra/OpenRA.Mods.RA.dll
-mod_ra_KIND = library
-mod_ra_DEPS = $(STD_MOD_DEPS) $(mod_common_TARGET)
-mod_ra_LIBS = $(COMMON_LIBS) $(STD_MOD_LIBS) $(mod_common_TARGET)
-PROGRAMS += mod_ra
-mod_ra: $(mod_ra_TARGET)
-
 # Command and Conquer
 mod_cnc_SRCS := $(shell find OpenRA.Mods.Cnc/ -iname '*.cs')
-mod_cnc_TARGET = mods/cnc/OpenRA.Mods.Cnc.dll
+mod_cnc_TARGET = mods/common/OpenRA.Mods.Cnc.dll
 mod_cnc_KIND = library
 mod_cnc_DEPS = $(STD_MOD_DEPS) $(mod_common_TARGET)
 mod_cnc_LIBS = $(COMMON_LIBS) $(STD_MOD_LIBS) $(mod_common_TARGET)
@@ -216,9 +207,6 @@ check: utility mods
 	@echo
 	@echo "Checking for code style violations in OpenRA.Mods.Common..."
 	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.Common
-	@echo
-	@echo "Checking for code style violations in OpenRA.Mods.RA..."
-	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.RA
 	@echo
 	@echo "Checking for code style violations in OpenRA.Mods.Cnc..."
 	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.Cnc
@@ -344,10 +332,14 @@ tools: gamemonitor
 package: all-dependencies core tools docs version
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 mods: mod_common mod_ra mod_cnc mod_d2k mod_ts mod_ra2
 =======
 mods: mod_common mod_ra mod_cnc mod_d2k
 >>>>>>> 958d1cd3652a45668a7d9fb4890afb4d708911c2
+=======
+mods: mod_common mod_cnc mod_d2k
+>>>>>>> 5999a028ad591275e84d2b8264ae13fde8150006
 
 all: dependencies core tools
 
@@ -412,12 +404,15 @@ install-core: default
 	@$(INSTALL_PROGRAM) $(mod_common_TARGET) "$(DATA_INSTALL_DIR)/mods/common"
 	@$(CP_R) mods/cnc "$(DATA_INSTALL_DIR)/mods/"
 	@$(INSTALL_PROGRAM) $(mod_cnc_TARGET) "$(DATA_INSTALL_DIR)/mods/cnc"
+<<<<<<< HEAD
 	@$(CP_R) mods/ra "$(DATA_INSTALL_DIR)/mods/"
 	@$(INSTALL_PROGRAM) $(mod_ra_TARGET) "$(DATA_INSTALL_DIR)/mods/ra"
 	@$(CP_R) mods/ra2 "$(DATA_INSTALL_DIR)/mods/"
 	@$(INSTALL_PROGRAM) $(mod_ra2_TARGET) "$(DATA_INSTALL_DIR)/mods/ra2"
 	@$(CP_R) mods/ts "$(DATA_INSTALL_DIR)/mods/"
 	@$(INSTALL_PROGRAM) $(mod_ts_TARGET) "$(DATA_INSTALL_DIR)/mods/ts"
+=======
+>>>>>>> 5999a028ad591275e84d2b8264ae13fde8150006
 	@$(CP_R) mods/d2k "$(DATA_INSTALL_DIR)/mods/"
 	@$(INSTALL_PROGRAM) $(mod_d2k_TARGET) "$(DATA_INSTALL_DIR)/mods/d2k"
 	@$(CP_R) mods/modchooser "$(DATA_INSTALL_DIR)/mods/"
@@ -477,10 +472,11 @@ install-man-page: man-page
 install-linux-scripts:
 	@echo "#!/bin/sh" > openra
 	@echo 'cd "$(gameinstalldir)"' >> openra
+# Note: this relies on the non-standard -f flag implemented by gnu readlink
 ifeq ($(DEBUG), $(filter $(DEBUG),false no n off 0))
-	@echo 'mono OpenRA.Game.exe "$$@"' >> openra
+	@echo 'mono OpenRA.Game.exe Engine.LaunchPath="$(readlink -f $0)" "$$@"' >> openra
 else
-	@echo 'mono --debug OpenRA.Game.exe "$$@"' >> openra
+	@echo 'mono --debug OpenRA.Game.exe Engine.LaunchPath="$(readlink -f $0)" "$$@"' >> openra
 endif
 	@echo 'if [ $$? != 0 -a $$? != 1 ]' >> openra
 	@echo 'then' >> openra

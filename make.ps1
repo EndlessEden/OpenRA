@@ -143,10 +143,13 @@ function Check-Command {
 		./OpenRA.Utility.exe ra --check-code-style OpenRA.Game
 		echo "Checking for code style violations in OpenRA.Mods.Common..."
 		./OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.Common
+<<<<<<< HEAD
 		echo "Checking for code style violations in OpenRA.Mods.RA..."
 		./OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.RA
 		echo "Checking for code style violations in OpenRA.Mods.RA2..."
 		./OpenRA.Utility.exe ra2 --check-code-style OpenRA.Mods.RA2
+=======
+>>>>>>> 5999a028ad591275e84d2b8264ae13fde8150006
 		echo "Checking for code style violations in OpenRA.Mods.Cnc..."
 		./OpenRA.Utility.exe cnc --check-code-style OpenRA.Mods.Cnc
 		echo "Checking for code style violations in OpenRA.Mods.D2k..."
