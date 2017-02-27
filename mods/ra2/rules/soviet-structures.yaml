@@ -763,6 +763,8 @@ namisl:
 		DisplayRadarPing: True
 		CameraRemoveDelay: 70
 		FlashType: Nuke
+		ArrowSequence: arrow
+		ClockSequence: clock
 		CircleSequence:
 		CameraRange: 10
 
@@ -875,8 +877,8 @@ tesla:
 		IndicatorPalette: ts-mouse
 		PowerupSpeech: BuildingOnline
 		PowerdownSpeech: BuildingOffline
-	ExternalConditions@charged:
-		Conditions: charged
+	ExternalCondition@CHARGED:
+		Condition: charged
 
 nalasr:
 	Inherits: ^VoxelLighting
