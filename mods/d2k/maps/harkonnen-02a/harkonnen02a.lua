@@ -94,7 +94,7 @@ WorldLoaded = function()
 	end)
 
 	SendAtreides()
-	ActivateAI()
+	Trigger.AfterDelay(0, ActivateAI)
 end
 
 InitObjectives = function()
