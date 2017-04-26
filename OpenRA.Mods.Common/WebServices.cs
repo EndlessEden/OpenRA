@@ -9,12 +9,14 @@
  */
 #endregion
 
-using OpenRA.Traits;
+using System.Collections.Generic;
 
-namespace OpenRA.Mods.Common.Traits
+namespace OpenRA
 {
-	[Desc("Tag trait for `SupplyTruck` actors.")]
-	class AcceptsSuppliesInfo : TraitInfo<AcceptsSupplies> { }
-
-	class AcceptsSupplies { }
+	public class WebServices : IGlobalModData
+	{
+		public readonly string ServerList = "http://master.openra.net/";
+		public readonly string MapRepository = "http://resource.openra.net/map/";
+		public readonly string GameNews = "http://master.openra.net/gamenews";
+	}
 }

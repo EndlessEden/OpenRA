@@ -11,6 +11,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using OpenRA.Primitives;
 using OpenRA.Support;
 using OpenRA.Traits;
 
@@ -30,7 +31,7 @@ namespace OpenRA.Mods.Common.Traits
 		[Desc("Requirements for accepting a plug type.",
 			"Key is the plug type that the requirements applies to.",
 			"Value is the condition expression defining the requirements to place the plug.")]
-		public readonly Dictionary<string, ConditionExpression> Requirements = new Dictionary<string, ConditionExpression>();
+		public readonly Dictionary<string, BooleanExpression> Requirements = new Dictionary<string, BooleanExpression>();
 
 		[GrantedConditionReference]
 		public IEnumerable<string> LinterConditions { get { return Conditions.Values; } }
@@ -44,7 +45,7 @@ namespace OpenRA.Mods.Common.Traits
 		public object Create(ActorInitializer init) { return new Pluggable(init, this); }
 	}
 
-	public class Pluggable : IConditionConsumer, INotifyCreated
+	public class Pluggable : IObservesVariables, INotifyCreated
 	{
 		public readonly PluggableInfo Info;
 
@@ -114,12 +115,12 @@ namespace OpenRA.Mods.Common.Traits
 			active = null;
 		}
 
-		IEnumerable<string> IConditionConsumer.Conditions { get { return Info.ConsumedConditions; } }
-
-		void IConditionConsumer.ConditionsChanged(Actor self, IReadOnlyDictionary<string, int> conditions)
+		IEnumerable<VariableObserver> IObservesVariables.GetVariableObservers()
 		{
 			foreach (var req in Info.Requirements)
-				plugTypesAvailability[req.Key] = req.Value.Evaluate(conditions) != 0;
+				yield return new VariableObserver(
+					(self, variables) => plugTypesAvailability[req.Key] = req.Value.Evaluate(variables),
+					req.Value.Variables);
 		}
 	}
 

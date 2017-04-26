@@ -51,8 +51,6 @@ namespace OpenRA
 		[Desc("Locks the game with a password.")]
 		public string Password = "";
 
-		public string MasterServer = "http://master.openra.net/";
-
 		[Desc("Allow users to enable NAT discovery for external IP detection and automatic port forwarding.")]
 		public bool DiscoverNatDevices = false;
 
@@ -120,6 +118,9 @@ namespace OpenRA
 		[Desc("At which frames per second to cap the framerate.")]
 		public int MaxFramerate = 60;
 
+		[Desc("Disable high resolution DPI scaling on Windows operating systems.")]
+		public bool DisableWindowsDPIScaling = false;
+
 		public int BatchSize = 8192;
 		public int SheetSize = 2048;
 
@@ -153,10 +154,6 @@ namespace OpenRA
 
 	public class GameSettings
 	{
-		[Desc("Load a specific mod on startup.")]
-		public string Mod = null;
-		public string PreviousMod = "ra";
-
 		public string Platform = "Default";
 
 		public bool ViewportEdgeScroll = true;
@@ -175,13 +172,11 @@ namespace OpenRA
 		public bool DrawTargetLine = true;
 
 		public bool AllowDownloading = true;
-		public string MapRepository = "http://resource.openra.net/map/";
 
 		public bool AllowZoom = true;
 		public Modifiers ZoomModifier = Modifiers.Ctrl;
 
 		public bool FetchNews = true;
-		public string NewsUrl = "http://master.openra.net/gamenews";
 
 		public MPGameFilters MPGameFilters = MPGameFilters.Waiting | MPGameFilters.Empty | MPGameFilters.Protected | MPGameFilters.Started;
 	}

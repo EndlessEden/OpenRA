@@ -582,6 +582,25 @@ namespace OpenRA.Mods.Common.UtilityCommands
 				if (engineVersion < 20170318)
 					node.Value.Nodes.RemoveAll(n => n.Key == "ActorGroupProxy");
 
+				// Refactor SupplyTruck/AcceptsSupplies traits to DeliversCash/AcceptsDeliveredCash
+				if (engineVersion < 20170415)
+				{
+					if (node.Key == "SupplyTruck")
+						RenameNodeKey(node, "DeliversCash");
+					if (node.Key == "-SupplyTruck")
+						RenameNodeKey(node, "-DeliversCash");
+
+					if (node.Key == "AcceptsSupplies")
+						RenameNodeKey(node, "AcceptsDeliveredCash");
+					if (node.Key == "-AcceptsSupplies")
+						RenameNodeKey(node, "-AcceptsDeliveredCash");
+				}
+
+				// Add random sound support to AmbientSound
+				if (engineVersion < 20170422)
+					if (node.Key == "SoundFile" && parent.Key.StartsWith("AmbientSound", StringComparison.Ordinal))
+						RenameNodeKey(node, "SoundFiles");
+
 				UpgradeActorRules(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 

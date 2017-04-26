@@ -34,9 +34,7 @@ namespace OpenRA
 	public class ModMetadata
 	{
 		public string Title;
-		public string Description;
 		public string Version;
-		public string Author;
 		public bool Hidden;
 	}
 
@@ -55,8 +53,6 @@ namespace OpenRA
 		public readonly IReadOnlyDictionary<string, string> Packages;
 		public readonly IReadOnlyDictionary<string, string> MapFolders;
 		public readonly MiniYaml LoadScreen;
-
-		public readonly Dictionary<string, string> RequiresMods;
 		public readonly Dictionary<string, Pair<string, int>> Fonts;
 
 		public readonly string[] SoundFormats = { };
@@ -114,8 +110,6 @@ namespace OpenRA
 				var nd = my.ToDictionary();
 				return Pair.New(nd["Font"].Value, Exts.ParseIntegerInvariant(nd["Size"].Value));
 			});
-
-			RequiresMods = yaml["RequiresMods"].ToDictionary(my => my.Value);
 
 			// Allow inherited mods to import parent maps.
 			var compat = new List<string> { Id };
