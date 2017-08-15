@@ -1,73 +1,68 @@
-﻿#region Copyright & License Information
+#region Copyright & License Information
 /*
- * Copyright 2007-2011 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
- * as published by the Free Software Foundation. For more information,
- * see COPYING.
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
  */
 #endregion
 
 using System.Collections.Generic;
-using System.Linq;
-using OpenRA.Graphics;
-using OpenRA.Traits;
 
 namespace OpenRA.Orders
 {
-	public class GenericSelectTarget : IOrderGenerator
+	public class GenericSelectTarget : UnitOrderGenerator
 	{
-		readonly IEnumerable<Actor> subjects;
-		readonly string order;
-		readonly string cursor;
-		readonly MouseButton expectedButton;
+		public readonly string OrderName;
+		protected readonly IEnumerable<Actor> Subjects;
+		protected readonly string Cursor;
+		protected readonly MouseButton ExpectedButton;
 
 		public GenericSelectTarget(IEnumerable<Actor> subjects, string order, string cursor, MouseButton button)
 		{
-			this.subjects = subjects;
-			this.order = order;
-			this.cursor = cursor;
-			expectedButton = button;
+			Subjects = subjects;
+			OrderName = order;
+			Cursor = cursor;
+			ExpectedButton = button;
 		}
 
 		public GenericSelectTarget(IEnumerable<Actor> subjects, string order, string cursor)
-			: this(subjects, order, cursor, MouseButton.Left)
-		{
-
-		}
+			: this(subjects, order, cursor, MouseButton.Left) { }
 
 		public GenericSelectTarget(Actor subject, string order, string cursor)
-			: this(new Actor[] { subject }, order, cursor)
-		{
-
-		}
+			: this(new Actor[] { subject }, order, cursor) { }
 
 		public GenericSelectTarget(Actor subject, string order, string cursor, MouseButton button)
-			: this(new Actor[] { subject }, order, cursor, button)
-		{
+			: this(new Actor[] { subject }, order, cursor, button) { }
 
-		}
-
-		public IEnumerable<Order> Order(World world, CPos xy, MouseInput mi)
+		public override IEnumerable<Order> Order(World world, CPos cell, int2 worldPixel, MouseInput mi)
 		{
-			if (mi.Button != expectedButton)
+			if (mi.Button != ExpectedButton)
 				world.CancelInputMode();
-			return OrderInner(world, xy, mi);
+			return OrderInner(world, cell, mi);
 		}
 
-		IEnumerable<Order> OrderInner(World world, CPos xy, MouseInput mi)
+		protected virtual IEnumerable<Order> OrderInner(World world, CPos cell, MouseInput mi)
 		{
-			if (mi.Button == expectedButton && world.Map.IsInMap(xy))
+			if (mi.Button == ExpectedButton && world.Map.Contains(cell))
 			{
 				world.CancelInputMode();
-				foreach (var subject in subjects)
-					yield return new Order(order, subject, false) { TargetLocation = xy };
+				foreach (var subject in Subjects)
+					yield return new Order(OrderName, subject, false) { TargetLocation = cell };
 			}
 		}
 
-		public virtual void Tick(World world) { }
-		public void RenderBeforeWorld(WorldRenderer wr, World world) { }
-		public void RenderAfterWorld(WorldRenderer wr, World world) { }
-		public string GetCursor(World world, CPos xy, MouseInput mi) { return world.Map.IsInMap(xy) ? cursor : "generic-blocked"; }
+		public override string GetCursor(World world, CPos cell, int2 worldPixel, MouseInput mi)
+		{
+			return world.Map.Contains(cell) ? Cursor : "generic-blocked";
+		}
+
+		public override bool InputOverridesSelection(World world, int2 xy, MouseInput mi)
+		{
+			// Custom order generators always override selection
+			return true;
+		}
 	}
 }

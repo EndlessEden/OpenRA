@@ -1,59 +1,60 @@
 #!/bin/bash
 # OpenRA packaging master script for linux packages
 
-if [ $# -ne "3" ]; then
-	echo "Usage: `basename $0` version files-dir outputdir"
+command -v curl >/dev/null 2>&1 || { echo >&2 "Linux packaging requires curl."; exit 1; }
+command -v markdown >/dev/null 2>&1 || { echo >&2 "Linux packaging requires markdown."; exit 1; }
+
+if [ $# -ne "2" ]; then
+	echo "Usage: `basename $0` tag outputdir"
     exit 1
 fi
 
-TAG=$1
-VERSION=`echo $TAG | grep -o "[0-9]\\+-\\?[0-9]\\?"`
-BUILTDIR=$2
-PACKAGEDIR=$3
-ROOTDIR=root
+# Set the working dir to the location of this script
+cd $(dirname $0)
+
+TAG="${1}"
+VERSION=`echo ${TAG} | grep -o "[0-9]\\+-\\?[0-9]\\?"`
+OUTPUTDIR="${2}"
+
+SRCDIR="$(pwd)/../.."
+BUILTDIR="$(pwd)/build"
 
 # Clean up
-rm -rf $ROOTDIR
+rm -rf ${BUILTDIR}
 
-# Game files
-mkdir -p $ROOTDIR/usr/bin/
-cp -T openra-bin $ROOTDIR/usr/bin/openra
-mkdir -p $ROOTDIR/usr/share/openra/
-cp -R $BUILTDIR/* "$ROOTDIR/usr/share/openra/" || exit 3
+echo "Building core files"
 
-# Desktop Icons
-mkdir -p $ROOTDIR/usr/share/applications/
-desktop-file-install --dir $ROOTDIR/usr/share/applications/ openra.desktop
+pushd ${SRCDIR} > /dev/null
+make linux-dependencies
+make core SDK="-sdk:4.5"
+make version VERSION="${TAG}"
 
-mkdir -p $ROOTDIR/usr/share/icons/
-cp -r hicolor $ROOTDIR/usr/share/icons/
+make install-core prefix="/usr" DESTDIR="${BUILTDIR}"
+make install-linux-shortcuts prefix="/usr" DESTDIR="${BUILTDIR}"
+make install-linux-mime prefix="/usr" DESTDIR="${BUILTDIR}"
+make install-linux-appdata prefix="/usr" DESTDIR="${BUILTDIR}"
+make install-man-page prefix="/usr" DESTDIR="${BUILTDIR}"
 
-(
-    echo "Building Debian package."
-    cd deb
-    ./buildpackage.sh "$TAG" ../$ROOTDIR "$PACKAGEDIR" &> package.log
-    if [ $? -ne 0 ]; then
-        echo "Debian package build failed, refer to $PWD/package.log."
-    fi
-) &
+popd > /dev/null
 
-(
-    echo "Building Arch-Linux package."
-    cd pkgbuild
-    sh buildpackage.sh "$TAG" ../$ROOTDIR "$PACKAGEDIR" &> package.log
-    if [ $? -ne 0 ]; then
-        echo "Arch-Linux package build failed, refer to $PWD/package.log."
-    fi
-) &
-     
-(
-    echo "Building RPM package."
-    cd rpm
-    sh buildpackage.sh "$TAG" ../$ROOTDIR ~/rpmbuild "$PACKAGEDIR" &> package.log
-    if [ $? -ne 0 ]; then
-        echo "RPM package build failed, refer to $PWD/package.log."
-    fi
-) &
- 
-wait
+# Documentation
+DOCSDIR="${BUILTDIR}/usr/share/doc/openra/"
 
+mkdir -p "${DOCSDIR}"
+
+curl -s -L -O https://raw.githubusercontent.com/wiki/OpenRA/OpenRA/Changelog.md
+markdown Changelog.md > "${DOCSDIR}/Changelog.html"
+rm Changelog.md
+
+markdown ${SRCDIR}/README.md > "${DOCSDIR}/README.html"
+markdown ${SRCDIR}/CONTRIBUTING.md > "${DOCSDIR}/CONTRIBUTING.html"
+
+pushd deb >/dev/null
+echo "Building Debian package"
+./buildpackage.sh "${TAG}" "${BUILTDIR}" "${OUTPUTDIR}"
+if [ $? -ne 0 ]; then
+    echo "Debian package build failed."
+fi
+popd >/dev/null
+
+rm -rf "${BUILTDIR}"

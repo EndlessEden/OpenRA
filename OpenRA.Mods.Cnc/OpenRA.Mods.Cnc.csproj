@@ -10,7 +10,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>OpenRA.Mods.Cnc</RootNamespace>
     <AssemblyName>OpenRA.Mods.Cnc</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -31,105 +30,142 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <OutputPath>bin\Debug\</OutputPath>
-    <CustomCommands>
-      <CustomCommands>
-        <Command type="AfterBuild" command="cp ${TargetFile} ../mods/cnc" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="mono RALint.exe cnc" workingdir="${ProjectDir}/../" />
-      </CustomCommands>
-    </CustomCommands>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Optimize>true</Optimize>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Xml.Linq">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Data.DataSetExtensions">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Activities\HarvesterDockSequence.cs" />
-    <Compile Include="CncLoadScreen.cs" />
-    <Compile Include="CncMenuPaletteEffect.cs" />
-    <Compile Include="DeadBuildingState.cs" />
-    <Compile Include="Effects\IonCannon.cs" />
-    <Compile Include="IonCannonPower.cs" />
-    <Compile Include="Missions\CncShellmapScript.cs" />
-    <Compile Include="Missions\Gdi01Script.cs" />
-    <Compile Include="PoisonedByTiberium.cs" />
-    <Compile Include="ProductionAirdrop.cs" />
-    <Compile Include="ProductionQueueFromSelection.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RenderBuildingRefinery.cs" />
-    <Compile Include="RenderCargo.cs" />
-    <Compile Include="RenderGunboat.cs" />
-    <Compile Include="SpawnViceroid.cs" />
-    <Compile Include="TiberiumRefinery.cs" />
-    <Compile Include="Widgets\CncWidgetUtils.cs" />
-    <Compile Include="Widgets\CncWorldInteractionControllerWidget.cs" />
-    <Compile Include="Widgets\LogicTickerWidget.cs" />
-    <Compile Include="Widgets\Logic\ButtonTooltipLogic.cs" />
-    <Compile Include="Widgets\Logic\CncConquestObjectivesLogic.cs" />
-    <Compile Include="Widgets\Logic\CncIngameChromeLogic.cs" />
-    <Compile Include="Widgets\Logic\CncIngameMenuLogic.cs" />
-    <Compile Include="Widgets\Logic\CncInstallFromCDLogic.cs" />
-    <Compile Include="Widgets\Logic\CncInstallLogic.cs" />
-    <Compile Include="Widgets\Logic\CncMenuLogic.cs" />
-    <Compile Include="Widgets\Logic\CncMusicPlayerLogic.cs" />
-    <Compile Include="Widgets\Logic\CncPerfDebugLogic.cs" />
-    <Compile Include="Widgets\Logic\CncSettingsLogic.cs" />
-    <Compile Include="Widgets\Logic\ProductionTooltipLogic.cs" />
-    <Compile Include="Widgets\Logic\SimpleTooltipLogic.cs" />
-    <Compile Include="Widgets\Logic\SupportPowerTooltipLogic.cs" />
-    <Compile Include="Widgets\Logic\WorldTooltipLogic.cs" />
-    <Compile Include="Widgets\ProductionPaletteWidget.cs" />
-    <Compile Include="Widgets\ProductionTabsWidget.cs" />
-    <Compile Include="Widgets\SupportPowersWidget.cs" />
-    <Compile Include="Widgets\ToggleButtonWidget.cs" />
-    <Compile Include="Widgets\TooltipContainerWidget.cs" />
-    <Compile Include="WithFire.cs" />
-    <Compile Include="WithRoof.cs" />
-    <Compile Include="Widgets\ResourceBarWidget.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\OpenRA.FileFormats\OpenRA.FileFormats.csproj">
-      <Project>{BDAEAB25-991E-46A7-AF1E-4F0E03358DAA}</Project>
-      <Name>OpenRA.FileFormats</Name>
+    <Reference Include="Eluant">
+      <HintPath>..\thirdparty\download\Eluant.dll</HintPath>
       <Private>False</Private>
-    </ProjectReference>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CncLoadScreen.cs" />
+    <Compile Include="Traits\Attack\AttackPopupTurreted.cs" />
+    <Compile Include="Traits\Buildings\ProductionAirdrop.cs" />
+    <Compile Include="Traits\Render\WithGunboatBody.cs" />
+    <Compile Include="Traits\Render\WithCargo.cs" />
+    <Compile Include="Traits\Render\WithDeliveryAnimation.cs" />
+    <Compile Include="Traits\Render\WithReloadingSpriteTurret.cs" />
+    <Compile Include="Traits\Render\WithRoof.cs" />
+    <Compile Include="Traits\SupportPowers\IonCannonPower.cs" />
+    <Compile Include="UtilityCommands\ImportTiberianDawnLegacyMapCommand.cs" />
+    <Compile Include="Projectiles\IonCannon.cs" />
+    <Compile Include="Activities\VoxelHarvesterDockSequence.cs" />
+    <Compile Include="SpriteLoaders\TmpTSLoader.cs" />
+    <Compile Include="Traits\Buildings\TiberianSunRefinery.cs" />
+    <Compile Include="Traits\Render\WithBuildingBib.cs" />
+    <Compile Include="Traits\Render\WithDockingOverlay.cs" />
+    <Compile Include="Traits\Render\WithPermanentInjury.cs" />
+    <Compile Include="Traits\Render\WithVoxelWalkerBody.cs" />
+    <Compile Include="Traits\Render\WithVoxelUnloadBody.cs" />
+    <Compile Include="Traits\SupportPowers\AttackOrderPower.cs" />
+    <Compile Include="UtilityCommands\LegacyTilesetImporter.cs" />
+    <Compile Include="Traits\World\TSShroudPalette.cs" />
+    <Compile Include="UtilityCommands\ImportTSMapCommand.cs" />
+    <Compile Include="Player\PlaceSimpleBeacon.cs" />
+    <Compile Include="Effects\AnimatedBeacon.cs" />
+    <Compile Include="UtilityCommands\LegacyRulesImporter.cs" />
+    <Compile Include="UtilityCommands\LegacySequenceImporter.cs" />
+    <Compile Include="Widgets\Logic\PreReleaseWarningPrompt.cs" />
+    <Compile Include="Traits\Attack\AttackTesla.cs" />
+    <Compile Include="Traits\Render\WithTeslaChargeAnimation.cs" />
+    <Compile Include="Traits\Render\WithTeslaChargeOverlay.cs" />
+    <Compile Include="Activities\Infiltrate.cs" />
+    <Compile Include="Activities\LayMines.cs" />
+    <Compile Include="Activities\Leap.cs" />
+    <Compile Include="Activities\Teleport.cs" />
+    <Compile Include="Effects\GpsDot.cs" />
+    <Compile Include="Effects\GpsSatellite.cs" />
+    <Compile Include="Effects\SatelliteLaunch.cs" />
+    <Compile Include="Projectiles\TeslaZap.cs" />
+    <Compile Include="Graphics\TeslaZapRenderable.cs" />
+    <Compile Include="Scripting\Properties\InfiltrateProperties.cs" />
+    <Compile Include="Scripting\Properties\DisguiseProperties.cs" />
+    <Compile Include="Traits\Attack\AttackLeap.cs" />
+    <Compile Include="Traits\Buildings\ClonesProducedUnits.cs" />
+    <Compile Include="Traits\Chronoshiftable.cs" />
+    <Compile Include="Traits\Cloneable.cs" />
+    <Compile Include="Traits\Disguise.cs" />
+    <Compile Include="Traits\EnergyWall.cs" />
+    <Compile Include="Traits\FrozenUnderFogUpdatedByGps.cs" />
+    <Compile Include="Traits\HarvesterHuskModifier.cs" />
+    <Compile Include="Traits\Infiltration\InfiltrateForCash.cs" />
+    <Compile Include="Traits\Infiltration\InfiltrateForExploration.cs" />
+    <Compile Include="Traits\Infiltration\InfiltrateForPowerOutage.cs" />
+    <Compile Include="Traits\Infiltration\InfiltrateForSupportPower.cs" />
+    <Compile Include="Traits\Infiltration\Infiltrates.cs" />
+    <Compile Include="Traits\MadTank.cs" />
+    <Compile Include="Traits\Mine.cs" />
+    <Compile Include="Traits\Minelayer.cs" />
+    <Compile Include="Traits\PaletteEffects\ChronoshiftPaletteEffect.cs" />
+    <Compile Include="Traits\PaletteEffects\LightPaletteRotator.cs" />
+    <Compile Include="Traits\PortableChrono.cs" />
+    <Compile Include="Traits\Render\RenderJammerCircle.cs" />
+    <Compile Include="Traits\Render\WithLandingCraftAnimation.cs" />
+    <Compile Include="Traits\Render\RenderShroudCircle.cs" />
+    <Compile Include="Traits\SupportPowers\ChronoshiftPower.cs" />
+    <Compile Include="Traits\SupportPowers\GpsPower.cs" />
+    <Compile Include="Traits\GpsWatcher.cs" />
+    <Compile Include="Scripting\Properties\ChronosphereProperties.cs" />
+    <Compile Include="Traits\Render\WithDisguisingInfantryBody.cs" />
+    <Compile Include="UtilityCommands\ImportRedAlertLegacyMapCommand.cs" />
+    <Compile Include="Traits\Infiltration\InfiltrateForDecoration.cs" />
+    <Compile Include="TraitsInterfaces.cs" />
+    <Compile Include="FileSystem\BagFile.cs" />
+    <Compile Include="FileSystem\BigFile.cs" />
+    <Compile Include="FileSystem\MixFile.cs" />
+    <Compile Include="FileSystem\PackageEntry.cs" />
+    <Compile Include="FileSystem\Pak.cs" />
+    <Compile Include="UtilityCommands\ListMixContentsCommand.cs" />
+    <Compile Include="FileFormats\Blowfish.cs" />
+    <Compile Include="FileFormats\BlowfishKeyProvider.cs" />
+    <Compile Include="FileFormats\IdxEntry.cs" />
+    <Compile Include="FileFormats\IdxReader.cs" />
+    <Compile Include="FileFormats\XccGlobalDatabase.cs" />
+    <Compile Include="FileFormats\XccLocalDatabase.cs" />
+    <Compile Include="FileFormats\CRC32.cs" />
+    <Compile Include="Graphics\VoxelModelSequenceLoader.cs" />
+    <Compile Include="Graphics\VoxelLoader.cs" />
+    <Compile Include="Graphics\Voxel.cs" />
+    <Compile Include="FileFormats\HvaReader.cs" />
+    <Compile Include="FileFormats\VxlReader.cs" />
+    <Compile Include="Traits\World\VoxelNormalsPalette.cs" />
+    <Compile Include="Traits\TDGunboat.cs" />
+    <Compile Include="Traits\Attack\AttackTDGunboatTurreted.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\OpenRA.Game\OpenRA.Game.csproj">
       <Project>{0DFB103F-2962-400F-8C6D-E2C28CCBA633}</Project>
       <Name>OpenRA.Game</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\OpenRA.Mods.RA\OpenRA.Mods.RA.csproj">
-      <Project>{4A8A43B5-A9EF-4ED0-99DD-4BAB10A0DB6E}</Project>
-      <Name>OpenRA.Mods.RA</Name>
+    <ProjectReference Include="..\OpenRA.Mods.Common\OpenRA.Mods.Common.csproj">
+      <Project>{FE6C8CC0-2F07-442A-B29F-17617B3B7FC6}</Project>
+      <Name>OpenRA.Mods.Common</Name>
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
@@ -151,16 +187,29 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
   <Target Name="AfterBuild">
+    <MakeDir Directories="$(SolutionDir)mods/common/"/>
+    <Copy
+      SourceFiles="$(TargetPath)"
+      DestinationFolder="$(SolutionDir)mods/common/"/>
+    <!--
+      csc generates .pdb symbol files (not `.dll.pdb`).
+      mcs generates .dll.mdb symbol files.
+    -->
+    <Copy
+      SourceFiles="$(TargetDir)$(TargetName).pdb"
+      DestinationFolder="$(SolutionDir)mods/common/"
+      Condition="Exists('$(TargetDir)$(TargetName).pdb')"/>
+    <Copy
+      SourceFiles="$(TargetPath).mdb"
+      DestinationFolder="$(SolutionDir)mods/common/"
+      Condition="Exists('$(TargetPath).mdb')"/>
+    <!-- Uncomment these lines when debugging or adding to this target
+    <Message Text="DEBUG OS:                     $(OS)"/>
+    <Message Text="DEBUG SolutionDir:            $(SolutionDir)"/>
+    <Message Text="DEBUG TargetPath:             $(TargetPath)"/>
+    <Message Text="DEBUG TargetDir:              $(TargetDir)"/>
+    <Message Text="DEBUG TargetName:             $(TargetName)"/>
+    -->
   </Target>
-  -->
-  <PropertyGroup>
-    <PostBuildEvent>mkdir "$(SolutionDir)mods/cnc/"
-copy "$(TargetPath)" "$(SolutionDir)mods/cnc/"
-cd "$(SolutionDir)"</PostBuildEvent>
-  </PropertyGroup>
 </Project>

@@ -1,22 +1,41 @@
 vice:
 	idle:
-		Start: 0
 		Length: *
-	muzzle: chem
-		Start: 0
-		Length: 13
+	muzzle:
+		Combine:
+			chem-n:
+				Length: *
+				Offset: 1,2
+			chem-nw:
+				Length: *
+				Offset: 8,2
+			chem-w:
+				Length: *
+				Offset: 8,-3
+			chem-sw:
+				Length: *
+				Offset: 7,-6
+			chem-s:
+				Length: *
+				Offset: 1,-6
+			chem-se:
+				Length: *
+				Offset: -5,-6
+			chem-e:
+				Length: *
+				Offset: -7,-3
+			chem-ne:
+				Length: *
+				Offset: -3,2
 		Facings: 8
+		Length: 13
+	icon: viceicnh
+
 pvice:
-	idle:
-		Start: 0
-		Length: *
-	muzzle: chem
-		Start: 0
-		Length: 13
-		Facings: 8
+	Inherits: vice
+
 e1:
 	stand:
-		Start: 0
 		Facings: 8
 	stand2:
 		Start: 8
@@ -25,18 +44,24 @@ e1:
 		Start: 16
 		Length: 6
 		Facings: 8
+		Tick: 100
 	shoot:
 		Start: 64
 		Length: 8
 		Facings: 8
 	prone-stand:
 		Start: 144
-		Length: 4
+		Stride: 4
+		Facings: 8
+	prone-stand2:
+		Start: 144
+		Stride: 4
 		Facings: 8
 	prone-run:
 		Start: 144
 		Length: 4
 		Facings: 8
+		Tick: 100
 	# stand -> prone transition
 	liedown:
 		Start: 128
@@ -107,10 +132,12 @@ e1:
 		Start: 16
 		Length: 4
 		Tick: 1600
+		ZOffset: -511
+	icon: e1icnh.tem
+		AddExtension: False
 
 e2:
 	stand:
-		Start: 0
 		Facings: 8
 	stand2:
 		Start: 8
@@ -119,7 +146,8 @@ e2:
 		Start: 16
 		Length: 6
 		Facings: 8
-	shoot:
+		Tick: 100
+	throw:
 		Start: 64
 		Length: 20
 		Facings: 8
@@ -135,13 +163,18 @@ e2:
 		Facings: 8
 	prone-stand:
 		Start: 240
-		Length: 4
+		Stride: 4
+		Facings: 8
+	prone-stand2:
+		Start: 240
+		Stride: 4
 		Facings: 8
 	prone-run:
 		Start: 240
 		Length: 4
 		Facings: 8
-	prone-shoot:
+		Tick: 100
+	prone-throw:
 		Start: 288
 		Length: 12
 		Facings: 8
@@ -192,10 +225,12 @@ e2:
 		Start: 16
 		Length: 4
 		Tick: 1600
+		ZOffset: -511
+	icon: e2icnh.tem
+		AddExtension: False
 
 e3:
 	stand:
-		Start: 0
 		Facings: 8
 	stand2:
 		Start: 8
@@ -204,6 +239,7 @@ e3:
 		Start: 16
 		Length: 6
 		Facings: 8
+		Tick: 100
 	shoot:
 		Start: 64
 		Length: 8
@@ -220,12 +256,17 @@ e3:
 		Facings: 8
 	prone-stand:
 		Start: 144
-		Length: 4
+		Stride: 4
+		Facings: 8
+	prone-stand2:
+		Start: 144
+		Stride: 4
 		Facings: 8
 	prone-run:
 		Start: 144
 		Length: 4
 		Facings: 8
+		Tick: 100
 	prone-shoot:
 		Start: 192
 		Length: 10
@@ -277,10 +318,12 @@ e3:
 		Start: 16
 		Length: 4
 		Tick: 1600
+		ZOffset: -511
+	icon: e3icnh.tem
+		AddExtension: False
 
 e4:
 	stand:
-		Start: 0
 		Facings: 8
 	stand2:
 		Start: 8
@@ -289,6 +332,7 @@ e4:
 		Start: 16
 		Length: 6
 		Facings: 8
+		Tick: 100
 	shoot:
 		Start: 64
 		Length: 16
@@ -305,12 +349,17 @@ e4:
 		Facings: 8
 	prone-stand:
 		Start: 208
-		Length: 4
+		Stride: 4
+		Facings: 8
+	prone-stand2:
+		Start: 208
+		Stride: 4
 		Facings: 8
 	prone-run:
 		Start: 208
 		Length: 4
 		Facings: 8
+		Tick: 100
 	prone-shoot:
 		Start: 256
 		Length: 16
@@ -362,13 +411,40 @@ e4:
 		Start: 16
 		Length: 4
 		Tick: 1600
-	muzzle: flame
-		Start: 0
-		Length: 13
+		ZOffset: -511
+	muzzle:
+		Combine:
+			flame-n:
+				Length: *
+				Offset: 1,6
+			flame-nw:
+				Length: *
+				Offset: 8,7
+			flame-w:
+				Length: *
+				Offset: 8,2
+			flame-sw:
+				Length: *
+				Offset: 7,-2
+			flame-s:
+				Length: *
+				Offset: 1,-2
+			flame-se:
+				Length: *
+				Offset: -5,-2
+			flame-e:
+				Length: *
+				Offset: -7,2
+			flame-ne:
+				Length: *
+				Offset: -7,8
 		Facings: 8
+		Length: 13
+	icon: e4icnh.tem
+		AddExtension: False
+
 e5:
 	stand:
-		Start: 0
 		Facings: 8
 	stand2:
 		Start: 8
@@ -377,6 +453,7 @@ e5:
 		Start: 16
 		Length: 6
 		Facings: 8
+		Tick: 100
 	shoot:
 		Start: 64
 		Length: 16
@@ -393,12 +470,17 @@ e5:
 		Facings: 8
 	prone-stand:
 		Start: 208
-		Length: 4
+		Stride: 4
+		Facings: 8
+	prone-stand2:
+		Start: 208
+		Stride: 4
 		Facings: 8
 	prone-run:
 		Start: 208
 		Length: 4
 		Facings: 8
+		Tick: 100
 	prone-shoot:
 		Start: 256
 		Length: 16
@@ -450,13 +532,40 @@ e5:
 		Start: 16
 		Length: 4
 		Tick: 1600
-	muzzle: chem
-		Start: 0
-		Length: 13
+		ZOffset: -511
+	muzzle:
+		Combine:
+			chem-n:
+				Length: *
+				Offset: 1,2
+			chem-nw:
+				Length: *
+				Offset: 8,2
+			chem-w:
+				Length: *
+				Offset: 8,-3
+			chem-sw:
+				Length: *
+				Offset: 7,-6
+			chem-s:
+				Length: *
+				Offset: 1,-6
+			chem-se:
+				Length: *
+				Offset: -5,-6
+			chem-e:
+				Length: *
+				Offset: -7,-3
+			chem-ne:
+				Length: *
+				Offset: -3,2
 		Facings: 8
+		Length: 13
+	icon: e5icnh.tem
+		AddExtension: False
+
 e6:
 	stand:
-		Start: 0
 		Facings: 8
 	stand2:
 		Start: 8
@@ -465,6 +574,7 @@ e6:
 		Start: 16
 		Length: 6
 		Facings: 8
+		Tick: 100
 	# stand -> prone transition
 	liedown:
 		Start: 66
@@ -477,12 +587,17 @@ e6:
 		Facings: 8
 	prone-stand:
 		Start: 82
-		Length: 4
+		Stride: 4
+		Facings: 8
+	prone-stand2:
+		Start: 82
+		Stride: 4
 		Facings: 8
 	prone-run:
 		Start: 82
 		Length: 4
 		Facings: 8
+		Tick: 100
 	idle1:
 		Start: 114
 		Length: 6
@@ -530,9 +645,12 @@ e6:
 		Start: 16
 		Length: 4
 		Tick: 1600
+		ZOffset: -511
+	icon: e6icnh.tem
+		AddExtension: False
+
 rmbo:
 	stand:
-		Start: 0
 		Facings: 8
 	stand2:
 		Start: 8
@@ -541,6 +659,7 @@ rmbo:
 		Start: 16
 		Length: 6
 		Facings: 8
+		Tick: 100
 	shoot:
 		Start: 64
 		Length: 4
@@ -557,12 +676,17 @@ rmbo:
 		Facings: 8
 	prone-stand:
 		Start: 112
-		Length: 4
+		Stride: 4
+		Facings: 8
+	prone-stand2:
+		Start: 112
+		Stride: 4
 		Facings: 8
 	prone-run:
 		Start: 112
 		Length: 4
 		Facings: 8
+		Tick: 100
 	prone-shoot:
 		Start: 160
 		Length: 4
@@ -618,3 +742,6 @@ rmbo:
 		Start: 16
 		Length: 4
 		Tick: 1600
+		ZOffset: -511
+	icon: rmboicnh.tem
+		AddExtension: False

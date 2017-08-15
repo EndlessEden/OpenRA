@@ -1,40 +1,103 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2011 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
- * as published by the Free Software Foundation. For more information,
- * see COPYING.
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
  */
 #endregion
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.Linq;
-using OpenRA.FileFormats;
-using OpenRA.GameRules;
+using OpenRA.Activities;
 using OpenRA.Graphics;
 using OpenRA.Network;
+using OpenRA.Primitives;
 
 namespace OpenRA.Traits
 {
+	public sealed class RequireExplicitImplementationAttribute : Attribute { }
+
+	[Flags]
+	public enum DamageState
+	{
+		Undamaged = 1,
+		Light = 2,
+		Medium = 4,
+		Heavy = 8,
+		Critical = 16,
+		Dead = 32
+	}
+
+	public interface IHealth
+	{
+		DamageState DamageState { get; }
+		int HP { get; }
+		int MaxHP { get; }
+		int DisplayHP { get; }
+		bool IsDead { get; }
+
+		void InflictDamage(Actor self, Actor attacker, Damage damage, bool ignoreModifiers);
+		void Kill(Actor self, Actor attacker);
+	}
+
 	// depends on the order of pips in WorldRenderer.cs!
-	public enum PipType { Transparent, Green, Yellow, Red, Gray, Blue };
-	public enum TagType { None, Fake, Primary };
-	public enum Stance { Enemy, Neutral, Ally };
+	public enum PipType { Transparent, Green, Yellow, Red, Gray, Blue, Ammo, AmmoEmpty }
+
+	[Flags]
+	public enum Stance
+	{
+		None = 0,
+		Enemy = 1,
+		Neutral = 2,
+		Ally = 4,
+	}
+
+	public static class StanceExts
+	{
+		public static bool HasStance(this Stance s, Stance stance)
+		{
+			// PERF: Enum.HasFlag is slower and requires allocations.
+			return (s & stance) == stance;
+		}
+	}
 
 	public class AttackInfo
 	{
+		public Damage Damage;
 		public Actor Attacker;
-		public WarheadInfo Warhead;
-		public int Damage;
 		public DamageState DamageState;
 		public DamageState PreviousDamageState;
 	}
 
+	public class Damage
+	{
+		public readonly int Value;
+		public readonly HashSet<string> DamageTypes;
+
+		public Damage(int damage, HashSet<string> damageTypes)
+		{
+			Value = damage;
+			DamageTypes = damageTypes;
+		}
+
+		public Damage(int damage)
+		{
+			Value = damage;
+			DamageTypes = new HashSet<string>();
+		}
+	}
+
 	public interface ITick { void Tick(Actor self); }
-	public interface IRender { IEnumerable<Renderable> Render(Actor self); }
+	public interface ITickRender { void TickRender(WorldRenderer wr, Actor self); }
+	public interface IRender { IEnumerable<IRenderable> Render(Actor self, WorldRenderer wr); }
+
+	public interface IAutoSelectionSizeInfo : ITraitInfoInterface { }
+	public interface IAutoSelectionSize { int2 SelectionSize(Actor self); }
 
 	public interface IIssueOrder
 	{
@@ -42,53 +105,116 @@ namespace OpenRA.Traits
 		Order IssueOrder(Actor self, IOrderTargeter order, Target target, bool queued);
 	}
 
+	[Flags] public enum TargetModifiers { None = 0, ForceAttack = 1, ForceQueue = 2, ForceMove = 4 }
+
+	public static class TargetModifiersExts
+	{
+		public static bool HasModifier(this TargetModifiers self, TargetModifiers m)
+		{
+			// PERF: Enum.HasFlag is slower and requires allocations.
+			return (self & m) == m;
+		}
+	}
+
 	public interface IOrderTargeter
 	{
 		string OrderID { get; }
 		int OrderPriority { get; }
-		bool CanTargetActor(Actor self, Actor target, bool forceAttack, bool forceQueue, ref string cursor);
-		bool CanTargetLocation(Actor self, CPos location, List<Actor> actorsAtLocation, bool forceAttack, bool forceQueue, ref string cursor);
+		bool CanTarget(Actor self, Target target, List<Actor> othersAtTarget, ref TargetModifiers modifiers, ref string cursor);
 		bool IsQueued { get; }
+		bool TargetOverridesSelection(TargetModifiers modifiers);
 	}
 
 	public interface IResolveOrder { void ResolveOrder(Actor self, Order order); }
 	public interface IValidateOrder { bool OrderValidation(OrderManager orderManager, World world, int clientId, Order order); }
 	public interface IOrderVoice { string VoicePhraseForOrder(Actor self, Order order); }
-	public interface INotify { void Play(Player p, string notification); }
-	public interface INotifySold { void Selling(Actor self); void Sold(Actor self); }
+	public interface INotifyCreated { void Created(Actor self); }
+	public interface INotifyAddedToWorld { void AddedToWorld(Actor self); }
+	public interface INotifyRemovedFromWorld { void RemovedFromWorld(Actor self); }
 	public interface INotifyDamage { void Damaged(Actor self, AttackInfo e); }
-	public interface INotifyDamageStateChanged { void DamageStateChanged(Actor self, AttackInfo e); }
 	public interface INotifyKilled { void Killed(Actor self, AttackInfo e); }
+	public interface INotifyActorDisposing { void Disposing(Actor self); }
 	public interface INotifyAppliedDamage { void AppliedDamage(Actor self, Actor damaged, AttackInfo e); }
-	public interface INotifyBuildComplete { void BuildingComplete(Actor self); }
-	public interface INotifyProduction { void UnitProduced(Actor self, Actor other, CPos exit); }
-	public interface INotifyCapture { void OnCapture(Actor self, Actor captor, Player oldOwner, Player newOwner); }
-	public interface INotifyOtherCaptured { void OnActorCaptured(Actor self, Actor captured, Actor captor, Player oldOwner, Player newOwner); }
-	public interface IAcceptSpy { void OnInfiltrate(Actor self, Actor spy); }
-	public interface IStoreOre { int Capacity { get; } }
-	public interface IToolTip
+	public interface INotifyOwnerChanged { void OnOwnerChanged(Actor self, Player oldOwner, Player newOwner); }
+	public interface INotifyEffectiveOwnerChanged { void OnEffectiveOwnerChanged(Actor self, Player oldEffectiveOwner, Player newEffectiveOwner); }
+
+	public interface ISeedableResource { void Seed(Actor self); }
+
+	public interface ISelectionDecorationsInfo : ITraitInfoInterface
 	{
-		string Name();
-		Player Owner();
-		Stance Stance();
+		int[] SelectionBoxBounds { get; }
 	}
 
+	public interface IVoiced
+	{
+		string VoiceSet { get; }
+		bool PlayVoice(Actor self, string phrase, string variant);
+		bool PlayVoiceLocal(Actor self, string phrase, string variant, float volume);
+		bool HasVoice(Actor self, string voice);
+	}
+
+	public interface IStoreResources { int Capacity { get; } }
+
+	public interface IEffectiveOwner
+	{
+		bool Disguised { get; }
+		Player Owner { get; }
+	}
+
+	public interface ITooltip
+	{
+		ITooltipInfo TooltipInfo { get; }
+		Player Owner { get; }
+	}
+
+	public interface ITooltipInfo : ITraitInfoInterface
+	{
+		string TooltipForPlayerStance(Stance stance);
+		bool IsOwnerRowVisible { get; }
+	}
+
+	public interface IProvideTooltipInfo
+	{
+		bool IsTooltipVisible(Player forPlayer);
+		string TooltipText { get; }
+	}
+
+	public interface IDisabledTrait { bool IsTraitDisabled { get; } }
 	public interface IDisable { bool Disabled { get; } }
 	public interface IExplodeModifier { bool ShouldExplode(Actor self); }
 	public interface IHuskModifier { string HuskActor(Actor self); }
 
 	public interface IRadarSignature
 	{
-		IEnumerable<CPos> RadarSignatureCells(Actor self);
-		Color RadarSignatureColor(Actor self);
+		IEnumerable<Pair<CPos, Color>> RadarSignatureCells(Actor self);
 	}
 
-	public interface IVisibilityModifier { bool IsVisible(Shroud s, Actor self); }
-	public interface IRadarColorModifier { Color RadarColorOverride(Actor self); }
-	public interface IHasLocation { PPos PxPosition { get; } }
+	public interface IDefaultVisibilityInfo : ITraitInfoInterface { }
+	public interface IDefaultVisibility { bool IsVisible(Actor self, Player byPlayer); }
+	public interface IVisibilityModifier { bool IsVisible(Actor self, Player byPlayer); }
 
-	public interface IOccupySpace : IHasLocation
+	public interface IFogVisibilityModifier
 	{
+		bool IsVisible(Actor actor);
+		bool HasFogVisibility();
+	}
+
+	public interface IRadarColorModifier { Color RadarColorOverride(Actor self, Color color); }
+
+	public interface ITargetableCells
+	{
+		IEnumerable<Pair<CPos, SubCell>> TargetableCells();
+	}
+
+	public interface IOccupySpaceInfo : ITraitInfoInterface
+	{
+		IReadOnlyDictionary<CPos, SubCell> OccupiedCells(ActorInfo info, CPos location, SubCell subCell = SubCell.Any);
+		bool SharesCell { get; }
+	}
+
+	public interface IOccupySpace
+	{
+		WPos CenterPosition { get; }
 		CPos TopLeft { get; }
 		IEnumerable<Pair<CPos, SubCell>> OccupiedCells();
 	}
@@ -108,91 +234,115 @@ namespace OpenRA.Traits
 					nearestDistance = dist;
 				}
 			}
+
 			return nearest;
 		}
 	}
 
-	public interface INotifyAttack { void Attacking(Actor self, Target target); }
-	public interface IRenderModifier { IEnumerable<Renderable> ModifyRender(Actor self, IEnumerable<Renderable> r); }
-	public interface IDamageModifier { float GetDamageModifier(Actor attacker, WarheadInfo warhead); }
-	public interface ISpeedModifier { decimal GetSpeedModifier(); }
-	public interface IFirepowerModifier { float GetFirepowerModifier(); }
-	public interface IPalette { void InitPalette(WorldRenderer wr); }
-	public interface IPaletteModifier { void AdjustPalette(Dictionary<string, Palette> b); }
-	public interface IPips { IEnumerable<PipType> GetPips(Actor self); }
-	public interface ITags { IEnumerable<TagType> GetTags(); }
-	public interface ISelectionBar { float GetValue(); Color GetColor(); }
-
-	public interface ITeleportable : IHasLocation /* crap name! */
+	public enum SubCell { Invalid = int.MinValue, Any = int.MinValue / 2, FullCell = 0, First = 1 }
+	public interface IActorMap
 	{
-		bool CanEnterCell(CPos location);
-		void SetPosition(Actor self, CPos cell);
-		void SetPxPosition(Actor self, PPos px);
-		void AdjustPxPosition(Actor self, PPos px);	/* works like SetPxPosition, but visual only */
+		IEnumerable<Actor> GetActorsAt(CPos a);
+		IEnumerable<Actor> GetActorsAt(CPos a, SubCell sub);
+		bool HasFreeSubCell(CPos cell, bool checkTransient = true);
+		SubCell FreeSubCell(CPos cell, SubCell preferredSubCell = SubCell.Any, bool checkTransient = true);
+		SubCell FreeSubCell(CPos cell, SubCell preferredSubCell, Func<Actor, bool> checkIfBlocker);
+		bool AnyActorsAt(CPos a);
+		bool AnyActorsAt(CPos a, SubCell sub, bool checkTransient = true);
+		bool AnyActorsAt(CPos a, SubCell sub, Func<Actor, bool> withCondition);
+		void AddInfluence(Actor self, IOccupySpace ios);
+		void RemoveInfluence(Actor self, IOccupySpace ios);
+		int AddCellTrigger(CPos[] cells, Action<Actor> onEntry, Action<Actor> onExit);
+		void RemoveCellTrigger(int id);
+		int AddProximityTrigger(WPos pos, WDist range, WDist vRange, Action<Actor> onEntry, Action<Actor> onExit);
+		void RemoveProximityTrigger(int id);
+		void UpdateProximityTrigger(int id, WPos newPos, WDist newRange, WDist newVRange);
+		void AddPosition(Actor a, IOccupySpace ios);
+		void RemovePosition(Actor a, IOccupySpace ios);
+		void UpdatePosition(Actor a, IOccupySpace ios);
+		IEnumerable<Actor> ActorsInBox(WPos a, WPos b);
 	}
 
-	public interface IMove : ITeleportable { int Altitude { get; set; } }
-	public interface INotifyBlockingMove { void OnNotifyBlockingMove(Actor self, Actor blocking); }
+	public interface IRenderModifier { IEnumerable<IRenderable> ModifyRender(Actor self, WorldRenderer wr, IEnumerable<IRenderable> r); }
+	public interface ILoadsPalettes { void LoadPalettes(WorldRenderer wr); }
+	public interface ILoadsPlayerPalettes { void LoadPlayerPalettes(WorldRenderer wr, string playerName, HSLColor playerColor, bool replaceExisting); }
+	public interface IPaletteModifier { void AdjustPalette(IReadOnlyDictionary<string, MutablePalette> b); }
+	public interface IPips { IEnumerable<PipType> GetPips(Actor self); }
+
+	[RequireExplicitImplementation]
+	public interface ISelectionBar { float GetValue(); Color GetColor(); bool DisplayWhenEmpty { get; } }
+
+	public interface IPositionableInfo : IOccupySpaceInfo
+	{
+		bool CanEnterCell(World world, Actor self, CPos cell, Actor ignoreActor = null, bool checkTransientActors = true);
+	}
+
+	public interface IPositionable : IOccupySpace
+	{
+		bool IsLeavingCell(CPos location, SubCell subCell = SubCell.Any);
+		bool CanEnterCell(CPos location, Actor ignoreActor = null, bool checkTransientActors = true);
+		SubCell GetValidSubCell(SubCell preferred = SubCell.Any);
+		SubCell GetAvailableSubCell(CPos location, SubCell preferredSubCell = SubCell.Any, Actor ignoreActor = null, bool checkTransientActors = true);
+		void SetPosition(Actor self, CPos cell, SubCell subCell = SubCell.Any);
+		void SetPosition(Actor self, WPos pos);
+		void SetVisualPosition(Actor self, WPos pos);
+	}
+
+	public interface IMoveInfo : ITraitInfoInterface { }
+	public interface IMove
+	{
+		Activity MoveTo(CPos cell, int nearEnough);
+		Activity MoveTo(CPos cell, Actor ignoreActor);
+		Activity MoveWithinRange(Target target, WDist range);
+		Activity MoveWithinRange(Target target, WDist minRange, WDist maxRange);
+		Activity MoveFollow(Actor self, Target target, WDist minRange, WDist maxRange);
+		Activity MoveIntoWorld(Actor self, CPos cell, SubCell subCell = SubCell.Any);
+		Activity MoveToTarget(Actor self, Target target);
+		Activity MoveIntoTarget(Actor self, Target target);
+		Activity VisualMove(Actor self, WPos fromPos, WPos toPos);
+		CPos NearestMoveableCell(CPos target);
+		bool IsMoving { get; set; }
+		bool IsMovingVertically { get; set; }
+		bool CanEnterTargetNow(Actor self, Target target);
+	}
+
+	[RequireExplicitImplementation]
+	public interface ITemporaryBlocker
+	{
+		bool CanRemoveBlockage(Actor self, Actor blocking);
+		bool IsBlocking(Actor self, CPos cell);
+	}
 
 	public interface IFacing
 	{
-		int ROT { get; }
+		int TurnSpeed { get; }
 		int Facing { get; set; }
-		int InitialFacing { get; }
 	}
 
-	public interface IFacingInfo {}		/* tag interface for infoclasses whose corresponding trait has IFacing */
+	public interface IFacingInfo : ITraitInfoInterface { int GetInitialFacing(); }
 
-	public interface ICrushable
-	{
-		void OnCrush(Actor crusher);
-		void WarnCrush(Actor crusher);
-		bool CrushableBy(string[] crushClasses, Player owner);
-	}
-
-	public struct Renderable
-	{
-		public readonly Sprite Sprite;
-		public readonly float2 Pos;
-		public readonly string Palette;
-		public readonly int Z;
-		public readonly int ZOffset;
-		public float Scale;
-
-		public Renderable(Sprite sprite, float2 pos, string palette, int z, int zOffset, float scale)
-		{
-			Sprite = sprite;
-			Pos = pos;
-			Palette = palette;
-			Z = z;
-			ZOffset = zOffset;
-			Scale = scale; /* default */
-		}
-
-		public Renderable(Sprite sprite, float2 pos, string palette, int z)
-			: this(sprite, pos, palette, z, 0, 1f) { }
-
-		public Renderable(Sprite sprite, float2 pos, string palette, int z, float scale)
-			: this(sprite, pos, palette, z, 0, scale) { }
-
-		public Renderable WithScale(float newScale) { return new Renderable(Sprite, Pos, Palette, Z, ZOffset, newScale); }
-		public Renderable WithPalette(string newPalette) { return new Renderable(Sprite, Pos, newPalette, Z, ZOffset, Scale); }
-		public Renderable WithZOffset(int newOffset) { return new Renderable(Sprite, Pos, Palette, Z, newOffset, Scale); }
-		public Renderable WithPos(float2 newPos) { return new Renderable(Sprite, newPos, Palette, Z, ZOffset, Scale); }
-	}
-
-	public interface ITraitInfo { object Create(ActorInitializer init); }
+	public interface ITraitInfoInterface { }
+	public interface ITraitInfo : ITraitInfoInterface { object Create(ActorInitializer init); }
 
 	public class TraitInfo<T> : ITraitInfo where T : new() { public virtual object Create(ActorInitializer init) { return new T(); } }
+	public interface ILobbyCustomRulesIgnore { }
 
-	public interface Requires<T> where T : class { }
-	public interface UsesInit<T> where T : IActorInit { }
+	[SuppressMessage("StyleCop.CSharp.NamingRules", "SA1302:InterfaceNamesMustBeginWithI", Justification = "Not a real interface, but more like a tag.")]
+	public interface Requires<T> where T : class, ITraitInfoInterface { }
+	[SuppressMessage("StyleCop.CSharp.NamingRules", "SA1302:InterfaceNamesMustBeginWithI", Justification = "Not a real interface, but more like a tag.")]
+	public interface UsesInit<T> : ITraitInfo where T : IActorInit { }
 
+	public interface INotifySelected { void Selected(Actor self); }
 	public interface INotifySelection { void SelectionChanged(); }
-	public interface IWorldLoaded { void WorldLoaded(World w); }
+	public interface IWorldLoaded { void WorldLoaded(World w, WorldRenderer wr); }
 	public interface ICreatePlayers { void CreatePlayers(World w); }
 
-	public interface IBotInfo { string Name { get; } }
+	public interface IBotInfo : ITraitInfoInterface
+	{
+		string Type { get; }
+		string Name { get; }
+	}
+
 	public interface IBot
 	{
 		void Activate(Player p);
@@ -200,38 +350,107 @@ namespace OpenRA.Traits
 	}
 
 	public interface IRenderOverlay { void Render(WorldRenderer wr); }
+	public interface INotifyBecomingIdle { void OnBecomingIdle(Actor self); }
 	public interface INotifyIdle { void TickIdle(Actor self); }
 
-	public interface IBlocksBullets { }
+	public interface IRenderAboveWorld { void RenderAboveWorld(Actor self, WorldRenderer wr); }
+	public interface IRenderShroud { void RenderShroud(Shroud shroud, WorldRenderer wr); }
+	public interface IRenderAboveShroud { IEnumerable<IRenderable> RenderAboveShroud(Actor self, WorldRenderer wr); }
+	public interface IRenderAboveShroudWhenSelected { IEnumerable<IRenderable> RenderAboveShroud(Actor self, WorldRenderer wr); }
 
-	public interface IPostRender { void RenderAfterWorld(WorldRenderer wr, Actor self); }
-
-	public interface IPostRenderSelection { void RenderAfterWorld(WorldRenderer wr); }
-	public interface IPreRenderSelection { void RenderBeforeWorld(WorldRenderer wr, Actor self); }
-	public interface IRenderAsTerrain { IEnumerable<Renderable> RenderAsTerrain(Actor self); }
+	public interface ITargetableInfo : ITraitInfoInterface
+	{
+		HashSet<string> GetTargetTypes();
+	}
 
 	public interface ITargetable
 	{
-		string[] TargetTypes { get; }
-		IEnumerable<CPos> TargetableCells(Actor self);
+		// Check IsTraitEnabled or !IsTraitDisabled first
+		HashSet<string> TargetTypes { get; }
 		bool TargetableBy(Actor self, Actor byActor);
+		bool RequiresForceFire { get; }
 	}
 
-	public interface INotifyStanceChanged
+	public interface ITargetablePositions
 	{
-		void StanceChanged(Actor self, Player a, Player b,
-			Stance oldStance, Stance newStance);
+		IEnumerable<WPos> TargetablePositions(Actor self);
 	}
 
-	public interface ILintPass { void Run(Action<string> emitError, Action<string> emitWarning); }
+	public interface ILintPass { void Run(Action<string> emitError, Action<string> emitWarning, ModData modData); }
+	public interface ILintMapPass { void Run(Action<string> emitError, Action<string> emitWarning, Map map); }
+	public interface ILintRulesPass { void Run(Action<string> emitError, Action<string> emitWarning, Ruleset rules); }
 
-	public interface IObjectivesPanel { string ObjectivesPanel { get; } }
-	
-	public static class DisableExts
+	public interface IObjectivesPanel
 	{
-		public static bool IsDisabled(this Actor a)
+		string PanelName { get; }
+		int ExitDelay { get; }
+	}
+
+	public interface INotifyObjectivesUpdated
+	{
+		void OnPlayerWon(Player winner);
+		void OnPlayerLost(Player loser);
+		void OnObjectiveAdded(Player player, int objectiveID);
+		void OnObjectiveCompleted(Player player, int objectiveID);
+		void OnObjectiveFailed(Player player, int objectiveID);
+	}
+
+	public interface IGameOver { void GameOver(World world); }
+
+	public interface IWarhead
+	{
+		int Delay { get; }
+		bool IsValidAgainst(Actor victim, Actor firedBy);
+		bool IsValidAgainst(FrozenActor victim, Actor firedBy);
+		void DoImpact(Target target, Actor firedBy, IEnumerable<int> damageModifiers);
+	}
+
+	public interface IRulesetLoaded<TInfo> { void RulesetLoaded(Ruleset rules, TInfo info); }
+	public interface IRulesetLoaded : IRulesetLoaded<ActorInfo>, ITraitInfoInterface { }
+
+	[RequireExplicitImplementation]
+	public interface ILobbyOptions : ITraitInfoInterface
+	{
+		IEnumerable<LobbyOption> LobbyOptions(Ruleset rules);
+	}
+
+	public class LobbyOption
+	{
+		public readonly string Id;
+		public readonly string Name;
+		public readonly IReadOnlyDictionary<string, string> Values;
+		public readonly string DefaultValue;
+		public readonly bool Locked;
+
+		public LobbyOption(string id, string name, IReadOnlyDictionary<string, string> values, string defaultValue, bool locked)
 		{
-			return a.TraitsImplementing<IDisable>().Any(d => d.Disabled);
+			Id = id;
+			Name = name;
+			Values = values;
+			DefaultValue = defaultValue;
+			Locked = locked;
+		}
+
+		public virtual string ValueChangedMessage(string playerName, string newValue)
+		{
+			return playerName + " changed " + Name + " to " + Values[newValue] + ".";
+		}
+	}
+
+	public class LobbyBooleanOption : LobbyOption
+	{
+		static readonly Dictionary<string, string> BoolValues = new Dictionary<string, string>()
+		{
+			{ true.ToString(), "enabled" },
+			{ false.ToString(), "disabled" }
+		};
+
+		public LobbyBooleanOption(string id, string name, bool defaultValue, bool locked)
+			: base(id, name, new ReadOnlyDictionary<string, string>(BoolValues), defaultValue.ToString(), locked) { }
+
+		public override string ValueChangedMessage(string playerName, string newValue)
+		{
+			return playerName + " " + BoolValues[newValue] + " " + Name + ".";
 		}
 	}
 }

@@ -1,10 +1,11 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2011 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
- * as published by the Free Software Foundation. For more information,
- * see COPYING.
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
  */
 #endregion
 
@@ -14,7 +15,6 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using OpenRA.Server;
-using OpenRA.Support;
 
 namespace OpenRA.Network
 {
@@ -30,10 +30,10 @@ namespace OpenRA.Network
 	{
 		int LocalClientId { get; }
 		ConnectionState ConnectionState { get; }
-		void Send( int frame, List<byte[]> orders );
-		void SendImmediate( List<byte[]> orders );
-		void SendSync( int frame, byte[] syncData );
-		void Receive( Action<int, byte[]> packetFn );
+		void Send(int frame, List<byte[]> orders);
+		void SendImmediate(List<byte[]> orders);
+		void SendSync(int frame, byte[] syncData);
+		void Receive(Action<int, byte[]> packetFn);
 	}
 
 	class EchoConnection : IConnection
@@ -43,7 +43,9 @@ namespace OpenRA.Network
 			public int FromClient;
 			public byte[] Data;
 		}
-		protected List<ReceivedPacket> receivedPackets = new List<ReceivedPacket>();
+
+		readonly List<ReceivedPacket> receivedPackets = new List<ReceivedPacket>();
+		public ReplayRecorder Recorder { get; private set; }
 
 		public virtual int LocalClientId
 		{
@@ -55,159 +57,190 @@ namespace OpenRA.Network
 			get { return ConnectionState.PreConnecting; }
 		}
 
-		public virtual void Send( int frame, List<byte[]> orders )
+		public virtual void Send(int frame, List<byte[]> orders)
 		{
 			var ms = new MemoryStream();
-			ms.Write( BitConverter.GetBytes( frame ) );
-			foreach( var o in orders )
-				ms.Write( o );
-			Send( ms.ToArray() );
+			ms.Write(BitConverter.GetBytes(frame));
+			foreach (var o in orders)
+				ms.Write(o);
+			Send(ms.ToArray());
 		}
 
-		public virtual void SendImmediate( List<byte[]> orders )
+		public virtual void SendImmediate(List<byte[]> orders)
 		{
 			var ms = new MemoryStream();
-			ms.Write( BitConverter.GetBytes( (int)0 ) );
-			foreach( var o in orders )
-				ms.Write( o );
-			Send( ms.ToArray() );
+			ms.Write(BitConverter.GetBytes(0));
+			foreach (var o in orders)
+				ms.Write(o);
+			Send(ms.ToArray());
 		}
 
-		public virtual void SendSync( int frame, byte[] syncData )
+		public virtual void SendSync(int frame, byte[] syncData)
 		{
 			var ms = new MemoryStream();
-			ms.Write( BitConverter.GetBytes( frame ) );
-			ms.Write( syncData );
-			Send( ms.ToArray() );
+			ms.Write(BitConverter.GetBytes(frame));
+			ms.Write(syncData);
+			Send(ms.ToArray());
 		}
 
-		protected virtual void Send( byte[] packet )
+		protected virtual void Send(byte[] packet)
 		{
-			if( packet.Length == 0 )
+			if (packet.Length == 0)
 				throw new NotImplementedException();
-			lock( this )
-				receivedPackets.Add( new ReceivedPacket { FromClient = LocalClientId, Data = packet } );
+			AddPacket(new ReceivedPacket { FromClient = LocalClientId, Data = packet });
 		}
 
-		public virtual void Receive( Action<int, byte[]> packetFn )
+		protected void AddPacket(ReceivedPacket packet)
 		{
-			List<ReceivedPacket> packets;
-			lock( this )
+			lock (receivedPackets)
+				receivedPackets.Add(packet);
+		}
+
+		public virtual void Receive(Action<int, byte[]> packetFn)
+		{
+			ReceivedPacket[] packets;
+			lock (receivedPackets)
 			{
-				packets = receivedPackets;
-				receivedPackets = new List<ReceivedPacket>();
+				packets = receivedPackets.ToArray();
+				receivedPackets.Clear();
 			}
 
-			foreach( var p in packets )
-				packetFn( p.FromClient, p.Data );
+			foreach (var p in packets)
+			{
+				packetFn(p.FromClient, p.Data);
+				if (Recorder != null)
+					Recorder.Receive(p.FromClient, p.Data);
+			}
 		}
 
-		public virtual void Dispose() { }
+		public void StartRecording(Func<string> chooseFilename)
+		{
+			// If we have a previous recording then save/dispose it and start a new one.
+			if (Recorder != null)
+				Recorder.Dispose();
+			Recorder = new ReplayRecorder(chooseFilename);
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing && Recorder != null)
+				Recorder.Dispose();
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 	}
 
-	class NetworkConnection : EchoConnection
+	sealed class NetworkConnection : EchoConnection
 	{
-		TcpClient socket;
-		int clientId;
-		ConnectionState connectionState = ConnectionState.Connecting;
-		Thread t;
+		readonly TcpClient tcp;
+		readonly List<byte[]> queuedSyncPackets = new List<byte[]>();
+		volatile ConnectionState connectionState = ConnectionState.Connecting;
+		volatile int clientId;
+		bool disposed;
 
-		public NetworkConnection( string host, int port )
+		public NetworkConnection(string host, int port)
 		{
-			t = new Thread( _ =>
+			try
 			{
-				try
+				tcp = new TcpClient(host, port) { NoDelay = true };
+				new Thread(NetworkConnectionReceive)
 				{
-					socket = new TcpClient( host, port );
-					socket.NoDelay = true;
-					var reader = new BinaryReader( socket.GetStream() );
-					var serverProtocol = reader.ReadInt32();
+					Name = GetType().Name + " " + host + ":" + port,
+					IsBackground = true
+				}.Start(tcp.GetStream());
+			}
+			catch
+			{
+				connectionState = ConnectionState.NotConnected;
+			}
+		}
 
-					if (ProtocolVersion.Version != serverProtocol)
-						throw new InvalidOperationException(
-							"Protocol version mismatch. Server={0} Client={1}"
-								.F(serverProtocol, ProtocolVersion.Version));
+		void NetworkConnectionReceive(object networkStreamObject)
+		{
+			try
+			{
+				var networkStream = (NetworkStream)networkStreamObject;
+				var reader = new BinaryReader(networkStream);
+				var serverProtocol = reader.ReadInt32();
 
-					clientId = reader.ReadInt32();
-					connectionState = ConnectionState.Connected;
+				if (ProtocolVersion.Version != serverProtocol)
+					throw new InvalidOperationException(
+						"Protocol version mismatch. Server={0} Client={1}"
+							.F(serverProtocol, ProtocolVersion.Version));
 
-					for( ; ; )
-					{
-						var len = reader.ReadInt32();
-						var client = reader.ReadInt32();
-						var buf = reader.ReadBytes( len );
-						if( len == 0 )
-							throw new NotImplementedException();
-						lock( this )
-							receivedPackets.Add( new ReceivedPacket { FromClient = client, Data = buf } );
-					}
-				}
-				catch { }
-				finally
+				clientId = reader.ReadInt32();
+				connectionState = ConnectionState.Connected;
+
+				for (;;)
 				{
-					connectionState = ConnectionState.NotConnected;
-					if( socket != null )
-						socket.Close();
+					var len = reader.ReadInt32();
+					var client = reader.ReadInt32();
+					var buf = reader.ReadBytes(len);
+					if (len == 0)
+						throw new NotImplementedException();
+					AddPacket(new ReceivedPacket { FromClient = client, Data = buf });
 				}
 			}
-			) { IsBackground = true };
-			t.Start();
+			catch { }
+			finally
+			{
+				connectionState = ConnectionState.NotConnected;
+			}
 		}
 
 		public override int LocalClientId { get { return clientId; } }
 		public override ConnectionState ConnectionState { get { return connectionState; } }
 
-		List<byte[]> queuedSyncPackets = new List<byte[]>();
-
-		public override void SendSync( int frame, byte[] syncData )
+		public override void SendSync(int frame, byte[] syncData)
 		{
 			var ms = new MemoryStream();
-			ms.Write( BitConverter.GetBytes( frame ) );
-			ms.Write( syncData );
-			queuedSyncPackets.Add( ms.ToArray() );
+			ms.Write(BitConverter.GetBytes(frame));
+			ms.Write(syncData);
+			queuedSyncPackets.Add(ms.ToArray());
 		}
 
-		protected override void Send( byte[] packet )
+		protected override void Send(byte[] packet)
 		{
-			base.Send( packet );
+			base.Send(packet);
 
 			try
 			{
 				var ms = new MemoryStream();
-				ms.Write(BitConverter.GetBytes((int)packet.Length));
+				ms.Write(BitConverter.GetBytes(packet.Length));
 				ms.Write(packet);
-				foreach( var q in queuedSyncPackets )
+
+				foreach (var q in queuedSyncPackets)
 				{
-					ms.Write( BitConverter.GetBytes( (int)q.Length ) );
-					ms.Write( q );
-					base.Send( q );
+					ms.Write(BitConverter.GetBytes(q.Length));
+					ms.Write(q);
+					base.Send(q);
 				}
+
 				queuedSyncPackets.Clear();
-				ms.WriteTo(socket.GetStream());
+				ms.WriteTo(tcp.GetStream());
 			}
 			catch (SocketException) { /* drop this on the floor; we'll pick up the disconnect from the reader thread */ }
 			catch (ObjectDisposedException) { /* ditto */ }
 			catch (InvalidOperationException) { /* ditto */ }
+			catch (IOException) { /* ditto */ }
 		}
 
-		bool disposed = false;
-
-		public override void Dispose ()
+		protected override void Dispose(bool disposing)
 		{
-			if (disposed) return;
+			if (disposed)
+				return;
 			disposed = true;
-			GC.SuppressFinalize( this );
 
-			t.Abort();
-			if (socket != null)
-				socket.Client.Close();
-			using( new PerfSample( "Thread.Join" ))
-			{
-				if (!t.Join(1000))
-					return;
-			}
+			// Closing the stream will cause any reads on the receiving thread to throw.
+			// This will mark the connection as no longer connected and the thread will terminate cleanly.
+			if (tcp != null)
+				tcp.Close();
+
+			base.Dispose(disposing);
 		}
-
-		~NetworkConnection() { Dispose(); }
 	}
 }

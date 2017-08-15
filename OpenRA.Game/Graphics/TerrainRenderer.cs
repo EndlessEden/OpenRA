@@ -1,97 +1,73 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2011 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
- * as published by the Free Software Foundation. For more information,
- * see COPYING.
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
  */
 #endregion
 
 using System;
-using System.Drawing;
-using OpenRA.FileFormats;
-using OpenRA.FileFormats.Graphics;
+using System.Collections.Generic;
 using OpenRA.Traits;
 
 namespace OpenRA.Graphics
 {
-	class TerrainRenderer
+	sealed class TerrainRenderer : IDisposable
 	{
-		IVertexBuffer<Vertex> vertexBuffer;
-		Sheet terrainSheet;
-
-		World world;
-		Map map;
+		readonly Map map;
+		readonly Dictionary<string, TerrainSpriteLayer> spriteLayers = new Dictionary<string, TerrainSpriteLayer>();
+		readonly Theater theater;
 
 		public TerrainRenderer(World world, WorldRenderer wr)
 		{
-			this.world = world;
-			this.map = world.Map;
+			map = world.Map;
+			theater = wr.Theater;
 
-			var tileSize = new Size( Game.CellSize, Game.CellSize );
-			var tileMapping = new Cache<TileReference<ushort,byte>, Sprite>(
-				x => Game.modData.SheetBuilder.Add(world.TileSet.GetBytes(x), tileSize));
-
-			var vertices = new Vertex[4 * map.Bounds.Height * map.Bounds.Width];
-
-			terrainSheet = tileMapping[map.MapTiles.Value[map.Bounds.Left, map.Bounds.Top]].sheet;
-
-			int nv = 0;
-
-			var terrainPalette = Game.modData.Palette.GetPaletteIndex("terrain");
-
-			for( int j = map.Bounds.Top; j < map.Bounds.Bottom; j++ )
-				for( int i = map.Bounds.Left; i < map.Bounds.Right; i++ )
-				{
-					var tile = tileMapping[map.MapTiles.Value[i, j]];
-					// TODO: move GetPaletteIndex out of the inner loop.
-					Util.FastCreateQuad(vertices, Game.CellSize * new float2(i, j), tile, terrainPalette, nv, tile.size);
-					nv += 4;
-
-					if (tileMapping[map.MapTiles.Value[i, j]].sheet != terrainSheet)
-						throw new InvalidOperationException("Terrain sprites span multiple sheets");
-				}
-
-			vertexBuffer = Game.Renderer.Device.CreateVertexBuffer( vertices.Length );
-			vertexBuffer.SetData( vertices, nv );
-		}
-
-		public void Draw( WorldRenderer wr, Viewport viewport )
-		{
-			int verticesPerRow = map.Bounds.Width * 4;
-
-			int visibleRows = (int)(viewport.Height * 1f / Game.CellSize / viewport.Zoom + 2);
-
-			int firstRow = (int)(viewport.Location.Y * 1f / Game.CellSize - map.Bounds.Top);
-			int lastRow = firstRow + visibleRows;
-
-			if (lastRow < 0 || firstRow > map.Bounds.Height)
-				return;
-
-			if (firstRow < 0) firstRow = 0;
-			if (lastRow > map.Bounds.Height) lastRow = map.Bounds.Height;
-
-			if (world.RenderedPlayer != null && !world.RenderedShroud.Disabled && world.RenderedShroud.Bounds.HasValue)
+			foreach (var template in map.Rules.TileSet.Templates)
 			{
-				var r = world.RenderedShroud.Bounds.Value;
-				if (firstRow < r.Top - map.Bounds.Top)
-					firstRow = r.Top - map.Bounds.Top;
-
-				if (firstRow > r.Bottom - map.Bounds.Top)
-					firstRow = r.Bottom - map.Bounds.Top;
+				var palette = template.Value.Palette ?? TileSet.TerrainPaletteInternalName;
+				spriteLayers.GetOrAdd(palette, pal =>
+					new TerrainSpriteLayer(world, wr, theater.Sheet, BlendMode.Alpha, wr.Palette(palette), world.Type != WorldType.Editor));
 			}
 
-			if( lastRow < firstRow ) lastRow = firstRow;
+			foreach (var cell in map.AllCells)
+				UpdateCell(cell);
 
-			Game.Renderer.WorldSpriteShader.SetValue( "DiffuseTexture", terrainSheet.Texture );
-			Game.Renderer.WorldSpriteShader.Render(() =>
-				Game.Renderer.DrawBatch(vertexBuffer,
-					verticesPerRow * firstRow, verticesPerRow * (lastRow - firstRow),
-					PrimitiveType.QuadList));
+			map.Tiles.CellEntryChanged += UpdateCell;
+			map.Height.CellEntryChanged += UpdateCell;
+		}
 
-			foreach (var r in world.WorldActor.TraitsImplementing<IRenderOverlay>())
-				r.Render( wr );
+		public void UpdateCell(CPos cell)
+		{
+			var tile = map.Tiles[cell];
+			var palette = TileSet.TerrainPaletteInternalName;
+			if (map.Rules.TileSet.Templates.ContainsKey(tile.Type))
+				palette = map.Rules.TileSet.Templates[tile.Type].Palette ?? palette;
+
+			var sprite = theater.TileSprite(tile);
+			foreach (var kv in spriteLayers)
+				kv.Value.Update(cell, palette == kv.Key ? sprite : null);
+		}
+
+		public void Draw(WorldRenderer wr, Viewport viewport)
+		{
+			foreach (var kv in spriteLayers.Values)
+				kv.Draw(wr.Viewport);
+
+			foreach (var r in wr.World.WorldActor.TraitsImplementing<IRenderOverlay>())
+				r.Render(wr);
+		}
+
+		public void Dispose()
+		{
+			map.Tiles.CellEntryChanged -= UpdateCell;
+			map.Height.CellEntryChanged -= UpdateCell;
+
+			foreach (var kv in spriteLayers.Values)
+				kv.Dispose();
 		}
 	}
 }

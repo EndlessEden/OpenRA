@@ -1,80 +1,157 @@
-﻿#region Copyright & License Information
+#region Copyright & License Information
 /*
- * Copyright 2007-2012 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
- * as published by the Free Software Foundation. For more information,
- * see COPYING.
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
  */
 #endregion
 
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.Serialization;
 
-namespace OpenRA.Utility
+namespace OpenRA
 {
+	using UtilityActions = Dictionary<string, KeyValuePair<Action<Utility, string[]>, Func<string[], bool>>>;
+
+	[Serializable]
+	public class NoSuchCommandException : Exception
+	{
+		public readonly string Command;
+		public NoSuchCommandException(string command)
+			: base("No such command '{0}'".F(command))
+		{
+			Command = command;
+		}
+
+		public override void GetObjectData(SerializationInfo info, StreamingContext context)
+		{
+			base.GetObjectData(info, context);
+			info.AddValue("Command", Command);
+		}
+	}
+
 	class Program
 	{
 		static void Main(string[] args)
 		{
-			var actions = new Dictionary<string, Action<string[]>>()
+			Log.AddChannel("perf", null);
+			Log.AddChannel("debug", null);
+
+			Game.InitializeSettings(Arguments.Empty);
+
+			var envModSearchPaths = Environment.GetEnvironmentVariable("MOD_SEARCH_PATHS");
+			var modSearchPaths = !string.IsNullOrWhiteSpace(envModSearchPaths) ?
+				FieldLoader.GetValue<string[]>("MOD_SEARCH_PATHS", envModSearchPaths) :
+				new[] { Path.Combine(".", "mods") };
+
+			if (args.Length == 0)
 			{
-				{ "--settings-value", Command.Settings },
-				{ "--shp", Command.ConvertPngToShp },
-				{ "--png", Command.ConvertShpToPng },
-				{ "--fromd2", Command.ConvertFormat2ToFormat80 },
-				{ "--extract", Command.ExtractFiles },
-				{ "--tmp-png", Command.ConvertTmpToPng },
-				{ "--remap", Command.RemapShp },
-				{ "--r8", Command.ConvertR8ToPng },
-				{ "--transpose", Command.TransposeShp },
-			};
+				PrintUsage(new InstalledMods(modSearchPaths, new string[0]), null);
+				return;
+			}
 
-			if (args.Length == 0) { PrintUsage(); return; }
+			var modId = args[0];
+			var explicitModPaths = new string[0];
+			if (File.Exists(modId) || Directory.Exists(modId))
+			{
+				explicitModPaths = new[] { modId };
+				modId = Path.GetFileNameWithoutExtension(modId);
+			}
 
-			Log.LogPath = Platform.SupportDir + "Logs" + Path.DirectorySeparatorChar;
+			var mods = new InstalledMods(modSearchPaths, explicitModPaths);
+			if (!mods.Keys.Contains(modId))
+			{
+				PrintUsage(mods, null);
+				return;
+			}
+
+			var modData = new ModData(mods[modId], mods);
+			var utility = new Utility(modData, mods);
+			args = args.Skip(1).ToArray();
+			var actions = new UtilityActions();
+			foreach (var commandType in modData.ObjectCreator.GetTypesImplementing<IUtilityCommand>())
+			{
+				var command = (IUtilityCommand)Activator.CreateInstance(commandType);
+				var kvp = new KeyValuePair<Action<Utility, string[]>, Func<string[], bool>>(command.Run, command.ValidateArguments);
+				actions.Add(command.Name, kvp);
+			}
+
+			if (args.Length == 0)
+			{
+				PrintUsage(mods, actions);
+				return;
+			}
 
 			try
 			{
-				var action = Exts.WithDefault( _ => PrintUsage(), () => actions[args[0]]);
-				action(args);
+				var command = args[0];
+				if (!actions.ContainsKey(command))
+					throw new NoSuchCommandException(command);
+
+				var action = actions[command].Key;
+				var validateActionArgs = actions[command].Value;
+
+				if (validateActionArgs.Invoke(args))
+				{
+					action.Invoke(utility, args);
+				}
+				else
+				{
+					Console.WriteLine("Invalid arguments for '{0}'", command);
+					GetActionUsage(command, action);
+				}
 			}
-			catch( Exception e )
+			catch (Exception e)
 			{
 				Log.AddChannel("utility", "utility.log");
 				Log.Write("utility", "Received args: {0}", args.JoinWith(" "));
 				Log.Write("utility", "{0}", e);
 
-				Console.WriteLine("Error: Utility application crashed. See utility.log for details");
-				throw;
+				if (e is NoSuchCommandException)
+					Console.WriteLine(e.Message);
+				else
+				{
+					Console.WriteLine("Error: Utility application crashed. See utility.log for details");
+					throw;
+				}
 			}
 		}
 
-		static void PrintUsage()
+		static void PrintUsage(InstalledMods mods, UtilityActions actions)
 		{
-			Console.WriteLine("Usage: OpenRA.Utility.exe [OPTION] [ARGS]");
+			Console.WriteLine("Run `OpenRA.Utility.exe [MOD]` to see a list of available commands.");
+			Console.WriteLine("The available mods are: " + string.Join(", ", mods.Keys));
 			Console.WriteLine();
-			Console.WriteLine("  --settings-value KEY     Get value of KEY from settings.yaml");
-			Console.WriteLine("  --shp PNGFILE FRAMEWIDTH     Convert a single PNG with multiple frames appended after another to a SHP");
-			Console.WriteLine("  --png SHPFILE PALETTE [--noshadow]     Convert a SHP to a PNG containing all of its frames, optionally removing the shadow");
-			Console.WriteLine("  --extract MOD[,MOD]* FILES     Extract files from mod packages");
-			Console.WriteLine("  --tmp-png MOD[,MOD]* THEATER FILES      Extract terrain tiles to PNG");
-			Console.WriteLine("  --remap SRCMOD:PAL DESTMOD:PAL SRCSHP DESTSHP     Remap SHPs to another palette");
-			Console.WriteLine("  --r8 R8FILE PALETTE START END FILENAME [--noshadow] [--infrantry] [--vehicle] [--projectile] [--building] [--wall] [--tileset]     Convert Dune 2000 DATA.R8 to PNGs choosing start- and endframe as well as type for correct offset to append multiple frames to one PNG named by filename optionally removing the shadow.");
-			Console.WriteLine("  --transpose SRCSHP DESTSHP START N M [START N M ...]     Transpose the N*M block of frames starting at START.");
+
+			if (actions == null)
+				return;
+
+			var keys = actions.Keys.OrderBy(x => x);
+
+			foreach (var key in keys)
+			{
+				GetActionUsage(key, actions[key].Key);
+			}
 		}
 
-		static string GetNamedArg(string[] args, string arg)
+		static void GetActionUsage(string key, Action<Utility, string[]> action)
 		{
-			if (args.Length < 2)
-				return null;
+			var descParts = action.Method.GetCustomAttributes<DescAttribute>(true)
+					.SelectMany(d => d.Lines).ToArray();
 
-			var i = Array.IndexOf(args, arg);
-			if (i < 0 || i == args.Length - 1)  // doesnt exist, or doesnt have a value.
-				return null;
+			if (descParts.Length == 0)
+				return;
 
-			return args[i + 1];
+			var args = descParts.Take(descParts.Length - 1).JoinWith(" ");
+			var desc = descParts[descParts.Length - 1];
+
+			Console.WriteLine("  {0} {1}{3}  {2}{3}", key, args, desc, Environment.NewLine);
 		}
 	}
 }

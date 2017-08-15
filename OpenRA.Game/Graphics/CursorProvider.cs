@@ -1,65 +1,69 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2012 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
- * as published by the Free Software Foundation. For more information,
- * see COPYING.
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
  */
 #endregion
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Xml;
-using OpenRA.FileFormats;
 
 namespace OpenRA.Graphics
 {
-	public static class CursorProvider
+	public sealed class CursorProvider
 	{
-		static Dictionary<string, CursorSequence> cursors;
+		public readonly IReadOnlyDictionary<string, CursorSequence> Cursors;
+		public readonly IReadOnlyDictionary<string, ImmutablePalette> Palettes;
 
-		public static void Initialize(string[] sequenceFiles)
+		public CursorProvider(ModData modData)
 		{
-			cursors = new Dictionary<string, CursorSequence>();
-			var sequences = new MiniYaml(null, sequenceFiles.Select(s => MiniYaml.FromFile(s)).Aggregate(MiniYaml.MergeLiberal));
-			int[] ShadowIndex = { };
+			var fileSystem = modData.DefaultFileSystem;
+			var sequenceYaml = MiniYaml.Merge(modData.Manifest.Cursors.Select(
+				s => MiniYaml.FromStream(fileSystem.Open(s), s)));
 
-			if (sequences.NodesDict.ContainsKey("ShadowIndex"))
-				{
-					Array.Resize(ref ShadowIndex, ShadowIndex.Length + 1);
-					ShadowIndex[ShadowIndex.Length - 1] = Convert.ToInt32(sequences.NodesDict["ShadowIndex"].Value);
-				}
+			var shadowIndex = new int[] { };
 
-			foreach (var s in sequences.NodesDict["Palettes"].Nodes)
-				Game.modData.Palette.AddPalette(s.Key, new Palette(FileSystem.Open(s.Value.Value), ShadowIndex));
+			var nodesDict = new MiniYaml(null, sequenceYaml).ToDictionary();
+			if (nodesDict.ContainsKey("ShadowIndex"))
+			{
+				Array.Resize(ref shadowIndex, shadowIndex.Length + 1);
+				Exts.TryParseIntegerInvariant(nodesDict["ShadowIndex"].Value,
+					out shadowIndex[shadowIndex.Length - 1]);
+			}
 
-			foreach (var s in sequences.NodesDict["Cursors"].Nodes)
-				LoadSequencesForCursor(s.Key, s.Value);
+			var palettes = new Dictionary<string, ImmutablePalette>();
+			foreach (var p in nodesDict["Palettes"].Nodes)
+				palettes.Add(p.Key, new ImmutablePalette(fileSystem.Open(p.Value.Value), shadowIndex));
+
+			Palettes = palettes.AsReadOnly();
+
+			var frameCache = new FrameCache(fileSystem, modData.SpriteLoaders);
+			var cursors = new Dictionary<string, CursorSequence>();
+			foreach (var s in nodesDict["Cursors"].Nodes)
+				foreach (var sequence in s.Value.Nodes)
+					cursors.Add(sequence.Key, new CursorSequence(frameCache, sequence.Key, s.Key, s.Value.Value, sequence.Value));
+
+			Cursors = cursors.AsReadOnly();
 		}
 
-		static void LoadSequencesForCursor(string cursorSrc, MiniYaml cursor)
-		{
-			Game.modData.LoadScreen.Display();
+		public static bool CursorViewportZoomed { get { return Game.Settings.Graphics.CursorDouble && Game.Settings.Graphics.PixelDouble; } }
 
-			foreach (var sequence in cursor.Nodes)
-				cursors.Add(sequence.Key, new CursorSequence(cursorSrc, cursor.Value, sequence.Value));
+		public bool HasCursorSequence(string cursor)
+		{
+			return Cursors.ContainsKey(cursor);
 		}
 
-		public static bool HasCursorSequence(string cursor)
+		public CursorSequence GetCursorSequence(string cursor)
 		{
-			return cursors.ContainsKey(cursor);
-		}
-
-		public static CursorSequence GetCursorSequence(string cursor)
-		{
-			try { return cursors[cursor]; }
+			try { return Cursors[cursor]; }
 			catch (KeyNotFoundException)
 			{
-				throw new InvalidOperationException(
-					"Cursor does not have a sequence `{0}`".F(cursor));
+				throw new InvalidOperationException("Cursor does not have a sequence `{0}`".F(cursor));
 			}
 		}
 	}

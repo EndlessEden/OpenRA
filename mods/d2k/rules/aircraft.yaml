@@ -1,176 +1,117 @@
-^CARRYALL:
-	Inherits: ^Helicopter
+carryall.reinforce:
+	Inherits: ^Plane
 	Valued:
-		Cost: 1200
+		Cost: 1100
 	Tooltip:
 		Name: Carryall
-		Description: Fast drop ship.\n  Unarmed
-		Icon: carryallicon
 	Health:
-		HP: 250
-	Armor: 
-		Type: Light
-	RevealsShroud:
-		Range: 12
-	Helicopter:
+		HP: 4800
+	Armor:
+		Type: light
+	Aircraft:
+		CruiseAltitude: 2160
 		InitialFacing: 0
-		ROT: 4
-		Speed: 20
-		LandableTerrainTypes: Sand, Rock, Transition, Spice, Dune
-		RepairBuildings: repair
-		RearmBuildings: starporta,starporto,starporth
-		MinimalLandAltitude: 25
-	SmokeTrailWhenDamaged@0:
-		Offset: 15, -12
-		Interval: 3
-	SmokeTrailWhenDamaged@1:
-		Offset: -15, -12
-		Interval: 3
-	RenderUnit:
-	RenderCargo:
-		RelativeAltitude: 20
-	WithShadow:
-	Cargo:
-		Types: Vehicle
-		MaxWeight: 1
-		PipCount: 1
-		minimalUnloadAltitude: 25
-	FallsToEarth:
-		Spins: no
-		Moves: yes
-		Explosion: UnitExplodeScale
+		Speed: 144 # 112 * ~1.3 for balance reasons
+		TurnSpeed: 4
+		LandableTerrainTypes: Sand, Rock, Transition, Spice, SpiceSand, Dune, Concrete
+		Repulsable: False
+		LandWhenIdle: False
+		AirborneCondition: airborne
+		CanHover: True
+	Targetable@GROUND:
+		TargetTypes: Ground, Vehicle
+		RequiresCondition: !airborne
+	Targetable@AIRBORNE:
+		TargetTypes: Air
+		RequiresCondition: airborne
+	SpawnActorOnDeath:
+		Actor: carryall.husk
+	Carryall:
+		LoadingDelay: 10
+		UnloadingDelay: 15
+		LocalOffset: 0, 0, -128
+	RenderSprites:
+		Image: carryall
+	SelfHealing:
+		Step: 5
+		Delay: 3
+		HealIfBelow: 50
+	Buildable:
+		BuildDuration: 648
+		BuildDurationModifier: 40
+		Description: Large winged, planet-bound ship\n  Automatically lifts harvesters from and to Spice.\n  Lifts vehicles to Repair Pads when ordered.
 
-FRIGATE:
-	ParaDrop:
-		LZRange: 1
+carryall:
+	Inherits: carryall.reinforce
+	-Carryall:
+	AutoCarryall:
+		LoadingDelay: 10
+		UnloadingDelay: 15
+		LocalOffset: 0, 0, -128
+	Buildable:
+		Queue: Aircraft
+		BuildPaletteOrder: 120
+
+frigate:
 	Inherits: ^Plane
+	ParaDrop:
+		DropRange: 1c0
 	Tooltip:
 		Name: Frigate
-		Description: Supply spacecraft
-	Plane:
-		ROT: 5
-		Speed: 30
-		RepairBuildings: repair
-		RearmBuildings: starporta,starporto,starporth
-	Health:
-		HP: 500
-	-TargetableAircraft:
+	Aircraft:
+		Speed: 189 # 126 * ~1.5 for balance reasons
+		TurnSpeed: 1
+		Repulsable: False
+		MaximumPitch: 20
+		CruiseAltitude: 2048
 	-AppearsOnRadar:
-	Armor:
-		Type: Heavy
-	RenderUnit:
-		Image: frigate
-	WithShadow:
 	Cargo:
 		MaxWeight: 20
 		PipCount: 10
-	Invulnerable:
-	-Selectable:
-	-GainsExperience:
 	FlyAwayOnIdle:
+	RejectsOrders:
 
-ORNI:
-	Inherits: ^Helicopter
-	Valued:
-		Cost: 1000
-	Tooltip:
-		Name: Ornithopter
-		Description: Helicopter Gunship with Chainguns.\n  Strong vs Infantry, Light Vehicles.\n  Weak vs Tanks
-	Health:
-		HP: 150
-	Armor:
-		Type: Light
-	RevealsShroud:
-		Range: 10
-	AttackHeli:
-		PrimaryWeapon: ChainGun
-		PrimaryOffset: -5,-2,0,2
-		FacingTolerance: 20
-	Helicopter:
-		LandWhenIdle: false
-		InitialFacing: 20
-		ROT: 6
-		Speed: 30
-		RepairBuildings: repair
-		RearmBuildings: starporta,starporto,starporth
-	RenderUnit:
-	WithShadow:
-	Selectable:
-		Bounds: 38,32,0,0
-	FallsToEarth:
-		Spins: no
-		Moves: yes
-		Explosion: UnitExplodeScale
-	SmokeTrailWhenDamaged:
-		Offset: 0,-10
-
-ORNI.bomber:
-	CarpetBomb:
-		Range: 3
-		Weapon: Napalm
+ornithopter:
 	Inherits: ^Plane
+	AttackBomber:
+	Armament:
+		Weapon: OrniBomb
 	Health:
-		HP: 100
+		HP: 900
 	Armor:
-		Type: Light
-	Plane:
-		ROT: 5
-		Speed: 35
-		RepairBuildings: repair
-		RearmBuildings: starporta,starporto,starporth
-	LimitedAmmo:
+		Type: light
+	Aircraft:
+		Speed: 224 # 189 * ~1.2 for balance reasons
+		TurnSpeed: 2
+		Repulsable: False
+		CanHover: True
+		CruiseAltitude: 1920
+	AmmoPool:
 		Ammo: 5
-	RenderUnit:
-		Image: orni
-	WithShadow:
-	-Selectable:
-	-GainsExperience:
 	Tooltip:
 		Name: Ornithopter
-	FallsToEarth:
-		Spins: no
-		Moves: yes
-		Explosion: UnitExplodeScale
-	SmokeTrailWhenDamaged:
-		Offset: 0,-10
+	SpawnActorOnDeath:
+		Actor: ornithopter.husk
+	RejectsOrders:
+	RevealOnFire:
 
-CARRYALL.infantry:
-	ParaDrop:
-		LZRange: 5
-	Inherits: ^Plane
-	Health:
-		HP: 200
-	Armor:
-		Type: Light
-	Plane:
-		ROT: 4
-		Speed: 25
-		RepairBuildings: repair
-		RearmBuildings: starporta,starporto,starporth
-	SmokeTrailWhenDamaged@0:
-		Offset: 15, -12
-		Interval: 3
-	SmokeTrailWhenDamaged@1:
-		Offset: -15, -12
-		Interval: 3
-	RenderUnit:
-		Image: carryall
-	WithShadow:
-	Cargo:
-		MaxWeight: 5
-		Types: Infantry
-	-Selectable:
-	-GainsExperience:
+ornithopter.husk:
+	Inherits: ^AircraftHusk
+	Tooltip:
+		Name: Ornithopter
+	Aircraft:
+		TurnSpeed: 5
+		Speed: 224
+	RenderSprites:
+		Image: ornithopter
+
+carryall.husk:
+	Inherits: ^AircraftHusk
 	Tooltip:
 		Name: Carryall
-	FallsToEarth:
-		Spins: no
-		Moves: yes
-		Explosion: UnitExplodeScale
-
-BADR:
-	Inherits: CARRYALL.infantry
-	ParaDrop:
-		LZRange: 4
-	Tooltip:
-		Name: Crate Carryall
+	Aircraft:
+		TurnSpeed: 4
+		Speed: 144
+		CanHover: True
+	RenderSprites:
+		Image: carryall

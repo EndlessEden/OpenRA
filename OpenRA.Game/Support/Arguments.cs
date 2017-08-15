@@ -1,10 +1,11 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2011 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
- * as published by the Free Software Foundation. For more information,
- * see COPYING.
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
  */
 #endregion
 
@@ -21,11 +22,11 @@ namespace OpenRA
 
 		public Arguments(params string[] src)
 		{
-			Regex regex = new Regex("([^=]+)=(.*)");
-			foreach (string s in src)
+			var regex = new Regex("([^=]+)=(.*)");
+			foreach (var s in src)
 			{
-				Match m = regex.Match(s);
-				if (m == null || !m.Success)
+				var m = regex.Match(s);
+				if (!m.Success)
 					continue;
 
 				args[m.Groups[1].Value] = m.Groups[2].Value;
@@ -34,5 +35,6 @@ namespace OpenRA
 
 		public bool Contains(string key) { return args.ContainsKey(key); }
 		public string GetValue(string key, string defaultValue) { return Contains(key) ? args[key] : defaultValue; }
+		public void ReplaceValue(string key, string value) { args[key] = value; }
 	}
 }

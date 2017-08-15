@@ -1,10 +1,11 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2011 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
- * as published by the Free Software Foundation. For more information,
- * see COPYING.
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
  */
 #endregion
 
@@ -12,122 +13,216 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using OpenRA.FileFormats;
+using OpenRA.FileSystem;
 using OpenRA.Graphics;
-using OpenRA.Traits;
 using OpenRA.Widgets;
+using FS = OpenRA.FileSystem.FileSystem;
 
 namespace OpenRA
 {
-	public class ModData
+	public sealed class ModData : IDisposable
 	{
 		public readonly Manifest Manifest;
 		public readonly ObjectCreator ObjectCreator;
-		public Dictionary<string, Map> AvailableMaps { get; private set; }
 		public readonly WidgetLoader WidgetLoader;
-		public ILoadScreen LoadScreen = null;
-		public SheetBuilder SheetBuilder;
-		public SpriteLoader SpriteLoader;
-		public HardwarePalette Palette { get; private set; }
+		public readonly MapCache MapCache;
+		public readonly IPackageLoader[] PackageLoaders;
+		public readonly ISoundLoader[] SoundLoaders;
+		public readonly ISpriteLoader[] SpriteLoaders;
+		public readonly ISpriteSequenceLoader SpriteSequenceLoader;
+		public readonly IModelSequenceLoader ModelSequenceLoader;
+		public ILoadScreen LoadScreen { get; private set; }
+		public CursorProvider CursorProvider { get; private set; }
+		public FS ModFiles;
+		public IReadOnlyFileSystem DefaultFileSystem { get { return ModFiles; } }
 
-		public ModData( params string[] mods )
+		readonly Lazy<Ruleset> defaultRules;
+		public Ruleset DefaultRules { get { return defaultRules.Value; } }
+
+		readonly Lazy<IReadOnlyDictionary<string, TileSet>> defaultTileSets;
+		public IReadOnlyDictionary<string, TileSet> DefaultTileSets { get { return defaultTileSets.Value; } }
+
+		readonly Lazy<IReadOnlyDictionary<string, SequenceProvider>> defaultSequences;
+		public IReadOnlyDictionary<string, SequenceProvider> DefaultSequences { get { return defaultSequences.Value; } }
+
+		public ModData(Manifest mod, InstalledMods mods, bool useLoadScreen = false)
 		{
-			Manifest = new Manifest( mods );
-			ObjectCreator = new ObjectCreator( Manifest );
-			LoadScreen = ObjectCreator.CreateObject<ILoadScreen>(Manifest.LoadScreen.Value);
-			LoadScreen.Init(Manifest.LoadScreen.NodesDict.ToDictionary(x => x.Key, x => x.Value.Value));
-			LoadScreen.Display();
-			WidgetLoader = new WidgetLoader( this );
+			Languages = new string[0];
+
+			// Take a local copy of the manifest
+			Manifest = new Manifest(mod.Id, mod.Package);
+			ObjectCreator = new ObjectCreator(Manifest, mods);
+			PackageLoaders = ObjectCreator.GetLoaders<IPackageLoader>(Manifest.PackageFormats, "package");
+
+			ModFiles = new FS(mods, PackageLoaders);
+			ModFiles.LoadFromManifest(Manifest);
+			Manifest.LoadCustomData(ObjectCreator);
+
+			if (useLoadScreen)
+			{
+				LoadScreen = ObjectCreator.CreateObject<ILoadScreen>(Manifest.LoadScreen.Value);
+				LoadScreen.Init(this, Manifest.LoadScreen.ToDictionary(my => my.Value));
+				LoadScreen.Display();
+			}
+
+			WidgetLoader = new WidgetLoader(this);
+			MapCache = new MapCache(this);
+
+			SoundLoaders = ObjectCreator.GetLoaders<ISoundLoader>(Manifest.SoundFormats, "sound");
+			SpriteLoaders = ObjectCreator.GetLoaders<ISpriteLoader>(Manifest.SpriteFormats, "sprite");
+
+			var sequenceFormat = Manifest.Get<SpriteSequenceFormat>();
+			var sequenceLoader = ObjectCreator.FindType(sequenceFormat.Type + "Loader");
+			var sequenceCtor = sequenceLoader != null ? sequenceLoader.GetConstructor(new[] { typeof(ModData) }) : null;
+			if (sequenceLoader == null || !sequenceLoader.GetInterfaces().Contains(typeof(ISpriteSequenceLoader)) || sequenceCtor == null)
+				throw new InvalidOperationException("Unable to find a sequence loader for type '{0}'.".F(sequenceFormat.Type));
+
+			SpriteSequenceLoader = (ISpriteSequenceLoader)sequenceCtor.Invoke(new[] { this });
+			SpriteSequenceLoader.OnMissingSpriteError = s => Log.Write("debug", s);
+
+			var modelFormat = Manifest.Get<ModelSequenceFormat>();
+			var modelLoader = ObjectCreator.FindType(modelFormat.Type + "Loader");
+			var modelCtor = modelLoader != null ? modelLoader.GetConstructor(new[] { typeof(ModData) }) : null;
+			if (modelLoader == null || !modelLoader.GetInterfaces().Contains(typeof(IModelSequenceLoader)) || modelCtor == null)
+				throw new InvalidOperationException("Unable to find a model loader for type '{0}'.".F(modelFormat.Type));
+
+			ModelSequenceLoader = (IModelSequenceLoader)modelCtor.Invoke(new[] { this });
+			ModelSequenceLoader.OnMissingModelError = s => Log.Write("debug", s);
+
+			defaultRules = Exts.Lazy(() => Ruleset.LoadDefaults(this));
+			defaultTileSets = Exts.Lazy(() =>
+			{
+				var items = new Dictionary<string, TileSet>();
+
+				foreach (var file in Manifest.TileSets)
+				{
+					var t = new TileSet(DefaultFileSystem, file);
+					items.Add(t.Id, t);
+				}
+
+				return (IReadOnlyDictionary<string, TileSet>)(new ReadOnlyDictionary<string, TileSet>(items));
+			});
+
+			defaultSequences = Exts.Lazy(() =>
+			{
+				var items = DefaultTileSets.ToDictionary(t => t.Key, t => new SequenceProvider(DefaultFileSystem, this, t.Value, null));
+				return (IReadOnlyDictionary<string, SequenceProvider>)(new ReadOnlyDictionary<string, SequenceProvider>(items));
+			});
+
+			initialThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
 		}
 
-		public void LoadInitialAssets()
+		// HACK: Only update the loading screen if we're in the main thread.
+		int initialThreadId;
+		internal void HandleLoadingProgress()
+		{
+			if (LoadScreen != null && IsOnMainThread)
+				LoadScreen.Display();
+		}
+
+		internal bool IsOnMainThread { get { return System.Threading.Thread.CurrentThread.ManagedThreadId == initialThreadId; } }
+
+		public void InitializeLoaders(IReadOnlyFileSystem fileSystem)
 		{
 			// all this manipulation of static crap here is nasty and breaks
 			// horribly when you use ModData in unexpected ways.
+			ChromeMetrics.Initialize(this);
+			ChromeProvider.Initialize(this);
 
-			FileSystem.UnmountAll();
-			foreach (var dir in Manifest.Folders)
-				FileSystem.Mount(dir);
+			Game.Sound.Initialize(SoundLoaders, fileSystem);
 
-			AvailableMaps = FindMaps(Manifest.Mods);
+			CursorProvider = new CursorProvider(this);
+		}
 
-			Palette = new HardwarePalette();
-			ChromeMetrics.Initialize(Manifest.ChromeMetrics);
-			ChromeProvider.Initialize(Manifest.Chrome);
-			SheetBuilder = new SheetBuilder(TextureChannel.Red);
-			SpriteLoader = new SpriteLoader(new string[] { ".shp" }, SheetBuilder);
-			CursorProvider.Initialize(Manifest.Cursors);
-			Palette.Update(new IPaletteModifier[] { });
+		public IEnumerable<string> Languages { get; private set; }
+
+		void LoadTranslations(Map map)
+		{
+			var selectedTranslations = new Dictionary<string, string>();
+			var defaultTranslations = new Dictionary<string, string>();
+
+			if (!Manifest.Translations.Any())
+			{
+				Languages = new string[0];
+				return;
+			}
+
+			var yaml = MiniYaml.Load(map, Manifest.Translations, map.TranslationDefinitions);
+			Languages = yaml.Select(t => t.Key).ToArray();
+
+			foreach (var y in yaml)
+			{
+				if (y.Key == Game.Settings.Graphics.Language)
+					selectedTranslations = y.Value.ToDictionary(my => my.Value ?? "");
+				else if (y.Key == Game.Settings.Graphics.DefaultLanguage)
+					defaultTranslations = y.Value.ToDictionary(my => my.Value ?? "");
+			}
+
+			var translations = new Dictionary<string, string>();
+			foreach (var tkv in defaultTranslations.Concat(selectedTranslations))
+			{
+				if (translations.ContainsKey(tkv.Key))
+					continue;
+				if (selectedTranslations.ContainsKey(tkv.Key))
+					translations.Add(tkv.Key, selectedTranslations[tkv.Key]);
+				else
+					translations.Add(tkv.Key, tkv.Value);
+			}
+
+			FieldLoader.SetTranslations(translations);
 		}
 
 		public Map PrepareMap(string uid)
 		{
-			LoadScreen.Display();
-			if (!AvailableMaps.ContainsKey(uid))
+			if (LoadScreen != null)
+				LoadScreen.Display();
+
+			if (MapCache[uid].Status != MapStatus.Available)
 				throw new InvalidDataException("Invalid map uid: {0}".F(uid));
-			var map = new Map(AvailableMaps[uid].Path);
 
-			// Reinit all our assets
-			LoadInitialAssets();
-			foreach (var pkg in Manifest.Packages)
-				FileSystem.Mount(pkg);
+			Map map;
+			using (new Support.PerfTimer("Map"))
+				map = new Map(this, MapCache[uid].Package);
 
-			// Mount map package so custom assets can be used. TODO: check priority.
-			FileSystem.Mount(FileSystem.OpenPackage(map.Path, int.MaxValue));
+			LoadTranslations(map);
 
-			Rules.LoadRules(Manifest, map);
-			SpriteLoader = new SpriteLoader( Rules.TileSets[map.Tileset].Extensions, SheetBuilder );
-			SequenceProvider.Initialize(Manifest.Sequences, map.Sequences);
+			// Reinitialize all our assets
+			InitializeLoaders(map);
+
+			// Load music with map assets mounted
+			using (new Support.PerfTimer("Map.Music"))
+				foreach (var entry in map.Rules.Music)
+					entry.Value.Load(map);
 
 			return map;
 		}
 
-		public static IEnumerable<string> FindMapsIn(string dir)
+		public void Dispose()
 		{
-			string[] NoMaps = { };
+			if (LoadScreen != null)
+				LoadScreen.Dispose();
+			MapCache.Dispose();
 
-			if (!Directory.Exists(dir))
-				return NoMaps;
-
-			return Directory.GetDirectories(dir)
-				.Concat(Directory.GetFiles(dir, "*.zip"))
-				.Concat(Directory.GetFiles(dir, "*.oramap"));
-		}
-
-		Dictionary<string, Map> FindMaps(string[] mods)
-		{
-			var paths = mods.SelectMany(p => FindMapsIn("mods{0}{1}{0}maps{0}".F(Path.DirectorySeparatorChar, p)))
-				.Concat(mods.SelectMany(p => FindMapsIn("{1}maps{0}{2}{0}".F(Path.DirectorySeparatorChar, Platform.SupportDir, p))));
-
-			var ret = new Dictionary<string, Map>();
-
-			foreach (var path in paths)
-			{
-				try
-				{
-					var map = new Map(path);
-					ret.Add(map.Uid, map);
-				}
-				catch(Exception e)
-				{
-					Console.WriteLine("Failed to load map: {0}", path);
-					Console.WriteLine("Details: {0}", e.ToString());
-				}
-			}
-
-			return ret;
-		}
-
-		public Map FindMapByUid(string uid)
-		{
-			return AvailableMaps.ContainsKey(uid) ? AvailableMaps[uid] : null;
+			if (ObjectCreator != null)
+				ObjectCreator.Dispose();
 		}
 	}
 
-	public interface ILoadScreen
+	public interface ILoadScreen : IDisposable
 	{
-		void Init(Dictionary<string, string> info);
+		/// <summary>Initializes the loadscreen with yaml data from the LoadScreen block in mod.yaml.</summary>
+		void Init(ModData m, Dictionary<string, string> info);
+
+		/// <summary>Called at arbitrary times during mod load to rerender the loadscreen.</summary>
 		void Display();
-		void StartGame();
+
+		/// <summary>
+		/// Called before loading the mod assets.
+		/// Returns false if mod loading should be aborted (e.g. switching to another mod instead).
+		/// </summary>
+		bool BeforeLoad();
+
+		/// <summary>Called when the engine expects to connect to a server/replay or load the shellmap.</summary>
+		void StartGame(Arguments args);
 	}
 }
