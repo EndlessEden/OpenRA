@@ -1,4 +1,6 @@
-# OpenRA
+# OpenRA - Kang
+
+(Forked from https://github.com/BangL/OpenRA#bleed - As it was abandoned. See commit#2)
 
 A Libre/Free Real Time Strategy game engine supporting early Westwood classics.
 
