@@ -1,0 +1,269 @@
+Metadata:
+	Title: Red Alert 2
+	Description: The Soviet Union is back!\nThis time to conquer the United States...
+	Version: {DEV_VERSION}
+	Author: the RA2 mod team
+
+RequiresMods:
+	modchooser: {DEV_VERSION}
+
+Packages:
+	~^Content/ra2
+	.
+	$ra2: ra2
+	$cnc: cnc
+	./mods/common: common
+	~ra2.mix
+	~language.mix
+	~multi.mix
+	~audio.mix
+	~cache.mix
+	~cameo.mix
+	~conquer.mix
+	~generic.mix
+	~isogen.mix
+	~isosnow.mix
+	~isotemp.mix
+	~isourb.mix
+	~load.mix
+	~local.mix
+	~neutral.mix
+	~sidec01.mix
+	~sidec02.mix
+	~sno.mix
+	~snow.mix
+	~tem.mix
+	~temperat.mix
+	~theme.mix
+	~urb.mix
+	~urban.mix
+	~audio.bag
+	ra2|bits
+	ra2|bits/cameos
+	ra2|bits/structures
+	ra2|bits/animations
+	ra2|uibits
+
+MapFolders:
+	ra2|maps: System
+	~^maps/ra2/{DEV_VERSION}: User
+
+Rules:
+	ra2|rules/proxy-actors.yaml
+	ra2|rules/misc.yaml
+	ra2|rules/ai.yaml
+	ra2|rules/player.yaml
+	ra2|rules/world.yaml
+	ra2|rules/palettes.yaml
+	ra2|rules/defaults.yaml
+	ra2|rules/allied-infantry.yaml
+	ra2|rules/soviet-infantry.yaml
+	ra2|rules/civilians.yaml
+	ra2|rules/animals.yaml
+	ra2|rules/allied-structures.yaml
+	ra2|rules/soviet-structures.yaml
+	ra2|rules/civilian-structures.yaml
+	ra2|rules/tech-structures.yaml
+	ra2|rules/allied-vehicles.yaml
+	ra2|rules/soviet-vehicles.yaml
+	ra2|rules/civilian-vehicles.yaml
+	ra2|rules/allied-naval.yaml
+	ra2|rules/soviet-naval.yaml
+	ra2|rules/aircraft.yaml
+	ra2|rules/civilian-props.yaml
+	ra2|rules/trees.yaml
+	ra2|rules/civilian-naval.yaml
+
+Sequences:
+	ra2|sequences/misc.yaml
+	ra2|sequences/aircraft.yaml
+	ra2|sequences/allied-infantry.yaml
+	ra2|sequences/soviet-infantry.yaml
+	ra2|sequences/animals.yaml
+	ra2|sequences/allied-structures.yaml
+	ra2|sequences/soviet-structures.yaml
+	ra2|sequences/civilians.yaml
+	ra2|sequences/civilian-structures.yaml
+	ra2|sequences/civilian-props.yaml
+	ra2|sequences/tech-structures.yaml
+	ra2|sequences/vehicles.yaml
+	ra2|sequences/trees.yaml
+
+VoxelSequences:
+	ra2|sequences/voxels.yaml
+
+Cursors:
+	ra2|cursors.yaml
+
+Chrome:
+	ra2|chrome.yaml
+
+Assemblies:
+	common|OpenRA.Mods.Common.dll
+	common|OpenRA.Mods.Cnc.dll
+	ra2|OpenRA.Mods.RA2.dll
+
+ChromeLayout:
+	ra2|chrome/ingame-player.yaml
+	ra2|chrome/ingame-infoobjectives.yaml
+	common|chrome/ingame-infostats.yaml
+	common|chrome/ingame-observerstats.yaml
+	common|chrome/musicplayer.yaml
+	common|chrome/tooltips.yaml
+	common|chrome/ingame.yaml
+	common|chrome/ingame-observer.yaml
+	common|chrome/ingame-chat.yaml
+	common|chrome/ingame-fmvplayer.yaml
+	common|chrome/ingame-menu.yaml
+	common|chrome/ingame-info.yaml
+	common|chrome/ingame-infoscripterror.yaml
+	common|chrome/ingame-infobriefing.yaml
+	common|chrome/ingame-debug.yaml
+	common|chrome/ingame-perf.yaml
+	common|chrome/mainmenu.yaml
+	common|chrome/settings.yaml
+	common|chrome/credits.yaml
+	common|chrome/lobby.yaml
+	common|chrome/lobby-players.yaml
+	common|chrome/lobby-options.yaml
+	common|chrome/lobby-music.yaml
+	common|chrome/lobby-mappreview.yaml
+	common|chrome/lobby-kickdialogs.yaml
+	common|chrome/lobby-globalchat.yaml
+	common|chrome/multiplayer.yaml
+	common|chrome/multiplayer-browser.yaml
+	common|chrome/multiplayer-createserver.yaml
+	common|chrome/multiplayer-directconnect.yaml
+	common|chrome/multiplayer-globalchat.yaml
+	common|chrome/map-chooser.yaml
+	common|chrome/connection.yaml
+	common|chrome/replaybrowser.yaml
+	ra2|chrome/assetbrowser.yaml
+	common|chrome/missionbrowser.yaml
+	common|chrome/confirmation-dialogs.yaml
+	common|chrome/color-picker.yaml
+	common|chrome/dropdowns.yaml
+	common|chrome/editor.yaml
+
+Weapons:
+	ra2|weapons.yaml
+	ra2|weapons/allied-infantry.yaml
+	ra2|weapons/soviet-infantry.yaml
+
+Voices:
+	ra2|audio/voices.yaml
+
+Notifications:
+	ra2|audio/notifications.yaml
+
+TileSets:
+	ra2|tilesets/temperat.yaml
+	ra2|tilesets/snow.yaml
+	ra2|tilesets/urban.yaml
+
+MapGrid:
+	Type: RectangularIsometric
+	TileSize: 60,30
+	SubCellsOffsets: 0,0,0, -256,128,0, 0,-128,0, 256,128,0
+	DefaultSubCell: 2
+	MaximumTerrainHeight: 16
+
+Music:
+	ra2|audio/music.yaml
+
+Translations:
+	ra2|languages/english.yaml
+
+LoadScreen: LogoStripeLoadScreen
+	Image: ra2|uibits/loadscreen.png
+	Text: Carving wooden nickels..., Preparing paratroopers..., Welcoming you to Texas..., Optimizing helium mix..., Receiving thoughts..., Igniting boosters...
+
+ServerTraits:
+	LobbyCommands
+	PlayerPinger
+	MasterServerPinger
+
+ChromeMetrics:
+	common|metrics.yaml
+	ra2|metrics.yaml
+
+Fonts:
+	Regular:
+		Font: common|FreeSans.ttf
+		Size:14
+	Bold:
+		Font: common|FreeSansBold.ttf
+		Size:14
+	Title:
+		Font: common|FreeSansBold.ttf
+		Size:32
+	BigBold:
+		Font: common|FreeSansBold.ttf
+		Size:24
+	MediumBold:
+		Font: common|FreeSansBold.ttf
+		Size:18
+	Small:
+		Font: common|FreeSans.ttf
+		Size:12
+	Tiny:
+		Font: common|FreeSans.ttf
+		Size:10
+	TinyBold:
+		Font: common|FreeSansBold.ttf
+		Size:10
+
+SupportsMapsFrom: ra2
+
+SoundFormats: Aud, Wav
+
+SpriteFormats: ShpTS, TmpTS, ShpTD
+
+SpriteSequenceFormat: TilesetSpecificSpriteSequence
+	TilesetExtensions:
+		TEMPERATE: .tem
+		SNOW: .sno
+		URBAN: .urb
+	TilesetCodes:
+		GENERIC: g
+		SNOW: a
+		TEMPERATE: t
+		URBAN: u
+
+GameSpeeds:
+	slower:
+		Name: Slower
+		Timestep: 50
+		OrderLatency: 3
+	default:
+		Name: Default
+		Timestep: 40
+		OrderLatency: 3
+	fast:
+		Name: Fast
+		Timestep: 35
+		OrderLatency: 4
+	faster:
+		Name: Faster
+		Timestep: 30
+		OrderLatency: 4
+	fastest:
+		Name: Fastest
+		Timestep: 20
+		OrderLatency: 6
+
+ModContent:
+	InstallPromptMessage: Red Alert 2 requires artwork and audio from the original game.
+	HeaderMessage: The original game content must be copied from an original game disc.
+	Packages:
+		base: Base Game Files
+			TestFiles: ^Content/ra2/ra2.mix, ^Content/ra2/language.mix
+			Sources: ra2, origin, tfd
+			Required: true
+		music: Base Game Music
+			TestFiles: ^Content/ra2/theme.mix
+			Sources: ra2, origin, tfd
+	Sources:
+		ra2|installer/ra2.yaml
+		ra2|installer/origin.yaml
+		ra2|installer/firstdecade.yaml
