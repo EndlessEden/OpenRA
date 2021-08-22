@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -10,6 +10,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using OpenRA.FileSystem;
 using OpenRA.Mods.Common.FileFormats;
@@ -21,7 +22,7 @@ namespace OpenRA.Mods.Common.FileSystem
 	{
 		public sealed class InstallShieldPackage : IReadOnlyPackage
 		{
-			public struct Entry
+			public readonly struct Entry
 			{
 				public readonly uint Offset;
 				public readonly uint Length;
@@ -34,7 +35,7 @@ namespace OpenRA.Mods.Common.FileSystem
 			}
 
 			public string Name { get; private set; }
-			public IEnumerable<string> Contents { get { return index.Keys; } }
+			public IEnumerable<string> Contents => index.Keys;
 
 			readonly Dictionary<string, Entry> index = new Dictionary<string, Entry>();
 			readonly Stream s;
@@ -109,8 +110,7 @@ namespace OpenRA.Mods.Common.FileSystem
 
 			public Stream GetStream(string filename)
 			{
-				Entry e;
-				if (!index.TryGetValue(filename, out e))
+				if (!index.TryGetValue(filename, out var e))
 					return null;
 
 				s.Seek(dataStart + e.Offset, SeekOrigin.Begin);
@@ -133,7 +133,7 @@ namespace OpenRA.Mods.Common.FileSystem
 				return index.ContainsKey(filename);
 			}
 
-			public IReadOnlyDictionary<string, Entry> Index { get { return new ReadOnlyDictionary<string, Entry>(index); } }
+			public IReadOnlyDictionary<string, Entry> Index => new ReadOnlyDictionary<string, Entry>(index);
 
 			public void Dispose()
 			{

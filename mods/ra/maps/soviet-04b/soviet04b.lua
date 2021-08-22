@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -127,9 +127,9 @@ WorldLoaded = function()
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "Objective failed")
 	end)
 
-	KillAll = player.AddPrimaryObjective("Defeat the Allied forces.")
-	BeatUSSR = Greece.AddPrimaryObjective("Defeat the Soviet forces.")
-	KillRadar = player.AddSecondaryObjective("Destroy Allied Radar Dome to stop enemy\nreinforcements.")
+	KillAll = player.AddObjective("Defeat the Allied forces.")
+	BeatUSSR = Greece.AddObjective("Defeat the Soviet forces.")
+	KillRadar = player.AddObjective("Destroy Allied Radar Dome to stop enemy\nreinforcements.", "Secondary", false)
 
 	Trigger.OnPlayerLost(player, function()
 		Media.PlaySpeechNotification(player, "Lose")
@@ -139,7 +139,7 @@ WorldLoaded = function()
 		Media.PlaySpeechNotification(player, "Win")
 	end)
 
-	Trigger.OnKilled(Radar, function()
+	Trigger.OnKilled(RadarDome, function()
 		player.MarkCompletedObjective(KillRadar)
 		Media.PlaySpeechNotification(player, "ObjectiveMet")
 	end)

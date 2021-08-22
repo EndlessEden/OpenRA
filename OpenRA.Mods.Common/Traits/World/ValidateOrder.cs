@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -14,6 +14,7 @@ using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
 {
+	[TraitLocation(SystemActors.World)]
 	[Desc("Used to detect exploits. Attach this to the world actor.")]
 	public class ValidateOrderInfo : TraitInfo<ValidateOrder> { }
 
@@ -29,18 +30,17 @@ namespace OpenRA.Mods.Common.Traits
 
 			if (subjectClient == null)
 			{
-				Game.Debug("Order sent to {0}: resolved ClientIndex `{1}` doesn't exist", order.Subject.Owner.PlayerName, subjectClientId);
+				Log.Write("debug", "Tick {0}: Order sent to {1}: resolved ClientIndex `{2}` doesn't exist", world.WorldTick, order.Subject.Owner.PlayerName, subjectClientId);
 				return false;
 			}
 
 			var isBotOrder = subjectClient.Bot != null && clientId == subjectClient.BotControllerClientIndex;
 
-			// Drop exploiting orders
+			// Drop orders from players who shouldn't be able to control this actor
+			// This may be because the owner changed within the last net tick,
+			// or, less likely, the client may be trying to do something malicious.
 			if (subjectClientId != clientId && !isBotOrder)
-			{
-				Game.Debug("Detected exploit order from client {0}: {1}", clientId, order.OrderString);
 				return false;
-			}
 
 			return order.Subject.AcceptsOrder(order.OrderString);
 		}

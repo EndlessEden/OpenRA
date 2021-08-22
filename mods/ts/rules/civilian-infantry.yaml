@@ -9,7 +9,7 @@ WEEDGUY:
 	Mobile:
 		Speed: 42
 	Health:
-		HP: 130
+		HP: 13000
 	Crushable:
 		CrushSound: squishy2.aud
 	Armament:
@@ -29,7 +29,8 @@ UMAGON:
 	Inherits: ^Soldier
 	Inherits@2: ^HealsOnTiberium
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@EXPHOSPITAL: ^InfantryExperienceHospitalOverrides
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
 	Valued:
 		Cost: 400
 	Tooltip:
@@ -39,7 +40,7 @@ UMAGON:
 	Mobile:
 		Speed: 71
 	Health:
-		HP: 150
+		HP: 15000
 	Passenger:
 	RevealsShroud:
 		Range: 7c0
@@ -47,7 +48,7 @@ UMAGON:
 		Weapon: Sniper
 	AttackFrontal:
 		Voice: Attack
-	WithInfantryBody:
+	WithSplitAttackPaletteInfantryBody:
 		DefaultAttackSequence: attack
 	ProducibleWithLevel:
 		Prerequisites: barracks.upgraded
@@ -61,7 +62,7 @@ CHAMSPY:
 	Voiced:
 		VoiceSet: Spy
 	Health:
-		HP: 120
+		HP: 12000
 	Mobile:
 		Speed: 85
 	RevealsShroud:
@@ -70,23 +71,25 @@ CHAMSPY:
 	Disguise:
 		DisguisedCondition: disguise
 	WithDecoration@disguise:
+		RequiresCondition: disguise
+		Position: TopRight
+		Margin: 6, 10
 		Image: pips
 		Sequence: pip-disguise
 		Palette: pips
-		ReferencePoint: Top, Right
-		ZOffset: 256
-		RequiresCondition: disguise
 	Infiltrates:
 		Types: SpyInfiltrate
-	-WithInfantryBody:
+		Notification: BuildingInfiltrated
+	-WithSplitAttackPaletteInfantryBody:
 	WithDisguisingInfantryBody:
-		IdleSequences: idle1,idle2
+		IdleSequences: idle1, idle2
 
 MUTANT:
 	Inherits: ^Soldier
 	Inherits@2: ^HealsOnTiberium
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@EXPHOSPITAL: ^InfantryExperienceHospitalOverrides
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
 	Valued:
 		Cost: 100
 	Tooltip:
@@ -94,7 +97,7 @@ MUTANT:
 	Voiced:
 		VoiceSet: Mutant
 	Health:
-		HP: 50
+		HP: 5000
 	Mobile:
 		Speed: 56
 	RevealsShroud:
@@ -103,7 +106,7 @@ MUTANT:
 		Weapon: Vulcan
 	AttackFrontal:
 		Voice: Attack
-	WithInfantryBody:
+	WithSplitAttackPaletteInfantryBody:
 		DefaultAttackSequence: attack
 	ProducibleWithLevel:
 		Prerequisites: barracks.upgraded
@@ -112,7 +115,8 @@ MWMN:
 	Inherits: ^Soldier
 	Inherits@2: ^HealsOnTiberium
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@EXPHOSPITAL: ^InfantryExperienceHospitalOverrides
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
 	Valued:
 		Cost: 100
 	Tooltip:
@@ -120,7 +124,7 @@ MWMN:
 	Voiced:
 		VoiceSet: CivilianFemale
 	Health:
-		HP: 50
+		HP: 5000
 	Mobile:
 		Speed: 56
 	RevealsShroud:
@@ -129,7 +133,7 @@ MWMN:
 		Weapon: Vulcan
 	AttackFrontal:
 		Voice: Attack
-	WithInfantryBody:
+	WithSplitAttackPaletteInfantryBody:
 		DefaultAttackSequence: attack
 	ProducibleWithLevel:
 		Prerequisites: barracks.upgraded
@@ -138,7 +142,8 @@ MUTANT3:
 	Inherits: ^Soldier
 	Inherits@2: ^HealsOnTiberium
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@EXPHOSPITAL: ^InfantryExperienceHospitalOverrides
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
 	Valued:
 		Cost: 100
 	Tooltip:
@@ -146,7 +151,7 @@ MUTANT3:
 	Voiced:
 		VoiceSet: Mutant
 	Health:
-		HP: 50
+		HP: 5000
 	Mobile:
 		Speed: 56
 	RevealsShroud:
@@ -155,8 +160,11 @@ MUTANT3:
 		Weapon: Vulcan
 	AttackFrontal:
 		Voice: Attack
-	WithInfantryBody:
+	WithSplitAttackPaletteInfantryBody:
 		DefaultAttackSequence: attack
+		Palette: player-nobright
+		IsPlayerPalette: true
+		SplitAttackPalette: bright
 	ProducibleWithLevel:
 		Prerequisites: barracks.upgraded
 
@@ -170,13 +178,11 @@ TRATOS:
 	Voiced:
 		VoiceSet: Tratos
 	Health:
-		HP: 200
+		HP: 20000
 	Mobile:
 		Speed: 71
 	RevealsShroud:
 		Range: 4c0
-	WithInfantryBody:
-		DefaultAttackSequence:
 
 OXANNA:
 	Inherits: ^Soldier
@@ -187,12 +193,12 @@ OXANNA:
 	Voiced:
 		VoiceSet: Oxanna
 	Health:
-		HP: 50
+		HP: 5000
 	Mobile:
 		Speed: 56
 	RevealsShroud:
 		Range: 4c0
-	WithInfantryBody:
+	WithSplitAttackPaletteInfantryBody:
 		DefaultAttackSequence: attack
 
 SLAV:
@@ -204,33 +210,52 @@ SLAV:
 	Voiced:
 		VoiceSet: Slavick
 	Health:
-		HP: 300
+		HP: 30000
 	Mobile:
 		Speed: 56
 	RevealsShroud:
 		Range: 4c0
-	WithInfantryBody:
+	WithSplitAttackPaletteInfantryBody:
 		DefaultAttackSequence: attack
 
 CIV1:
 	Inherits: ^CivilianInfantry
-	Inherits@AUTOTARGET: ^AutoTargetGround
-	WithInfantryBody:
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+	WithSplitAttackPaletteInfantryBody:
 		DefaultAttackSequence: attack
+		Palette: player-nomuzzle
+		IsPlayerPalette: true
+		SplitAttackPalette: muzzle
 	Armament:
 		Weapon: Pistola
 	AttackFrontal:
 		Voice: Attack
+	Voiced:
+		VoiceSet: Civilian1
 
 CIV2:
 	Inherits: ^CivilianInfantry
+	Voiced:
+		VoiceSet: Civilian2
 
 CIV3:
 	Inherits: ^CivilianInfantry
-	Inherits@AUTOTARGET: ^AutoTargetGround
-	WithInfantryBody:
+	Voiced:
+		VoiceSet: Civilian3
+
+CTECH:
+	Inherits: CIV3
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+	RenderSprites:
+		Image: civ3
+	WithSplitAttackPaletteInfantryBody:
 		DefaultAttackSequence: attack
+		Palette: player-nomuzzle
+		IsPlayerPalette: true
+		SplitAttackPalette: muzzle
 	Armament:
 		Weapon: Pistola
 	AttackFrontal:
 		Voice: Attack
+	Voiced:
+		VoiceSet: CivilianTechnician

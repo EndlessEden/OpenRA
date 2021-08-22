@@ -1,5 +1,7 @@
 Container@PLAYER_WIDGETS:
+	Logic: LoadIngameChatLogic
 	Children:
+		Container@CHAT_ROOT:
 		LogicKeyListener@CONTROLGROUP_KEYHANDLER:
 			Logic: ControlGroupLogic
 		LogicTicker@SIDEBAR_TICKER:
@@ -14,23 +16,15 @@ Container@PLAYER_WIDGETS:
 					TooltipContainer: TOOLTIP_CONTAINER
 					ReadyText: READY
 					HoldText: ON HOLD
-				Container@PALETTE_FOREGROUND:
-					Children:
-						Image@ICON_TEMPLATE:
-							X: 0 - 2
-							Y: 0 - 2
-							Width: 60
-							Height: 48
-							IgnoreMouseOver: true
-							ImageCollection: sidebar
-							ImageName: background-supportoverlay
+					HotkeyPrefix: SupportPower
+					HotkeyCount: 6
 		Image@COMMAND_BAR_BACKGROUND:
 			X: 0
 			Y: WINDOW_BOTTOM - HEIGHT
 			Width: 416
 			Height: 43
-			ImageCollection: sidebar-bits
-			ImageName: commandbar-background
+			ImageCollection: commandbar
+			ImageName: background
 		Container@COMMAND_BAR:
 			Logic: CommandBarLogic
 			X: 24
@@ -38,15 +32,18 @@ Container@PLAYER_WIDGETS:
 			Width: 275
 			Height: 41
 			Children:
+				LogicKeyListener@MODIFIER_OVERRIDES:
 				Button@ATTACK_MOVE:
 					Width: 34
 					Height: 41
 					VisualHeight: 0
 					Background: command-button
+					Key: AttackMove
 					DisableKeySound: true
 					TooltipText: Attack Move
-					TooltipDesc: Selected units will move to the desired location\nand attack any enemies they encounter en route.\n\nLeft-click icon then right-click on target location.
+					TooltipDesc: Selected units will move to the desired location\nand attack any enemies they encounter en route.\n\nHold {(Ctrl)} while targeting to order an Assault Move\nthat attacks any units or structures encountered en route.\n\nLeft-click icon then right-click on target location.
 					TooltipContainer: TOOLTIP_CONTAINER
+					TooltipTemplate: BUTTON_WITH_DESC_HIGHLIGHT_TOOLTIP
 					Children:
 						Image@ICON:
 							X: 4
@@ -78,7 +75,7 @@ Container@PLAYER_WIDGETS:
 					Background: command-button
 					DisableKeySound: true
 					TooltipText: Force Attack
-					TooltipDesc: Selected units will attack the targeted unit or location\nignoring their default activity for the target.\n\nLeft-click icon then right-click on target.\nHold {(Ctrl)} to activate temporarily while commanding units.
+					TooltipDesc: Selected units will attack the targeted unit or location\n - Default activity for the target is suppressed\n - Allows targeting of own or ally forces\n\nLeft-click icon then right-click on target.\nHold {(Ctrl)} to activate temporarily while commanding units.
 					TooltipContainer: TOOLTIP_CONTAINER
 					TooltipTemplate: BUTTON_WITH_DESC_HIGHLIGHT_TOOLTIP
 					Children:
@@ -93,6 +90,7 @@ Container@PLAYER_WIDGETS:
 					Height: 41
 					VisualHeight: 0
 					Background: command-button
+					Key: Guard
 					DisableKeySound: true
 					TooltipText: Guard
 					TooltipDesc: Selected units will follow the targeted unit.\n\nLeft-click icon then right-click on target unit.
@@ -109,10 +107,11 @@ Container@PLAYER_WIDGETS:
 					Height: 41
 					VisualHeight: 0
 					Background: command-button
+					Key: Deploy
 					DisableKeyRepeat: true
 					DisableKeySound: true
 					TooltipText: Deploy
-					TooltipDesc: Selected units will perform their default deploy activity\n - MCVs will unpack into a Construction Yard\n - Thumpers will start or stop attracting worms\n\nActs immediately on selected units.
+					TooltipDesc: Selected units will perform their default deploy activity\n - MCVs will unpack into a Construction Yard\n - Thumpers will start or stop attracting worms\n - Devastators will become immobilized and explode\n\nActs immediately on selected units.
 					TooltipContainer: TOOLTIP_CONTAINER
 					Children:
 						Image@ICON:
@@ -126,6 +125,7 @@ Container@PLAYER_WIDGETS:
 					Height: 41
 					VisualHeight: 0
 					Background: command-button
+					Key: Scatter
 					DisableKeyRepeat: true
 					DisableKeySound: true
 					TooltipText: Scatter
@@ -143,6 +143,7 @@ Container@PLAYER_WIDGETS:
 					Height: 41
 					VisualHeight: 0
 					Background: command-button
+					Key: Stop
 					DisableKeyRepeat: true
 					DisableKeySound: true
 					TooltipText: Stop
@@ -183,6 +184,7 @@ Container@PLAYER_WIDGETS:
 					Height: 26
 					VisualHeight: 0
 					Background:
+					Key: StanceAttackAnything
 					DisableKeyRepeat: true
 					DisableKeySound: true
 					TooltipText: Attack Anything Stance
@@ -200,6 +202,7 @@ Container@PLAYER_WIDGETS:
 					Height: 26
 					VisualHeight: 0
 					Background:
+					Key: StanceDefend
 					DisableKeyRepeat: true
 					DisableKeySound: true
 					TooltipText: Defend Stance
@@ -217,6 +220,7 @@ Container@PLAYER_WIDGETS:
 					Height: 26
 					VisualHeight: 0
 					Background:
+					Key: StanceReturnFire
 					DisableKeyRepeat: true
 					DisableKeySound: true
 					TooltipText: Return Fire Stance
@@ -234,6 +238,7 @@ Container@PLAYER_WIDGETS:
 					Height: 26
 					VisualHeight: 0
 					Background:
+					Key: StanceHoldFire
 					DisableKeyRepeat: true
 					DisableKeySound: true
 					TooltipText: Hold Fire Stance
@@ -245,6 +250,26 @@ Container@PLAYER_WIDGETS:
 							Y: 5
 							ImageCollection: stance-icons
 							ImageName: hold-fire
+		Container@MUTE_INDICATOR:
+			Logic: MuteIndicatorLogic
+			X: WINDOW_RIGHT - WIDTH - 231
+			Y: 5
+			Width: 200
+			Height: 25
+			Children:
+				Image@ICON:
+					X: PARENT_RIGHT - WIDTH
+					Y: 1
+					Width: 24
+					Height: 24
+					ImageCollection: sidebar-bits
+					ImageName: indicator-muted
+				Label@LABEL:
+					Width: PARENT_RIGHT - 30
+					Height: 25
+					Align: Right
+					Text: Audio Muted
+					Contrast: true
 		Image@SIDEBAR_BACKGROUND_TOP:
 			X: WINDOW_RIGHT - 226
 			Y: 0
@@ -259,28 +284,13 @@ Container@PLAYER_WIDGETS:
 					X: 16
 					Y: 236
 					Children:
-						MenuButton@DEBUG_BUTTON:
-							Key: escape Shift
-							X: 4
-							Width: 34
-							Height: 35
-							Background:
-							TooltipText: Debug Menu
-							TooltipContainer: TOOLTIP_CONTAINER
-							DisableWorldSounds: true
-							VisualHeight: 0
-							Children:
-								Image@ICON:
-									X: 0
-									Y: 0
-									ImageCollection: order-icons
-									ImageName: debug
 						Button@REPAIR_BUTTON:
 							Logic: RepairOrderButtonLogic
 							X: 29
 							Width: 34
 							Height: 35
 							Background:
+							Key: Repair
 							TooltipText: Repair
 							TooltipContainer: TOOLTIP_CONTAINER
 							VisualHeight: 0
@@ -295,6 +305,7 @@ Container@PLAYER_WIDGETS:
 							Width: 34
 							Height: 35
 							Background:
+							Key: Sell
 							TooltipText: Sell
 							TooltipContainer: TOOLTIP_CONTAINER
 							VisualHeight: 0
@@ -309,6 +320,7 @@ Container@PLAYER_WIDGETS:
 							Width: 36
 							Height: 35
 							Background:
+							Key: PlaceBeacon
 							TooltipText: Place Beacon
 							TooltipContainer: TOOLTIP_CONTAINER
 							VisualHeight: 0
@@ -323,6 +335,7 @@ Container@PLAYER_WIDGETS:
 							Width: 36
 							Height: 35
 							Background:
+							Key: PowerDown
 							TooltipText: Power Down
 							TooltipContainer: TOOLTIP_CONTAINER
 							VisualHeight: 0
@@ -369,8 +382,10 @@ Container@PLAYER_WIDGETS:
 							Y: 34
 							Width: 202
 							Height: 202
+							SoundUp: RadarUp
+							SoundDown: RadarDown
 							Children:
-						VqaPlayer@PLAYER:
+						VideoPlayer@PLAYER:
 							X: 12
 							Y: 32
 							Width: 202
@@ -412,7 +427,7 @@ Container@PLAYER_WIDGETS:
 				Label@GAME_TIMER:
 					Logic: GameTimerLogic
 					X: 10
-					Y: 2
+					Y: 4
 					Width: PARENT_RIGHT
 					Height: 22
 					Align: Center
@@ -420,7 +435,7 @@ Container@PLAYER_WIDGETS:
 				LabelWithTooltip@CASH:
 					Logic: IngameCashCounterLogic
 					X: 29
-					Y: 2
+					Y: 4
 					Width: 50
 					Height: 22
 					Font: Bold
@@ -430,7 +445,7 @@ Container@PLAYER_WIDGETS:
 				LabelWithTooltip@POWER:
 					Logic: IngamePowerCounterLogic
 					X: PARENT_RIGHT - WIDTH - 30
-					Y: 2
+					Y: 4
 					Width: 50
 					Height: 22
 					Align: Right
@@ -441,7 +456,7 @@ Container@PLAYER_WIDGETS:
 					Children:
 						Image@POWER_ICON:
 							X: PARENT_RIGHT + 0
-							Y: 5
+							Y: 3
 							ImageCollection: power-icons
 							ImageName: power-normal
 		Container@SIDEBAR_PRODUCTION:
@@ -477,6 +492,10 @@ Container@PLAYER_WIDGETS:
 					IconSpriteOffset: 0, 0
 					MinimumRows: 5
 					MaximumRows: 6
+					HotkeyPrefix: Production
+					HotkeyCount: 24
+					SelectProductionBuildingHotkey: SelectProductionBuilding
+					ClickSound: TabClick
 				Container@PRODUCTION_TYPES:
 					X: 6
 					Y: 2
@@ -491,22 +510,7 @@ Container@PLAYER_WIDGETS:
 							TooltipText: Buildings
 							TooltipContainer: TOOLTIP_CONTAINER
 							ProductionGroup: Building
-							HotkeyName: ProductionTypeBuildingKey
-							Children:
-								Image@ICON:
-									X: 5
-									Y: 5
-									ImageCollection: production-icons
-						ProductionTypeButton@UPGRADE:
-							Y: 31
-							Width: 25
-							Height: 25
-							VisualHeight: 0
-							Background: sidebar-button
-							TooltipText: Upgrades
-							TooltipContainer: TOOLTIP_CONTAINER
-							ProductionGroup: Upgrade
-							HotkeyName: ProductionTypeUpgradeKey
+							Key: ProductionTypeBuilding
 							Children:
 								Image@ICON:
 									X: 5
@@ -521,7 +525,7 @@ Container@PLAYER_WIDGETS:
 							TooltipText: Infantry
 							TooltipContainer: TOOLTIP_CONTAINER
 							ProductionGroup: Infantry
-							HotkeyName: ProductionTypeInfantryKey
+							Key: ProductionTypeInfantry
 							Children:
 								Image@ICON:
 									X: 5
@@ -536,7 +540,7 @@ Container@PLAYER_WIDGETS:
 							TooltipText: Light Vehicles
 							TooltipContainer: TOOLTIP_CONTAINER
 							ProductionGroup: Vehicle
-							HotkeyName: ProductionTypeVehicleKey
+							Key: ProductionTypeVehicle
 							Children:
 								Image@ICON:
 									X: 5
@@ -551,7 +555,7 @@ Container@PLAYER_WIDGETS:
 							TooltipText: Heavy Vehicles
 							TooltipContainer: TOOLTIP_CONTAINER
 							ProductionGroup: Armor
-							HotkeyName: ProductionTypeTankKey
+							Key: ProductionTypeTank
 							Children:
 								Image@ICON:
 									X: 5
@@ -566,7 +570,7 @@ Container@PLAYER_WIDGETS:
 							TooltipText: Aircraft
 							TooltipContainer: TOOLTIP_CONTAINER
 							ProductionGroup: Aircraft
-							HotkeyName: ProductionTypeAircraftKey
+							Key: ProductionTypeAircraft
 							Children:
 								Image@ICON:
 									X: 5
@@ -581,7 +585,22 @@ Container@PLAYER_WIDGETS:
 							TooltipText: Starport
 							TooltipContainer: TOOLTIP_CONTAINER
 							ProductionGroup: Starport
-							HotkeyName: ProductionTypeMerchantKey
+							Key: ProductionTypeMerchant
+							Children:
+								Image@ICON:
+									X: 5
+									Y: 5
+									ImageCollection: production-icons
+						ProductionTypeButton@UPGRADE: # Upgrade is defined after others so it won't be automatically selected after sell or at game start.
+							Y: 31
+							Width: 25
+							Height: 25
+							VisualHeight: 0
+							Background: sidebar-button
+							TooltipText: Upgrades
+							TooltipContainer: TOOLTIP_CONTAINER
+							ProductionGroup: Upgrade
+							Key: ProductionTypeUpgrade
 							Children:
 								Image@ICON:
 									X: 5
@@ -599,8 +618,8 @@ Container@PLAYER_WIDGETS:
 								Image@ICON:
 									X: 5
 									Y: 5
-									ImageCollection: scrollbar
-									ImageName: up_arrow
+									ImageCollection: scrollpanel-decorations
+									ImageName: up
 						Button@SCROLL_DOWN_BUTTON:
 							Y: 248
 							Width: 25
@@ -613,5 +632,5 @@ Container@PLAYER_WIDGETS:
 								Image@ICON:
 									X: 5
 									Y: 5
-									ImageCollection: scrollbar
-									ImageName: down_arrow
+									ImageCollection: scrollpanel-decorations
+									ImageName: down

@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -11,9 +11,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using OpenRA.FileFormats;
 using OpenRA.FileSystem;
 using OpenRA.Mods.Cnc.FileFormats;
 using OpenRA.Primitives;
@@ -26,7 +26,7 @@ namespace OpenRA.Mods.Cnc.FileSystem
 		public sealed class MixFile : IReadOnlyPackage
 		{
 			public string Name { get; private set; }
-			public IEnumerable<string> Contents { get { return index.Keys; } }
+			public IEnumerable<string> Contents => index.Keys;
 
 			readonly Dictionary<string, PackageEntry> index;
 			readonly long dataStart;
@@ -49,16 +49,13 @@ namespace OpenRA.Mods.Cnc.FileSystem
 
 					List<PackageEntry> entries;
 					if (isEncrypted)
-					{
-						long unused;
-						entries = ParseHeader(DecryptHeader(s, 4, out dataStart), 0, out unused);
-					}
+						entries = ParseHeader(DecryptHeader(s, 4, out dataStart), 0, out _);
 					else
 						entries = ParseHeader(s, isCncMix ? 0 : 4, out dataStart);
 
 					index = ParseIndex(entries.ToDictionaryWithConflictLog(x => x.Hash,
-						"{0} ({1} format, Encrypted: {2}, DataStart: {3})".F(filename, isCncMix ? "C&C" : "RA/TS/RA2", isEncrypted, dataStart),
-						null, x => "(offs={0}, len={1})".F(x.Offset, x.Length)), allPossibleFilenames);
+						$"{filename} ({(isCncMix ? "C&C" : "RA/TS/RA2")} format, Encrypted: {isEncrypted}, DataStart: {dataStart})",
+						null, x => $"(offs={x.Offset}, len={x.Length})"), allPossibleFilenames);
 				}
 				catch (Exception)
 				{
@@ -94,9 +91,8 @@ namespace OpenRA.Mods.Cnc.FileSystem
 				{
 					var classicHash = PackageEntry.HashFilename(filename, PackageHashType.Classic);
 					var crcHash = PackageEntry.HashFilename(filename, PackageHashType.CRC32);
-					PackageEntry e;
 
-					if (entries.TryGetValue(classicHash, out e))
+					if (entries.TryGetValue(classicHash, out var e))
 						classicIndex.Add(filename, e);
 
 					if (entries.TryGetValue(crcHash, out e))
@@ -107,7 +103,7 @@ namespace OpenRA.Mods.Cnc.FileSystem
 
 				var unknown = entries.Count - bestIndex.Count;
 				if (unknown > 0)
-					Log.Write("debug", "{0}: failed to resolve filenames for {1} unknown hashes".F(Name, unknown));
+					Log.Write("debug", $"{Name}: failed to resolve filenames for {unknown} unknown hashes");
 
 				return bestIndex;
 			}
@@ -150,7 +146,7 @@ namespace OpenRA.Mods.Cnc.FileSystem
 			{
 				var decrypted = fish.Decrypt(h);
 
-				var ms = new MemoryStream();
+				var ms = new MemoryStream(decrypted.Length * 4);
 				var writer = new BinaryWriter(ms);
 				foreach (var t in decrypted)
 					writer.Write(t);
@@ -163,13 +159,13 @@ namespace OpenRA.Mods.Cnc.FileSystem
 			static uint[] ReadBlocks(Stream s, long offset, int count)
 			{
 				if (offset < 0)
-					throw new ArgumentOutOfRangeException("offset", "Non-negative number required.");
+					throw new ArgumentOutOfRangeException(nameof(offset), "Non-negative number required.");
 
 				if (count < 0)
-					throw new ArgumentOutOfRangeException("count", "Non-negative number required.");
+					throw new ArgumentOutOfRangeException(nameof(count), "Non-negative number required.");
 
 				if (offset + (count * 2) > s.Length)
-					throw new ArgumentException("Bytes to read {0} and offset {1} greater than stream length {2}.".F(count * 2, offset, s.Length));
+					throw new ArgumentException($"Bytes to read {count * 2} and offset {offset} greater than stream length {s.Length}.");
 
 				s.Seek(offset, SeekOrigin.Begin);
 
@@ -188,8 +184,7 @@ namespace OpenRA.Mods.Cnc.FileSystem
 
 			public Stream GetStream(string filename)
 			{
-				PackageEntry e;
-				if (!index.TryGetValue(filename, out e))
+				if (!index.TryGetValue(filename, out var e))
 					return null;
 
 				return GetContent(e);
@@ -211,12 +206,11 @@ namespace OpenRA.Mods.Cnc.FileSystem
 
 			public IReadOnlyPackage OpenPackage(string filename, FS context)
 			{
-				IReadOnlyPackage package;
 				var childStream = GetStream(filename);
 				if (childStream == null)
 					return null;
 
-				if (context.TryParsePackage(childStream, filename, out package))
+				if (context.TryParsePackage(childStream, filename, out var package))
 					return package;
 
 				childStream.Dispose();
@@ -238,9 +232,8 @@ namespace OpenRA.Mods.Cnc.FileSystem
 			}
 
 			// Load the global mix database
-			Stream mixDatabase;
 			var allPossibleFilenames = new HashSet<string>();
-			if (context.TryOpen("global mix database.dat", out mixDatabase))
+			if (context.TryOpen("global mix database.dat", out var mixDatabase))
 				using (var db = new XccGlobalDatabase(mixDatabase))
 					foreach (var e in db.Entries)
 						allPossibleFilenames.Add(e);

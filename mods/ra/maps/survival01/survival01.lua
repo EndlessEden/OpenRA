@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -38,8 +38,8 @@ end
 
 AlliedAirReinforcementsWaypoints =
 {
-	{ AirReinforcementsEntry1.Location, AirReinforcementsEntry2.Location },
-	{ AirReinforcementsRally1.Location, AirReinforcementsRally2.Location }
+	{ AirReinforcementsEntry1.Location, AirReinforcementsRally1.Location },
+	{ AirReinforcementsEntry2.Location, AirReinforcementsRally2.Location }
 }
 FrenchReinforcements = { "2tnk", "2tnk", "2tnk", "2tnk", "2tnk", "1tnk", "1tnk", "1tnk", "arty", "arty", "arty", "jeep", "jeep" }
 
@@ -53,10 +53,10 @@ FactoryClearRange = 10
 ParadropTicks = DateTime.Seconds(30)
 ParadropWaypoints =
 {
-	{ 192 + 4, ParaDrop1},
-	{ 192 - 4, ParaDrop2},
-	{ 192 + 4, Alliesbase2},
-	{ 192 - 4, Alliesbase1}
+	{ Angle.East + Angle.New(16), ParaDrop1},
+	{ Angle.East - Angle.New(16), ParaDrop2},
+	{ Angle.East + Angle.New(16), Alliesbase2},
+	{ Angle.East - Angle.New(16), Alliesbase1}
 }
 NavalTransportPassengers = { "e1", "e1", "e2", "e4", "e4" }
 NavalReinforcementsWaypoints = { NavalWaypoint1, NavalWaypoint2, NavalWaypoint2, NavalWaypoint3 }
@@ -183,13 +183,10 @@ FinishTimer = function()
 end
 
 SendSovietParadrops = function(table)
-	local units = powerproxy.SendParatroopers(table[2].CenterPosition, false, table[1])
-
-	Utils.Do(units, function(unit)
-		Trigger.OnIdle(unit, function(a)
-			if a.IsInWorld then
-				a.Hunt()
-			end
+	local aircraft = powerproxy.TargetParatroopers(table[2].CenterPosition, table[1])
+	Utils.Do(aircraft, function(a)
+		Trigger.OnPassengerExited(a, function(t, p)
+			IdleHunt(p)
 		end)
 	end)
 end
@@ -272,9 +269,9 @@ TimerExpired = function()
 	Reinforcements.Reinforce(allies, FrenchReinforcements, { SovietEntryPoint7.Location, Alliesbase.Location })
 
 	if DestroyObj then
-		KillObj = allies.AddPrimaryObjective("Take control of French reinforcements and\nkill all remaining Soviet forces.")
+		KillObj = allies.AddObjective("Take control of French reinforcements and\nkill all remaining Soviet forces.")
 	else
-		DestroyObj = allies.AddPrimaryObjective("Take control of French reinforcements and\ndismantle the nearby Soviet base.")
+		DestroyObj = allies.AddObjective("Take control of French reinforcements and\ndismantle the nearby Soviet base.")
 	end
 
 	allies.MarkCompletedObjective(SurviveObj)
@@ -285,7 +282,7 @@ end
 
 DropAlliedArtillery = function(facing, dropzone)
 	local proxy = Actor.Create("powerproxy.allied", true, { Owner = allies })
-	proxy.SendParatroopers(dropzone, false, facing)
+	proxy.TargetParatroopers(dropzone, facing)
 	proxy.Destroy()
 end
 
@@ -295,7 +292,7 @@ SendLongBowReinforcements = function()
 	Reinforcements.Reinforce(allies, LongBowReinforcements, AlliedAirReinforcementsWaypoints[2])
 
 	if ParadropArtillery then
-		local facing = Utils.RandomInteger(Facing.NorthWest, Facing.SouthWest)
+		local facing = Angle.New(Utils.RandomInteger(128, 384))
 		DropAlliedArtillery(facing, Alliesbase.CenterPosition)
 	end
 end
@@ -305,11 +302,11 @@ InitObjectives = function()
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "New " .. string.lower(p.GetObjectiveType(id)) .. " objective")
 	end)
 
-	SurviveObj = allies.AddPrimaryObjective("Enforce your position and hold-out the onslaught\nuntil reinforcements arrive.")
-	KillSams = allies.AddSecondaryObjective("Destroy the two SAM sites before reinforcements\narrive.")
+	SurviveObj = allies.AddObjective("Enforce your position and hold-out the onslaught\nuntil reinforcements arrive.")
+	KillSams = allies.AddObjective("Destroy the two SAM sites before reinforcements\narrive.", "Secondary", false)
 	Media.DisplayMessage("The Soviets are blocking our GPS. We need to investigate their new technology.")
-	CaptureAirfields = allies.AddSecondaryObjective("Capture and hold the Soviet airbase\nin the northeast.")
-	SovietObj = soviets.AddPrimaryObjective("Eliminate all Allied forces.")
+	CaptureAirfields = allies.AddObjective("Capture and hold the Soviet airbase\nin the northeast.", "Secondary", false)
+	SovietObj = soviets.AddObjective("Eliminate all Allied forces.")
 
 	Trigger.OnObjectiveCompleted(allies, function(p, id)
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "Objective completed")
@@ -362,11 +359,11 @@ InitMission = function()
 	Trigger.OnAllKilledOrCaptured(SovietBuildings, function()
 		if DestroyObj then
 			if not soviets.HasNoRequiredUnits() then
-				KillObj = allies.AddPrimaryObjective("Kill all remaining Soviet forces.")
+				KillObj = allies.AddObjective("Kill all remaining Soviet forces.")
 			end
 			allies.MarkCompletedObjective(DestroyObj)
 		else
-			DestroyObj = allies.AddPrimaryObjective("Dismantle the nearby Soviet base.")
+			DestroyObj = allies.AddObjective("Dismantle the nearby Soviet base.")
 			allies.MarkCompletedObjective(DestroyObj)
 		end
 	end)

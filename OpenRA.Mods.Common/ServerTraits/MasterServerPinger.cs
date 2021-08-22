@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -11,20 +11,25 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
+using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using BeaconLib;
+using OpenRA.Network;
 using OpenRA.Server;
+using OpenRA.Support;
 using S = OpenRA.Server.Server;
 
 namespace OpenRA.Mods.Common.Server
 {
 	public class MasterServerPinger : ServerTrait, ITick, INotifyServerStart, INotifySyncLobbyInfo, IStartGame, IEndGame
 	{
-		// 3 minutes. Server has a 5 minute TTL for games, so give ourselves a bit of leeway.
-		const int MasterPingInterval = 60 * 3;
+		// 3 minutes (in milliseconds). Server has a 5 minute TTL for games, so give ourselves a bit of leeway.
+		const int MasterPingInterval = 60 * 3 * 1000;
+
+		// 1 second (in milliseconds) minimum delay between pings
+		const int RateLimitInterval = 1000;
+
 		static readonly Beacon LanGameBeacon;
 		static readonly Dictionary<int, string> MasterServerErrors = new Dictionary<int, string>()
 		{
@@ -32,13 +37,12 @@ namespace OpenRA.Mods.Common.Server
 			{ 2, "Server name contains a blacklisted word." }
 		};
 
-		public int TickTimeout { get { return MasterPingInterval * 10000; } }
-
 		long lastPing = 0;
+		long lastChanged = 0;
 		bool isInitialPing = true;
 
 		volatile bool isBusy;
-		Queue<string> masterServerMessages = new Queue<string>();
+		readonly Queue<string> masterServerMessages = new Queue<string>();
 
 		static MasterServerPinger()
 		{
@@ -54,118 +58,98 @@ namespace OpenRA.Mods.Common.Server
 
 		public void Tick(S server)
 		{
-			if ((Game.RunTime - lastPing > MasterPingInterval * 1000) || isInitialPing)
-				PublishGame(server);
-			else
-				lock (masterServerMessages)
-					while (masterServerMessages.Count > 0)
-						server.SendMessage(masterServerMessages.Dequeue());
+			// Force an update if the last one was too long ago so the advertisement doesn't time out
+			if (Game.RunTime - lastChanged > MasterPingInterval)
+				lastChanged = Game.RunTime;
+
+			// Update the master server and LAN clients if something has changed
+			// Note that isBusy is set while the master server ping is running on a
+			// background thread, and limits LAN pings as well as master server pings for simplicity.
+			if (!isBusy && ((lastChanged > lastPing && Game.RunTime - lastPing > RateLimitInterval) || isInitialPing))
+			{
+				var gs = new GameServer(server);
+				if (server.Settings.AdvertiseOnline)
+					UpdateMasterServer(server, gs.ToPOSTData(false));
+
+				if (LanGameBeacon != null)
+					LanGameBeacon.BeaconData = gs.ToPOSTData(true);
+
+				lastPing = Game.RunTime;
+			}
+
+			lock (masterServerMessages)
+				while (masterServerMessages.Count > 0)
+					server.SendMessage(masterServerMessages.Dequeue());
 		}
 
 		public void ServerStarted(S server)
 		{
-			if (!server.Ip.Equals(IPAddress.Loopback) && LanGameBeacon != null)
+			if (server.Type != ServerType.Local && LanGameBeacon != null)
 				LanGameBeacon.Start();
 		}
 
 		public void LobbyInfoSynced(S server)
 		{
-			PublishGame(server);
+			lastChanged = Game.RunTime;
 		}
 
 		public void GameStarted(S server)
 		{
-			PublishGame(server);
+			lastChanged = Game.RunTime;
 		}
 
 		public void GameEnded(S server)
 		{
-			if (LanGameBeacon != null)
-				LanGameBeacon.Stop();
+			LanGameBeacon?.Stop();
 
-			PublishGame(server);
+			lastChanged = Game.RunTime;
 		}
 
-		void PublishGame(S server)
+		void UpdateMasterServer(S server, string postData)
 		{
-			var mod = server.ModData.Manifest;
-
-			// important to grab these on the main server thread, not in the worker we're about to spawn -- they may be modified
-			// by the main thread as clients join and leave.
-			var numPlayers = server.LobbyInfo.Clients.Where(c1 => c1.Bot == null && c1.Slot != null).Count();
-			var numBots = server.LobbyInfo.Clients.Where(c1 => c1.Bot != null).Count();
-			var numSpectators = server.LobbyInfo.Clients.Where(c1 => c1.Bot == null && c1.Slot == null).Count();
-			var numSlots = server.LobbyInfo.Slots.Where(s => !s.Value.Closed).Count() - numBots;
-			var passwordProtected = !string.IsNullOrEmpty(server.Settings.Password);
-			var clients = server.LobbyInfo.Clients.Where(c1 => c1.Bot == null).Select(c => Convert.ToBase64String(Encoding.UTF8.GetBytes(c.Name))).ToArray();
-
-			UpdateMasterServer(server, numPlayers, numSlots, numBots, numSpectators, mod, passwordProtected, clients);
-			if (LanGameBeacon != null)
-				UpdateLANGameBeacon(server, numPlayers, numSlots, numBots, numSpectators, mod, passwordProtected);
-		}
-
-		void UpdateMasterServer(S server, int numPlayers, int numSlots, int numBots, int numSpectators, Manifest mod, bool passwordProtected, string[] clients)
-		{
-			if (isBusy || !server.Settings.AdvertiseOnline)
-				return;
-
-			lastPing = Game.RunTime;
 			isBusy = true;
 
-			Action a = () =>
+			Task.Run(async () =>
 			{
 				try
 				{
-					var url = "ping?port={0}&name={1}&state={2}&players={3}&bots={4}&mods={5}&map={6}&maxplayers={7}&spectators={8}&protected={9}&clients={10}";
-					if (isInitialPing) url += "&new=1";
+					var endpoint = server.ModData.Manifest.Get<WebServices>().ServerAdvertise;
 
-					var serverList = server.ModData.Manifest.Get<WebServices>().ServerList;
-					using (var wc = new WebClient())
+					var client = HttpClientFactory.Create();
+					var response = await client.PostAsync(endpoint, new StringContent(postData));
+
+					var masterResponseText = await response.Content.ReadAsStringAsync();
+
+					if (isInitialPing)
 					{
-						wc.Proxy = null;
-						var masterResponse = wc.DownloadData(
-							serverList + url.F(
-							server.Settings.ExternalPort, Uri.EscapeUriString(server.Settings.Name),
-							(int)server.State,
-							numPlayers,
-							numBots,
-							"{0}@{1}".F(mod.Id, mod.Metadata.Version),
-							server.LobbyInfo.GlobalSettings.Map,
-							numSlots,
-							numSpectators,
-							passwordProtected ? 1 : 0,
-							string.Join(",", clients)));
+						Log.Write("server", "Master server: " + masterResponseText);
+						var errorCode = 0;
+						var errorMessage = string.Empty;
 
-						if (isInitialPing)
+						if (!string.IsNullOrWhiteSpace(masterResponseText))
 						{
-							var masterResponseText = Encoding.UTF8.GetString(masterResponse);
-							Log.Write("server", "Master server: " + masterResponseText);
+							var regex = new Regex(@"^\[(?<code>-?\d+)\](?<message>.*)");
+							var match = regex.Match(masterResponseText);
+							errorMessage = match.Success && int.TryParse(match.Groups["code"].Value, out errorCode) ?
+								match.Groups["message"].Value.Trim() : "Failed to parse error message";
+						}
 
-							var errorCode = 0;
-							var errorMessage = string.Empty;
-
-							if (masterResponseText.Length > 0)
+						isInitialPing = false;
+						lock (masterServerMessages)
+						{
+							masterServerMessages.Enqueue("Master server communication established.");
+							if (errorCode != 0)
 							{
-								var regex = new Regex(@"^\[(?<code>\d+)\](?<message>.*)");
-								var match = regex.Match(masterResponseText);
-								errorMessage = match.Success && int.TryParse(match.Groups["code"].Value, out errorCode) ?
-									match.Groups["message"].Value.Trim() : "Failed to parse error message";
-							}
+								// Hardcoded error messages take precedence over the server-provided messages
+								if (!MasterServerErrors.TryGetValue(errorCode, out var message))
+									message = errorMessage;
 
-							isInitialPing = false;
-							lock (masterServerMessages)
-							{
-								masterServerMessages.Enqueue("Master server communication established.");
-								if (errorCode != 0)
-								{
-									// Hardcoded error messages take precedence over the server-provided messages
-									string message;
-									if (!MasterServerErrors.TryGetValue(errorCode, out message))
-										message = errorMessage;
+								masterServerMessages.Enqueue("Warning: " + message);
 
-									masterServerMessages.Enqueue("Warning: " + message);
+								// Positive error codes indicate errors that prevent advertisement
+								// Negative error codes are non-fatal warnings
+								if (errorCode > 0)
 									masterServerMessages.Enqueue("Game has not been advertised online.");
-								}
 							}
 						}
 					}
@@ -178,32 +162,7 @@ namespace OpenRA.Mods.Common.Server
 				}
 
 				isBusy = false;
-			};
-
-			a.BeginInvoke(null, null);
-		}
-
-		void UpdateLANGameBeacon(S server, int numPlayers, int numSlots, int numBots, int numSpectators, Manifest mod, bool passwordProtected)
-		{
-			var settings = server.Settings;
-
-			// TODO: Serialize and send client names
-			var lanGameYaml =
-@"Game:
-	Id: {0}
-	Name: {1}
-	Address: {2}:{3}
-	State: {4}
-	Players: {5}
-	MaxPlayers: {6}
-	Bots: {7}
-	Spectators: {8}
-	Map: {9}
-	Mods: {10}@{11}
-	Protected: {12}".F(Platform.SessionGUID, settings.Name, server.Ip, settings.ListenPort, (int)server.State, numPlayers, numSlots, numBots, numSpectators,
-				server.Map.Uid, mod.Id, mod.Metadata.Version, passwordProtected);
-
-			LanGameBeacon.BeaconData = lanGameYaml;
+			});
 		}
 	}
 }

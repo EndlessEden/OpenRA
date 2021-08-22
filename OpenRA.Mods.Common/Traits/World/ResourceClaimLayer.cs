@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -11,11 +11,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using OpenRA.Graphics;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
 {
+	[TraitLocation(SystemActors.World)]
 	[Desc("Allows harvesters to coordinate their operations. Attach this to the world actor.")]
 	public sealed class ResourceClaimLayerInfo : TraitInfo<ResourceClaimLayer> { }
 
@@ -39,8 +39,7 @@ namespace OpenRA.Mods.Common.Traits
 				return false;
 
 			// Remove the actor's last claim, if it has one
-			CPos lastClaim;
-			if (claimByActor.TryGetValue(claimer, out lastClaim))
+			if (claimByActor.TryGetValue(claimer, out var lastClaim))
 				claimByCell.GetOrAdd(lastClaim).Remove(claimer);
 
 			claimers.Add(claimer);
@@ -60,11 +59,9 @@ namespace OpenRA.Mods.Common.Traits
 		/// <summary>
 		/// Release the last resource claim made by this actor.
 		/// </summary>
-		/// <param name="claimer"></param>
 		public void RemoveClaim(Actor claimer)
 		{
-			CPos lastClaim;
-			if (claimByActor.TryGetValue(claimer, out lastClaim))
+			if (claimByActor.TryGetValue(claimer, out var lastClaim))
 				claimByCell.GetOrAdd(lastClaim).Remove(claimer);
 
 			claimByActor.Remove(claimer);

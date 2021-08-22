@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using OpenRA.FileSystem;
@@ -19,6 +20,17 @@ using OpenRA.Primitives;
 namespace OpenRA
 {
 	public interface IGlobalModData { }
+
+	public sealed class TerrainFormat : IGlobalModData
+	{
+		public readonly string Type;
+		public readonly IReadOnlyDictionary<string, MiniYaml> Metadata;
+		public TerrainFormat(MiniYaml yaml)
+		{
+			Type = yaml.Value;
+			Metadata = new ReadOnlyDictionary<string, MiniYaml>(yaml.ToDictionary());
+		}
+	}
 
 	public sealed class SpriteSequenceFormat : IGlobalModData
 	{
@@ -46,11 +58,13 @@ namespace OpenRA
 	{
 		public string Title;
 		public string Version;
+		public string Website;
+		public string WebIcon32;
 		public bool Hidden;
 	}
 
 	/// <summary> Describes what is to be loaded in order to run a mod. </summary>
-	public class Manifest
+	public class Manifest : IDisposable
 	{
 		public readonly string Id;
 		public readonly IReadOnlyPackage Package;
@@ -59,22 +73,25 @@ namespace OpenRA
 			Rules, ServerTraits,
 			Sequences, ModelSequences, Cursors, Chrome, Assemblies, ChromeLayout,
 			Weapons, Voices, Notifications, Music, Translations, TileSets,
-			ChromeMetrics, MapCompatibility, Missions;
+			ChromeMetrics, MapCompatibility, Missions, Hotkeys;
 
 		public readonly IReadOnlyDictionary<string, string> Packages;
 		public readonly IReadOnlyDictionary<string, string> MapFolders;
 		public readonly MiniYaml LoadScreen;
-		public readonly Dictionary<string, Pair<string, int>> Fonts;
 
 		public readonly string[] SoundFormats = { };
 		public readonly string[] SpriteFormats = { };
 		public readonly string[] PackageFormats = { };
+		public readonly string[] VideoFormats = { };
 
-		readonly string[] reservedModuleNames = { "Metadata", "Folders", "MapFolders", "Packages", "Rules",
+		readonly string[] reservedModuleNames =
+		{
+			"Include", "Metadata", "Folders", "MapFolders", "Packages", "Rules",
 			"Sequences", "ModelSequences", "Cursors", "Chrome", "Assemblies", "ChromeLayout", "Weapons",
-			"Voices", "Notifications", "Music", "Translations", "TileSets", "ChromeMetrics", "Missions",
-			"ServerTraits", "LoadScreen", "Fonts", "SupportsMapsFrom", "SoundFormats", "SpriteFormats",
-			"RequiresMods", "PackageFormats" };
+			"Voices", "Notifications", "Music", "Translations", "TileSets", "ChromeMetrics", "Missions", "Hotkeys",
+			"ServerTraits", "LoadScreen", "SupportsMapsFrom", "SoundFormats", "SpriteFormats", "VideoFormats",
+			"RequiresMods", "PackageFormats"
+		};
 
 		readonly TypeDictionary modules = new TypeDictionary();
 		readonly Dictionary<string, MiniYaml> yaml;
@@ -85,16 +102,33 @@ namespace OpenRA
 		{
 			Id = modId;
 			Package = package;
-			yaml = new MiniYaml(null, MiniYaml.FromStream(package.GetStream("mod.yaml"), "mod.yaml")).ToDictionary();
+
+			var nodes = MiniYaml.FromStream(package.GetStream("mod.yaml"), "mod.yaml");
+			for (var i = nodes.Count - 1; i >= 0; i--)
+			{
+				if (nodes[i].Key != "Include")
+					continue;
+
+				// Replace `Includes: filename.yaml` with the contents of filename.yaml
+				var filename = nodes[i].Value.Value;
+				var contents = package.GetStream(filename);
+				if (contents == null)
+					throw new YamlException($"{nodes[i].Location}: File `{filename}` not found.");
+
+				nodes.RemoveAt(i);
+				nodes.InsertRange(i, MiniYaml.FromStream(contents, filename));
+			}
+
+			// Merge inherited overrides
+			yaml = new MiniYaml(null, MiniYaml.Merge(new[] { nodes })).ToDictionary();
 
 			Metadata = FieldLoader.Load<ModMetadata>(yaml["Metadata"]);
 
 			// TODO: Use fieldloader
 			MapFolders = YamlDictionary(yaml, "MapFolders");
 
-			MiniYaml packages;
-			if (yaml.TryGetValue("Packages", out packages))
-				Packages = packages.ToDictionary(x => x.Value).AsReadOnly();
+			if (yaml.TryGetValue("Packages", out var packages))
+				Packages = packages.ToDictionary(x => x.Value);
 
 			Rules = YamlList(yaml, "Rules");
 			Sequences = YamlList(yaml, "Sequences");
@@ -111,17 +145,12 @@ namespace OpenRA
 			TileSets = YamlList(yaml, "TileSets");
 			ChromeMetrics = YamlList(yaml, "ChromeMetrics");
 			Missions = YamlList(yaml, "Missions");
+			Hotkeys = YamlList(yaml, "Hotkeys");
 
 			ServerTraits = YamlList(yaml, "ServerTraits");
 
 			if (!yaml.TryGetValue("LoadScreen", out LoadScreen))
 				throw new InvalidDataException("`LoadScreen` section is not defined.");
-
-			Fonts = yaml["Fonts"].ToDictionary(my =>
-			{
-				var nd = my.ToDictionary();
-				return Pair.New(nd["Font"].Value, Exts.ParseIntegerInvariant(nd["Size"].Value));
-			});
 
 			// Allow inherited mods to import parent maps.
 			var compat = new List<string> { Id };
@@ -139,6 +168,9 @@ namespace OpenRA
 
 			if (yaml.ContainsKey("SpriteFormats"))
 				SpriteFormats = FieldLoader.GetValue<string[]>("SpriteFormats", yaml["SpriteFormats"].Value);
+
+			if (yaml.ContainsKey("VideoFormats"))
+				VideoFormats = FieldLoader.GetValue<string[]>("VideoFormats", yaml["VideoFormats"].Value);
 		}
 
 		public void LoadCustomData(ObjectCreator oc)
@@ -150,7 +182,7 @@ namespace OpenRA
 
 				var t = oc.FindType(kv.Key);
 				if (t == null || !typeof(IGlobalModData).IsAssignableFrom(t))
-					throw new InvalidDataException("`{0}` is not a valid mod manifest entry.".F(kv.Key));
+					throw new InvalidDataException($"`{kv.Key}` is not a valid mod manifest entry.");
 
 				IGlobalModData module;
 				var ctor = t.GetConstructor(new[] { typeof(MiniYaml) });
@@ -183,10 +215,9 @@ namespace OpenRA
 		static IReadOnlyDictionary<string, string> YamlDictionary(Dictionary<string, MiniYaml> yaml, string key)
 		{
 			if (!yaml.ContainsKey(key))
-				return new ReadOnlyDictionary<string, string>();
+				return new Dictionary<string, string>();
 
-			var inner = yaml[key].ToDictionary(my => my.Value);
-			return new ReadOnlyDictionary<string, string>(inner);
+			return yaml[key].ToDictionary(my => my.Value);
 		}
 
 		public bool Contains<T>() where T : IGlobalModData
@@ -218,9 +249,8 @@ namespace OpenRA
 		/// </summary>
 		public T Get<T>(ObjectCreator oc) where T : IGlobalModData
 		{
-			MiniYaml data;
 			var t = typeof(T);
-			if (!yaml.TryGetValue(t.Name, out data))
+			if (!yaml.TryGetValue(t.Name, out var data))
 			{
 				// Lazily create the default values if not explicitly defined.
 				return (T)oc.CreateBasic(t);
@@ -241,6 +271,15 @@ namespace OpenRA
 			}
 
 			return (T)module;
+		}
+
+		public void Dispose()
+		{
+			foreach (var module in modules)
+			{
+				var disposableModule = module as IDisposable;
+				disposableModule?.Dispose();
+			}
 		}
 	}
 }

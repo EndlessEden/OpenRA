@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -11,72 +11,95 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.IO;
 using System.Linq;
 using OpenRA.Primitives;
+using OpenRA.Support;
+using OpenRA.Widgets;
 
 namespace OpenRA.Network
 {
 	public sealed class OrderManager : IDisposable
 	{
-		static readonly IEnumerable<Session.Client> NoClients = new Session.Client[] { };
-
 		readonly SyncReport syncReport;
-		readonly FrameData frameData = new FrameData();
+
+		readonly Dictionary<int, Queue<byte[]>> pendingPackets = new Dictionary<int, Queue<byte[]>>();
 
 		public Session LobbyInfo = new Session();
-		public Session.Client LocalClient { get { return LobbyInfo.ClientWithIndex(Connection.LocalClientId); } }
+		public Session.Client LocalClient => LobbyInfo.ClientWithIndex(Connection.LocalClientId);
 		public World World;
 
-		public readonly string Host;
-		public readonly int Port;
-		public readonly string Password = "";
-
-		public string ServerError = "Server is not responding";
+		public string ServerError = null;
 		public bool AuthenticationFailed = false;
-		public ExternalMod ServerExternalMod = null;
 
 		public int NetFrameNumber { get; private set; }
 		public int LocalFrameNumber;
 		public int FramesAhead = 0;
 
-		public long LastTickTime = Game.RunTime;
+		public TickTime LastTickTime;
 
-		public bool GameStarted { get { return NetFrameNumber != 0; } }
+		public bool GameStarted => NetFrameNumber != 0;
 		public IConnection Connection { get; private set; }
 
-		List<Order> localOrders = new List<Order>();
+		internal int GameSaveLastFrame = -1;
+		internal int GameSaveLastSyncFrame = -1;
 
-		List<ChatLine> chatCache = new List<ChatLine>();
+		readonly List<Order> localOrders = new List<Order>();
+		readonly List<Order> localImmediateOrders = new List<Order>();
 
-		public readonly ReadOnlyList<ChatLine> ChatCache;
+		readonly List<TextNotification> notificationsCache = new List<TextNotification>();
+
+		public IReadOnlyList<TextNotification> NotificationsCache => notificationsCache;
 
 		bool disposed;
+		bool generateSyncReport = false;
+
+		public struct ClientOrder
+		{
+			public int Client;
+			public Order Order;
+
+			public override string ToString()
+			{
+				return $"ClientId: {Client} {Order}";
+			}
+		}
 
 		void OutOfSync(int frame)
 		{
-			syncReport.DumpSyncReport(frame, frameData.OrdersForFrame(World, frame));
-			throw new InvalidOperationException("Out of sync in frame {0}.\n Compare syncreport.log with other players.".F(frame));
+			syncReport.DumpSyncReport(frame);
+			throw new InvalidOperationException($"Out of sync in frame {frame}.\n Compare syncreport.log with other players.");
 		}
 
 		public void StartGame()
 		{
-			if (GameStarted) return;
+			if (GameStarted)
+				return;
+
+			foreach (var client in LobbyInfo.Clients)
+				if (!client.IsBot)
+					pendingPackets.Add(client.Index, new Queue<byte[]>());
+
+			// Generating sync reports is expensive, so only do it if we have
+			// other players to compare against if a desync did occur
+			generateSyncReport = !(Connection is ReplayConnection) && LobbyInfo.GlobalSettings.EnableSyncReports;
 
 			NetFrameNumber = 1;
-			for (var i = NetFrameNumber; i <= FramesAhead; i++)
-				Connection.Send(i, new List<byte[]>());
+			LocalFrameNumber = 0;
+			LastTickTime.Value = Game.RunTime;
+
+			if (GameSaveLastFrame < 0)
+				for (var i = NetFrameNumber; i <= FramesAhead; i++)
+					Connection.Send(i, new List<byte[]>());
 		}
 
-		public OrderManager(string host, int port, string password, IConnection conn)
+		public OrderManager(IConnection conn)
 		{
-			Host = host;
-			Port = port;
-			Password = password;
 			Connection = conn;
 			syncReport = new SyncReport(this);
-			ChatCache = new ReadOnlyList<ChatLine>(chatCache);
-			AddChatLine += CacheChatLine;
+			AddTextNotification += CacheTextNotification;
+
+			LastTickTime = new TickTime(() => SuggestedTimestep, Game.RunTime);
 		}
 
 		public void IssueOrders(Order[] orders)
@@ -87,49 +110,68 @@ namespace OpenRA.Network
 
 		public void IssueOrder(Order order)
 		{
-			localOrders.Add(order);
+			if (order.IsImmediate)
+				localImmediateOrders.Add(order);
+			else
+				localOrders.Add(order);
 		}
 
-		public Action<Color, string, string> AddChatLine = (c, n, s) => { };
-		void CacheChatLine(Color color, string name, string text)
+		public Action<TextNotification> AddTextNotification = (notification) => { };
+		void CacheTextNotification(TextNotification notification)
 		{
-			chatCache.Add(new ChatLine(color, name, text));
+			notificationsCache.Add(notification);
 		}
 
-		public void TickImmediate()
+		void SendImmediateOrders()
 		{
-			var immediateOrders = localOrders.Where(o => o.IsImmediate).ToList();
-			if (immediateOrders.Count != 0)
-				Connection.SendImmediate(immediateOrders.Select(o => o.Serialize()).ToList());
-			localOrders.RemoveAll(o => o.IsImmediate);
+			if (localImmediateOrders.Count != 0 && GameSaveLastFrame < NetFrameNumber + FramesAhead)
+				Connection.SendImmediate(localImmediateOrders.Select(o => o.Serialize()));
+			localImmediateOrders.Clear();
+		}
 
-			var immediatePackets = new List<Pair<int, byte[]>>();
-
+		void ReceiveAllOrdersAndCheckSync()
+		{
 			Connection.Receive(
 				(clientId, packet) =>
 				{
-					var frame = BitConverter.ToInt32(packet, 0);
-					if (packet.Length == 5 && packet[4] == 0xBF)
-						frameData.ClientQuit(clientId, frame);
-					else if (packet.Length >= 5 && packet[4] == 0x65)
-						CheckSync(packet);
-					else if (frame == 0)
-						immediatePackets.Add(Pair.New(clientId, packet));
-					else
-						frameData.AddFrameOrders(clientId, frame, packet);
-				});
-
-			foreach (var p in immediatePackets)
-			{
-				foreach (var o in p.Second.ToOrderList(World))
-				{
-					UnitOrders.ProcessOrder(this, World, p.First, o);
-
-					// A mod switch or other event has pulled the ground from beneath us
-					if (disposed)
+					// HACK: The shellmap relies on ticking a disposed OM
+					if (disposed && World.Type != WorldType.Shellmap)
 						return;
-				}
-			}
+
+					var frame = BitConverter.ToInt32(packet, 0);
+					if (packet.Length == Order.DisconnectOrderLength + 4 && packet[4] == (byte)OrderType.Disconnect)
+					{
+						pendingPackets.Remove(BitConverter.ToInt32(packet, 5));
+					}
+					else if (packet.Length > 4 && packet[4] == (byte)OrderType.SyncHash)
+					{
+						if (packet.Length != 4 + Order.SyncHashOrderLength)
+						{
+							Log.Write("debug", $"Dropped sync order with length {packet.Length}. Expected length {4 + Order.SyncHashOrderLength}.");
+							return;
+						}
+
+						CheckSync(packet);
+					}
+					else if (frame == 0)
+					{
+						foreach (var o in packet.ToOrderList(World))
+						{
+							UnitOrders.ProcessOrder(this, World, clientId, o);
+
+							// A mod switch or other event has pulled the ground from beneath us
+							if (disposed)
+								return;
+						}
+					}
+					else
+					{
+						if (pendingPackets.TryGetValue(clientId, out var queue))
+							queue.Enqueue(packet);
+						else
+							Log.Write("debug", $"Received packet from disconnected client '{clientId}'");
+					}
+				});
 		}
 
 		Dictionary<int, byte[]> syncForFrame = new Dictionary<int, byte[]>();
@@ -137,8 +179,7 @@ namespace OpenRA.Network
 		void CheckSync(byte[] packet)
 		{
 			var frame = BitConverter.ToInt32(packet, 0);
-			byte[] existingSync;
-			if (syncForFrame.TryGetValue(frame, out existingSync))
+			if (syncForFrame.TryGetValue(frame, out var existingSync))
 			{
 				if (packet.Length != existingSync.Length)
 					OutOfSync(frame);
@@ -151,36 +192,76 @@ namespace OpenRA.Network
 				syncForFrame.Add(frame, packet);
 		}
 
-		public bool IsReadyForNextFrame
-		{
-			get { return NetFrameNumber >= 1 && frameData.IsReadyForFrame(NetFrameNumber); }
-		}
+		bool IsReadyForNextFrame => GameStarted && pendingPackets.All(p => p.Value.Count > 0);
 
-		public IEnumerable<Session.Client> GetClientsNotReadyForNextFrame
+		int SuggestedTimestep
 		{
 			get
 			{
-				return NetFrameNumber >= 1
-					? frameData.ClientsNotReadyForFrame(NetFrameNumber)
-						.Select(a => LobbyInfo.ClientWithIndex(a))
-					: NoClients;
+				if (World == null)
+					return Ui.Timestep;
+
+				if (World.IsLoadingGameSave)
+					return 1;
+
+				if (World.IsReplay)
+					return World.ReplayTimestep;
+
+				return World.Timestep;
 			}
 		}
 
-		public void Tick()
+		void SendOrders()
 		{
-			if (!IsReadyForNextFrame)
-				throw new InvalidOperationException();
+			if (!GameStarted)
+				return;
 
-			Connection.Send(NetFrameNumber + FramesAhead, localOrders.Select(o => o.Serialize()).ToList());
-			localOrders.Clear();
+			if (GameSaveLastFrame < NetFrameNumber + FramesAhead)
+			{
+				Connection.Send(NetFrameNumber + FramesAhead, localOrders.Select(o => o.Serialize()).ToList());
+				localOrders.Clear();
+			}
+		}
 
-			foreach (var order in frameData.OrdersForFrame(World, NetFrameNumber))
-				UnitOrders.ProcessOrder(this, World, order.Client, order.Order);
+		void ProcessOrders()
+		{
+			var clientOrders = new List<ClientOrder>();
 
-			Connection.SendSync(NetFrameNumber, OrderIO.SerializeSync(World.SyncHash()));
+			foreach (var (clientId, clientPackets) in pendingPackets)
+			{
+				// The IsReadyForNextFrame check above guarantees that all clients have sent a packet
+				var frameData = clientPackets.Dequeue();
 
-			syncReport.UpdateSyncReport();
+				// Orders are synchronised by sending an initial FramesAhead set of empty packets
+				// and then making sure that we enqueue and process exactly one packet for each player each tick.
+				// This may change in the future, so sanity check that the orders are for the frame we expect
+				// and crash early instead of risking desyncs.
+				var frameNumber = BitConverter.ToInt32(frameData, 0);
+				if (frameNumber != NetFrameNumber)
+					throw new InvalidDataException($"Attempted to process orders from client {clientId} for frame {frameNumber} on frame {NetFrameNumber}");
+
+				foreach (var order in frameData.ToOrderList(World))
+				{
+					UnitOrders.ProcessOrder(this, World, clientId, order);
+					clientOrders.Add(new ClientOrder { Client = clientId, Order = order });
+				}
+			}
+
+			if (NetFrameNumber + FramesAhead >= GameSaveLastSyncFrame)
+			{
+				var defeatState = 0UL;
+				for (var i = 0; i < World.Players.Length; i++)
+					if (World.Players[i].WinState == WinState.Lost)
+						defeatState |= 1UL << i;
+
+				Connection.SendSync(NetFrameNumber, OrderIO.SerializeSync(World.SyncHash(), defeatState));
+			}
+			else
+				Connection.SendSync(NetFrameNumber, OrderIO.SerializeSync(0, 0));
+
+			if (generateSyncReport)
+				using (new PerfSample("sync_report"))
+					syncReport.UpdateSyncReport(clientOrders);
 
 			++NetFrameNumber;
 		}
@@ -188,22 +269,46 @@ namespace OpenRA.Network
 		public void Dispose()
 		{
 			disposed = true;
-			if (Connection != null)
-				Connection.Dispose();
+			Connection?.Dispose();
 		}
-	}
 
-	public class ChatLine
-	{
-		public readonly Color Color;
-		public readonly string Name;
-		public readonly string Text;
-
-		public ChatLine(Color c, string n, string t)
+		public void TickImmediate()
 		{
-			Color = c;
-			Name = n;
-			Text = t;
+			SendImmediateOrders();
+
+			ReceiveAllOrdersAndCheckSync();
 		}
+
+		public bool TryTick()
+		{
+			var shouldTick = true;
+
+			if (IsNetTick)
+			{
+				// Check whether or not we will be ready for a tick next frame
+				// We don't need to include ourselves in the equation because we can always generate orders this frame
+				shouldTick = pendingPackets.All(p => p.Key == Connection.LocalClientId || p.Value.Count > 0);
+
+				// Send orders only if we are currently ready, this prevents us sending orders too soon if we are
+				// stalling
+				if (shouldTick)
+					SendOrders();
+			}
+
+			var willTick = shouldTick;
+			if (willTick && IsNetTick)
+			{
+				willTick = IsReadyForNextFrame;
+				if (willTick)
+					ProcessOrders();
+			}
+
+			if (willTick)
+				LocalFrameNumber++;
+
+			return willTick;
+		}
+
+		bool IsNetTick => LocalFrameNumber % Game.NetTickScale == 0;
 	}
 }

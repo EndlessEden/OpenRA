@@ -1,4 +1,5 @@
 mpspawn:
+	Interactable:
 	EditorOnlyTooltip:
 		Name: (multiplayer player starting point)
 	AlwaysVisible:
@@ -8,10 +9,13 @@ mpspawn:
 	WithSpriteBody:
 	BodyOrientation:
 		QuantizedFacings: 1
-	EditorTilesetFilter:
+	MapEditorData:
 		Categories: System
+	RequiresSpecificOwners:
+		ValidOwnerNames: Neutral
 
 waypoint:
+	Interactable:
 	EditorOnlyTooltip:
 		Name: (waypoint for scripted behavior)
 	AlwaysVisible:
@@ -21,18 +25,17 @@ waypoint:
 	WithSpriteBody:
 	BodyOrientation:
 		QuantizedFacings: 1
-	EditorTilesetFilter:
+	MapEditorData:
 		Categories: System
 
-^mmch.colorpicker:
+mmch.colorpicker:
 	Inherits: MMCH
-	-Health:
 	Mobile:
-		InitialFacing: 160
-	Turreted:
-		InitialFacing: 160
+		InitialFacing: 640
 	WithFacingSpriteBody:
 		Sequence: walk
+	-Buildable:
+	-MapEditorData:
 	RenderVoxels:
 		Image: mmch
 		Palette: colorpicker
@@ -41,6 +44,7 @@ waypoint:
 		Palette: colorpicker
 
 CAMERA:
+	Interactable:
 	EditorOnlyTooltip:
 		Name: (reveals area to owner)
 	AlwaysVisible:
@@ -55,7 +59,7 @@ CAMERA:
 		Type: CenterPosition
 	DetectCloaked:
 		Range: 10c0
-	EditorTilesetFilter:
+	MapEditorData:
 		Categories: System
 
 CRATE:
@@ -63,44 +67,44 @@ CRATE:
 	GiveCashCrateAction:
 		Amount: 1000
 		SelectionShares: 50
-		Effect: dollar
+		Sequence: dollar
 		UseCashTick: true
 	LevelUpCrateAction:
 		SelectionShares: 40
-		Effect: levelup
+		Sequence: levelup
 	HideMapCrateAction:
 		SelectionShares: 5
-		Effect: hide-map
-	HealUnitsCrateAction:
+		Sequence: hide-map
+	HealActorsCrateAction:
 		SelectionShares: 2
-		Effect: heal
+		Sequence: heal
 	RevealMapCrateAction:
 		SelectionShares: 1
-		Effect: reveal-map
+		Sequence: reveal-map
 	GiveMcvCrateAction:
 		SelectionShares: 0
 		NoBaseSelectionShares: 100
 		Units: mcv
 	GrantExternalConditionCrateAction@cloak:
 		SelectionShares: 5
-		Effect: stealth
+		Sequence: stealth
 		Condition: crate-cloak
-		Notification: cloak5.aud
+		Sound: cloak5.aud
 	GrantExternalConditionCrateAction@firepower:
 		SelectionShares: 5
-		Effect: firepower
+		Sequence: firepower
 		Condition: crate-firepower
-		Notification: 00-i070.aud
+		Notification: UnitFirepowerUpgraded
 	GrantExternalConditionCrateAction@armor:
 		SelectionShares: 5
-		Effect: armor
+		Sequence: armor
 		Condition: crate-damage
-		Notification: 00-i068.aud
+		Notification: UnitArmourUpgraded
 	GrantExternalConditionCrateAction@speed:
 		SelectionShares: 5
 		Condition: crate-speed
-		Notification: 00-i080.aud
-	EditorTilesetFilter:
+		Notification: UnitSpeedUpgraded
+	MapEditorData:
 		Categories: System
 
 SROCK01:

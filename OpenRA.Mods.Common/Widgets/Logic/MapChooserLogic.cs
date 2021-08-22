@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -11,10 +11,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using OpenRA;
-using OpenRA.Primitives;
 using OpenRA.Widgets;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
@@ -46,7 +43,12 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			this.modData = modData;
 			this.onSelect = onSelect;
 
-			var approving = new Action(() => { Ui.CloseWindow(); onSelect(selectedUid); });
+			var approving = new Action(() =>
+			{
+				Ui.CloseWindow();
+				onSelect?.Invoke(selectedUid);
+			});
+
 			var canceling = new Action(() => { Ui.CloseWindow(); onExit(); });
 
 			var okButton = widget.Get<ButtonWidget>("BUTTON_OK");
@@ -63,7 +65,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			if (mapFilterInput != null)
 			{
 				mapFilterInput.TakeKeyboardFocus();
-				mapFilterInput.OnEscKey = () =>
+				mapFilterInput.OnEscKey = _ =>
 				{
 					if (mapFilterInput.Text.Length == 0)
 						canceling();
@@ -75,7 +77,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 					return true;
 				};
-				mapFilterInput.OnEnterKey = () => { approving(); return true; };
+				mapFilterInput.OnEnterKey = _ => { approving(); return true; };
 				mapFilterInput.OnTextEdited = () =>
 				{
 					mapFilter = mapFilterInput.Text;
@@ -184,20 +186,20 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 				// Order categories alphabetically
 				var categories = categoryDict
-					.Select(kv => Pair.New(kv.Key, kv.Value))
-					.OrderBy(p => p.First)
+					.Select(kv => (Category: kv.Key, Count: kv.Value))
+					.OrderBy(p => p.Category)
 					.ToList();
 
 				// 'all game types' extra item
-				categories.Insert(0, Pair.New(null as string, tabMaps[tab].Count()));
+				categories.Insert(0, (null as string, tabMaps[tab].Count()));
 
-				Func<Pair<string, int>, string> showItem = x => "{0} ({1})".F(x.First ?? "All Maps", x.Second);
+				Func<(string Category, int Count), string> showItem = x => $"{x.Category ?? "All Maps"} ({x.Count})";
 
-				Func<Pair<string, int>, ScrollItemWidget, ScrollItemWidget> setupItem = (ii, template) =>
+				Func<(string Category, int Count), ScrollItemWidget, ScrollItemWidget> setupItem = (ii, template) =>
 				{
 					var item = ScrollItemWidget.Setup(template,
-						() => category == ii.First,
-						() => { category = ii.First; EnumerateMaps(tab, itemTemplate); });
+						() => category == ii.Category,
+						() => { category = ii.Category; EnumerateMaps(tab, itemTemplate); });
 					item.Get<LabelWidget>("LABEL").GetText = () => showItem(ii);
 					return item;
 				};
@@ -207,9 +209,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 				gameModeDropdown.GetText = () =>
 				{
-					var item = categories.FirstOrDefault(m => m.First == category);
-					if (item == default(Pair<string, int>))
-						item.First = "No matches";
+					var item = categories.FirstOrDefault(m => m.Category == category);
+					if (item == default((string, int)))
+						item.Category = "No matches";
 
 					return showItem(item);
 				};
@@ -218,8 +220,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 		void EnumerateMaps(MapClassification tab, ScrollItemWidget template)
 		{
-			int playerCountFilter;
-			if (!int.TryParse(mapFilter, out playerCountFilter))
+			if (!int.TryParse(mapFilter, out var playerCountFilter))
 				playerCountFilter = -1;
 
 			var maps = tabMaps[tab]
@@ -252,12 +253,10 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					() => selectedUid = preview.Uid, dblClick);
 				item.IsVisible = () => item.RenderBounds.IntersectsWith(scrollpanels[tab].RenderBounds);
 
-				var titleLabel = item.Get<LabelWidget>("TITLE");
+				var titleLabel = item.Get<LabelWithTooltipWidget>("TITLE");
 				if (titleLabel != null)
 				{
-					var font = Game.Renderer.Fonts[titleLabel.Font];
-					var title = WidgetUtils.TruncateText(preview.Title, titleLabel.Bounds.Width, font);
-					titleLabel.GetText = () => title;
+					WidgetUtils.TruncateLabelToTooltip(titleLabel, preview.Title);
 				}
 
 				var previewWidget = item.Get<MapPreviewWidget>("PREVIEW");
@@ -271,16 +270,14 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					if (type != null)
 						details = type + " ";
 
-					details += "({0} players)".F(preview.PlayerCount);
+					details += $"({preview.PlayerCount} players)";
 					detailsWidget.GetText = () => details;
 				}
 
-				var authorWidget = item.GetOrNull<LabelWidget>("AUTHOR");
+				var authorWidget = item.GetOrNull<LabelWithTooltipWidget>("AUTHOR");
 				if (authorWidget != null)
 				{
-					var font = Game.Renderer.Fonts[authorWidget.Font];
-					var author = WidgetUtils.TruncateText("Created by {0}".F(preview.Author), authorWidget.Bounds.Width, font);
-					authorWidget.GetText = () => author;
+					WidgetUtils.TruncateLabelToTooltip(authorWidget, $"Created by {preview.Author}");
 				}
 
 				var sizeWidget = item.GetOrNull<LabelWidget>("SIZE");
@@ -319,7 +316,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			}
 			catch (Exception ex)
 			{
-				Game.Debug("Failed to delete map '{0}'. See the debug.log file for details.", map);
+				TextNotificationsManager.Debug("Failed to delete map '{0}'. See the debug.log file for details.", map);
 				Log.Write("debug", ex.ToString());
 			}
 
@@ -330,12 +327,11 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		{
 			ConfirmationDialogs.ButtonPrompt(
 				title: "Delete map",
-				text: "Delete the map '{0}'?".F(modData.MapCache[map].Title),
+				text: $"Delete the map '{modData.MapCache[map].Title}'?",
 				onConfirm: () =>
 				{
 					var newUid = DeleteMap(map);
-					if (after != null)
-						after(newUid);
+					after?.Invoke(newUid);
 				},
 				confirmText: "Delete",
 				onCancel: () => { });
@@ -349,8 +345,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				onConfirm: () =>
 				{
 					maps.Do(m => DeleteMap(m));
-					if (after != null)
-						after(Game.ModData.MapCache.ChooseInitialMap(null, Game.CosmeticRandom));
+					after?.Invoke(Game.ModData.MapCache.ChooseInitialMap(null, Game.CosmeticRandom));
 				},
 				confirmText: "Delete",
 				onCancel: () => { });

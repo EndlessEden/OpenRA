@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using OpenRA.Primitives;
+using OpenRA.Support;
 
 namespace OpenRA
 {
@@ -26,7 +27,7 @@ namespace OpenRA
 
 		readonly Cache<string, Type> typeCache;
 		readonly Cache<Type, ConstructorInfo> ctorCache;
-		readonly Pair<Assembly, string>[] assemblies;
+		readonly (Assembly Assembly, string Namespace)[] assemblies;
 
 		public ObjectCreator(Manifest manifest, InstalledMods mods)
 		{
@@ -40,26 +41,48 @@ namespace OpenRA
 			{
 				var resolvedPath = FileSystem.FileSystem.ResolveAssemblyPath(path, manifest, mods);
 				if (resolvedPath == null)
-					throw new FileNotFoundException("Assembly `{0}` not found.".F(path));
+					throw new FileNotFoundException($"Assembly `{path}` not found.");
 
-				// .NET doesn't provide any way of querying the metadata of an assembly without either:
-				//   (a) loading duplicate data into the application domain, breaking the world.
-				//   (b) crashing if the assembly has already been loaded.
-				// We can't check the internal name of the assembly, so we'll work off the data instead
-				var hash = CryptoUtil.SHA1Hash(File.ReadAllBytes(resolvedPath));
-
-				Assembly assembly;
-				if (!ResolvedAssemblies.TryGetValue(hash, out assembly))
-				{
-					assembly = Assembly.LoadFile(resolvedPath);
-					ResolvedAssemblies.Add(hash, assembly);
-				}
-
-				assemblyList.Add(assembly);
+				LoadAssembly(assemblyList, resolvedPath);
 			}
 
 			AppDomain.CurrentDomain.AssemblyResolve += ResolveAssembly;
-			assemblies = assemblyList.SelectMany(asm => asm.GetNamespaces().Select(ns => Pair.New(asm, ns))).ToArray();
+			assemblies = assemblyList.SelectMany(asm => asm.GetNamespaces().Select(ns => (asm, ns))).ToArray();
+		}
+
+		void LoadAssembly(List<Assembly> assemblyList, string resolvedPath)
+		{
+			// .NET doesn't provide any way of querying the metadata of an assembly without either:
+			//   (a) loading duplicate data into the application domain, breaking the world.
+			//   (b) crashing if the assembly has already been loaded.
+			// We can't check the internal name of the assembly, so we'll work off the data instead
+			var hash = CryptoUtil.SHA1Hash(File.ReadAllBytes(resolvedPath));
+
+			if (!ResolvedAssemblies.TryGetValue(hash, out var assembly))
+			{
+#if MONO
+				assembly = Assembly.LoadFile(resolvedPath);
+				ResolvedAssemblies.Add(hash, assembly);
+
+				// Allow mods to use libraries.
+				var assemblyPath = Path.GetDirectoryName(resolvedPath);
+				if (assemblyPath != null)
+				{
+					foreach (var referencedAssembly in assembly.GetReferencedAssemblies())
+					{
+						var depedencyPath = Path.Combine(assemblyPath, referencedAssembly.Name + ".dll");
+						if (File.Exists(depedencyPath))
+							LoadAssembly(assemblyList, depedencyPath);
+					}
+				}
+#else
+				var loader = new AssemblyLoader(resolvedPath);
+				assembly = loader.LoadDefaultAssembly();
+				ResolvedAssemblies.Add(hash, assembly);
+#endif
+			}
+
+			assemblyList.Add(assembly);
 		}
 
 		Assembly ResolveAssembly(object sender, ResolveEventArgs e)
@@ -68,14 +91,11 @@ namespace OpenRA
 				if (a.FullName == e.Name)
 					return a;
 
-			if (assemblies == null)
-				return null;
-
-			return assemblies.Select(a => a.First).FirstOrDefault(a => a.FullName == e.Name);
+			return assemblies?.Select(a => a.Assembly).FirstOrDefault(a => a.FullName == e.Name);
 		}
 
-		public static Action<string> MissingTypeAction =
-			s => { throw new InvalidOperationException("Cannot locate type: {0}".F(s)); };
+		// Only used by the linter to prevent exceptions from being thrown during a lint run
+		public static Action<string> MissingTypeAction = null;
 
 		public T CreateObject<T>(string className)
 		{
@@ -87,7 +107,12 @@ namespace OpenRA
 			var type = typeCache[className];
 			if (type == null)
 			{
-				MissingTypeAction(className);
+				// HACK: The linter does not want to crash but only print an error instead
+				if (MissingTypeAction != null)
+					MissingTypeAction(className);
+				else
+					throw new InvalidOperationException($"Cannot locate type: {className}");
+
 				return default(T);
 			}
 
@@ -101,7 +126,7 @@ namespace OpenRA
 		public Type FindType(string className)
 		{
 			return assemblies
-				.Select(pair => pair.First.GetType(pair.Second + "." + className, false))
+				.Select(pair => pair.Assembly.GetType(pair.Namespace + "." + className, false))
 				.FirstOrDefault(t => t != null);
 		}
 
@@ -126,7 +151,7 @@ namespace OpenRA
 			for (var i = 0; i < p.Length; i++)
 			{
 				var key = p[i].Name;
-				if (!args.ContainsKey(key)) throw new InvalidOperationException("ObjectCreator: key `{0}' not found".F(key));
+				if (!args.ContainsKey(key)) throw new InvalidOperationException($"ObjectCreator: key `{key}' not found");
 				a[i] = args[key];
 			}
 
@@ -141,7 +166,7 @@ namespace OpenRA
 
 		public IEnumerable<Type> GetTypes()
 		{
-			return assemblies.Select(ma => ma.First).Distinct()
+			return assemblies.Select(ma => ma.Assembly).Distinct()
 				.SelectMany(ma => ma.GetTypes());
 		}
 
@@ -152,7 +177,7 @@ namespace OpenRA
 			{
 				var loader = FindType(format + "Loader");
 				if (loader == null || !loader.GetInterfaces().Contains(typeof(TLoader)))
-					throw new InvalidOperationException("Unable to find a {0} loader for type '{1}'.".F(name, format));
+					throw new InvalidOperationException($"Unable to find a {name} loader for type '{format}'.");
 
 				loaders.Add((TLoader)CreateBasic(loader));
 			}

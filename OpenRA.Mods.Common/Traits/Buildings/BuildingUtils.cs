@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -17,45 +17,88 @@ namespace OpenRA.Mods.Common.Traits
 {
 	public static class BuildingUtils
 	{
-		public static bool IsCellBuildable(this World world, CPos cell, BuildingInfo bi, Actor toIgnore = null)
+		public static bool IsCellBuildable(this World world, CPos cell, ActorInfo ai, BuildingInfo bi, Actor toIgnore = null)
 		{
 			if (!world.Map.Contains(cell))
 				return false;
 
-			if (world.WorldActor.Trait<BuildingInfluence>().GetBuildingAt(cell) != null)
-				return false;
+			if (!bi.AllowInvalidPlacement)
+			{
+				// Replaceable actors are rare, so avoid initializing state unless we have to
+				var checkReplacements = ai != null && ai.HasTraitInfo<ReplacementInfo>();
+				HashSet<string> acceptedReplacements = null;
 
-			if (!bi.AllowInvalidPlacement && world.ActorMap.GetActorsAt(cell).Any(a => a != toIgnore))
-				return false;
+				var foundActors = false;
+				foreach (var a in world.ActorMap.GetActorsAt(cell))
+				{
+					if (a == toIgnore)
+						continue;
 
-			var tile = world.Map.Tiles[cell];
-			var tileInfo = world.Map.Rules.TileSet.GetTileInfo(tile);
+					// If this is potentially a replacement actor we must check *all* cell occupants
+					// before we know the placement is invalid
+					// Otherwise, we can bail immediately
+					if (!checkReplacements)
+						return false;
 
-			// TODO: This is bandaiding over bogus tilesets.
-			if (tileInfo != null && tileInfo.RampType > 0)
-				return false;
+					foundActors = true;
+					foreach (var r in a.TraitsImplementing<Replaceable>())
+					{
+						if (r.IsTraitDisabled)
+							continue;
 
-			return bi.TerrainTypes.Contains(world.Map.GetTerrainInfo(cell).Type);
+						if (acceptedReplacements == null)
+							acceptedReplacements = new HashSet<string>();
+
+						acceptedReplacements.UnionWith(r.Info.Types);
+					}
+				}
+
+				// Replacements are enabled and the cell contained at least one (not ignored) actor or building bib
+				var foundBuilding = world.WorldActor.Trait<BuildingInfluence>().AnyBuildingAt(cell);
+				if (foundActors || foundBuilding)
+				{
+					// The cell contains at least one actor, and none were replaceable
+					if (acceptedReplacements == null)
+						return false;
+
+					// The cell contains at least one replaceable actor, but not of the types we accept
+					var foundReplacement = ai.TraitInfos<ReplacementInfo>()
+						.Any(r => r.ReplaceableTypes.Overlaps(acceptedReplacements));
+
+					if (!foundReplacement)
+						return false;
+				}
+			}
+			else
+			{
+				// HACK: To preserve legacy behaviour, AllowInvalidPlacement should display red placement indicators
+				// if (and only if) there is a building or bib in the cell
+				if (world.WorldActor.Trait<BuildingInfluence>().AnyBuildingAt(cell))
+					return false;
+			}
+
+			// Buildings can never be placed on ramps
+			return world.Map.Ramp[cell] == 0 && bi.TerrainTypes.Contains(world.Map.GetTerrainInfo(cell).Type);
 		}
 
-		public static bool CanPlaceBuilding(this World world, string name, BuildingInfo building, CPos topLeft, Actor toIgnore)
+		public static bool CanPlaceBuilding(this World world, CPos cell, ActorInfo ai, BuildingInfo bi, Actor toIgnore)
 		{
-			if (building.AllowInvalidPlacement)
+			if (bi.AllowInvalidPlacement)
 				return true;
 
-			var res = world.WorldActor.Trait<ResourceLayer>();
-			return building.Tiles(topLeft).All(
-				t => world.Map.Contains(t) && res.GetResource(t) == null &&
-					world.IsCellBuildable(t, building, toIgnore));
+			var resourceLayer = world.WorldActor.TraitOrDefault<IResourceLayer>();
+			return bi.Tiles(cell).All(t => world.Map.Contains(t) &&
+				(bi.AllowPlacementOnResources || resourceLayer == null || resourceLayer.GetResource(t).Type == null) &&
+					world.IsCellBuildable(t, ai, bi, toIgnore));
 		}
 
-		public static IEnumerable<Pair<CPos, Actor>> GetLineBuildCells(World world, CPos location, string name, BuildingInfo bi)
+		public static IEnumerable<(CPos Cell, Actor Actor)> GetLineBuildCells(World world, CPos cell, ActorInfo ai, BuildingInfo bi, Player owner)
 		{
-			var lbi = world.Map.Rules.Actors[name].TraitInfo<LineBuildInfo>();
-			var topLeft = location;	// 1x1 assumption!
+			var lbi = ai.TraitInfo<LineBuildInfo>();
+			var topLeft = cell;	// 1x1 assumption!
 
-			if (world.IsCellBuildable(topLeft, bi))
-				yield return Pair.New<CPos, Actor>(topLeft, null);
+			if (world.IsCellBuildable(topLeft, ai, bi))
+				yield return (topLeft, null);
 
 			// Start at place location, search outwards
 			// TODO: First make it work, then make it nice
@@ -70,12 +113,13 @@ namespace OpenRA.Mods.Common.Traits
 					if (dirs[d] != 0)
 						continue;
 
-					var cell = topLeft + i * vecs[d];
-					if (world.IsCellBuildable(cell, bi))
-						continue; // Cell is empty; continue search
+					// Continue the search if the cell is empty or not visible
+					var c = topLeft + i * vecs[d];
+					if (world.IsCellBuildable(c, ai, bi) || !owner.Shroud.IsExplored(c))
+						continue;
 
 					// Cell contains an actor. Is it the type we want?
-					connectors[d] = world.ActorMap.GetActorsAt(cell)
+					connectors[d] = world.ActorMap.GetActorsAt(c)
 						.FirstOrDefault(a => a.Info.TraitInfos<LineBuildNodeInfo>()
 							.Any(info => info.Types.Overlaps(lbi.NodeTypes) && info.Connections.Contains(vecs[d])));
 
@@ -85,7 +129,7 @@ namespace OpenRA.Mods.Common.Traits
 				// Place intermediate-line sections
 				if (dirs[d] > 0)
 					for (var i = 1; i < dirs[d]; i++)
-						yield return Pair.New(topLeft + i * vecs[d], connectors[d]);
+						yield return (topLeft + i * vecs[d], connectors[d]);
 			}
 		}
 	}

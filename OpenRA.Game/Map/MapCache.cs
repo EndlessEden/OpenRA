@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -14,9 +14,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using OpenRA.FileSystem;
 using OpenRA.Graphics;
 using OpenRA.Primitives;
@@ -27,7 +26,8 @@ namespace OpenRA
 	public sealed class MapCache : IEnumerable<MapPreview>, IDisposable
 	{
 		public static readonly MapPreview UnknownMap = new MapPreview(null, null, MapGridType.Rectangular, null);
-		public readonly IReadOnlyDictionary<IReadOnlyPackage, MapClassification> MapLocations;
+		public IReadOnlyDictionary<IReadOnlyPackage, MapClassification> MapLocations => mapLocations;
+		readonly Dictionary<IReadOnlyPackage, MapClassification> mapLocations = new Dictionary<IReadOnlyPackage, MapClassification>();
 
 		readonly Cache<string, MapPreview> previews;
 		readonly ModData modData;
@@ -37,6 +37,8 @@ namespace OpenRA
 		object syncRoot = new object();
 		Queue<MapPreview> generateMinimap = new Queue<MapPreview>();
 
+		public Dictionary<string, string> StringPool { get; } = new Dictionary<string, string>();
+
 		public MapCache(ModData modData)
 		{
 			this.modData = modData;
@@ -44,9 +46,15 @@ namespace OpenRA
 			var gridType = Exts.Lazy(() => modData.Manifest.Get<MapGrid>().Type);
 			previews = new Cache<string, MapPreview>(uid => new MapPreview(modData, uid, gridType.Value, this));
 			sheetBuilder = new SheetBuilder(SheetType.BGRA);
+		}
+
+		public void LoadMaps()
+		{
+			// Utility mod that does not support maps
+			if (!modData.Manifest.Contains<MapGrid>())
+				return;
 
 			// Enumerate map directories
-			var mapLocations = new Dictionary<IReadOnlyPackage, MapClassification>();
 			foreach (var kv in modData.Manifest.MapFolders)
 			{
 				var name = kv.Key;
@@ -61,13 +69,10 @@ namespace OpenRA
 				try
 				{
 					// HACK: If the path is inside the the support directory then we may need to create it
-					if (name.StartsWith("^", StringComparison.Ordinal))
-					{
-						// Assume that the path is a directory if there is not an existing file with the same name
-						var resolved = Platform.ResolvePath(name);
-						if (!File.Exists(resolved))
-							Directory.CreateDirectory(resolved);
-					}
+					// Assume that the path is a directory if there is not an existing file with the same name
+					var resolved = Platform.ResolvePath(name);
+					if (resolved.StartsWith(Platform.SupportDir) && !File.Exists(resolved))
+						Directory.CreateDirectory(resolved);
 
 					package = modData.ModFiles.OpenPackage(name);
 				}
@@ -81,15 +86,6 @@ namespace OpenRA
 
 				mapLocations.Add(package, classification);
 			}
-
-			MapLocations = new ReadOnlyDictionary<IReadOnlyPackage, MapClassification>(mapLocations);
-		}
-
-		public void LoadMaps()
-		{
-			// Utility mod that does not support maps
-			if (!modData.Manifest.Contains<MapGrid>())
-				return;
 
 			var mapGrid = modData.Manifest.Get<MapGrid>();
 			foreach (var kv in MapLocations)
@@ -111,8 +107,7 @@ namespace OpenRA
 					}
 					catch (Exception e)
 					{
-						if (mapPackage != null)
-							mapPackage.Dispose();
+						mapPackage?.Dispose();
 						Console.WriteLine("Failed to load map: {0}", map);
 						Console.WriteLine("Details: {0}", e);
 						Log.Write("debug", "Failed to load map: {0}", map);
@@ -122,53 +117,99 @@ namespace OpenRA
 			}
 		}
 
-		public void QueryRemoteMapDetails(string repositoryUrl, IEnumerable<string> uids, Action<MapPreview> mapDetailsReceived = null, Action queryFailed = null)
+		public IEnumerable<IReadWritePackage> EnumerateMapPackagesWithoutCaching(MapClassification classification = MapClassification.System)
 		{
-			var maps = uids.Distinct()
+			// Utility mod that does not support maps
+			if (!modData.Manifest.Contains<MapGrid>())
+				yield break;
+
+			// Enumerate map directories
+			foreach (var kv in modData.Manifest.MapFolders)
+			{
+				if (!Enum.TryParse(kv.Value, out MapClassification packageClassification))
+					continue;
+
+				if (!classification.HasFlag(packageClassification))
+					continue;
+
+				var name = kv.Key;
+				var optional = name.StartsWith("~", StringComparison.Ordinal);
+				if (optional)
+					name = name.Substring(1);
+
+				// Don't try to open the map directory in the support directory if it doesn't exist
+				var resolved = Platform.ResolvePath(name);
+				if (resolved.StartsWith(Platform.SupportDir) && (!Directory.Exists(resolved) || !File.Exists(resolved)))
+					continue;
+
+				using (var package = (IReadWritePackage)modData.ModFiles.OpenPackage(name))
+				{
+					foreach (var map in package.Contents)
+					{
+						if (package.OpenPackage(map, modData.ModFiles) is IReadWritePackage mapPackage)
+							yield return mapPackage;
+					}
+				}
+			}
+		}
+
+		public IEnumerable<Map> EnumerateMapsWithoutCaching(MapClassification classification = MapClassification.System)
+		{
+			foreach (var mapPackage in EnumerateMapPackagesWithoutCaching(classification))
+				yield return new Map(modData, mapPackage);
+		}
+
+		public void QueryRemoteMapDetails(string repositoryUrl, IEnumerable<string> uids, Action<MapPreview> mapDetailsReceived = null, Action<MapPreview> mapQueryFailed = null)
+		{
+			var queryUids = uids.Distinct()
+				.Where(uid => uid != null)
 				.Select(uid => previews[uid])
 				.Where(p => p.Status == MapStatus.Unavailable)
-				.ToDictionary(p => p.Uid, p => p);
+				.Select(p => p.Uid)
+				.ToList();
 
-			if (!maps.Any())
-				return;
+			foreach (var uid in queryUids)
+				previews[uid].UpdateRemoteSearch(MapStatus.Searching, null);
 
-			foreach (var p in maps.Values)
-				p.UpdateRemoteSearch(MapStatus.Searching, null);
-
-			var url = repositoryUrl + "hash/" + string.Join(",", maps.Keys) + "/yaml";
-
-			Action<DownloadDataCompletedEventArgs> onInfoComplete = i =>
+			Task.Run(async () =>
 			{
-				if (i.Error != null)
+				var client = HttpClientFactory.Create();
+
+				// Limit each query to 50 maps at a time to avoid request size limits
+				for (var i = 0; i < queryUids.Count; i += 50)
 				{
-					Log.Write("debug", "Remote map query failed with error: {0}", Download.FormatErrorMessage(i.Error));
-					Log.Write("debug", "URL was: {0}", url);
-					foreach (var p in maps.Values)
-						p.UpdateRemoteSearch(MapStatus.Unavailable, null);
+					var batchUids = queryUids.Skip(i).Take(50).ToList();
+					var url = repositoryUrl + "hash/" + string.Join(",", batchUids) + "/yaml";
+					try
+					{
+						var httpResponseMessage = await client.GetAsync(url);
+						var result = await httpResponseMessage.Content.ReadAsStringAsync();
 
-					if (queryFailed != null)
-						queryFailed();
+						var yaml = MiniYaml.FromString(result);
+						foreach (var kv in yaml)
+							previews[kv.Key].UpdateRemoteSearch(MapStatus.DownloadAvailable, kv.Value, mapDetailsReceived);
 
-					return;
+						foreach (var uid in batchUids)
+						{
+							var p = previews[uid];
+							if (p.Status != MapStatus.DownloadAvailable)
+								p.UpdateRemoteSearch(MapStatus.Unavailable, null);
+						}
+					}
+					catch (Exception e)
+					{
+						Log.Write("debug", "Remote map query failed with error: {0}", e);
+						Log.Write("debug", "URL was: {0}", url);
+
+						foreach (var uid in batchUids)
+						{
+							var p = previews[uid];
+							p.UpdateRemoteSearch(MapStatus.Unavailable, null);
+							mapQueryFailed?.Invoke(p);
+						}
+					}
 				}
-
-				var data = Encoding.UTF8.GetString(i.Result);
-				try
-				{
-					var yaml = MiniYaml.FromString(data);
-					foreach (var kv in yaml)
-						maps[kv.Key].UpdateRemoteSearch(MapStatus.DownloadAvailable, kv.Value, mapDetailsReceived);
-				}
-				catch (Exception e)
-				{
-					Log.Write("debug", "Can't parse remote map search data:\n{0}", data);
-					Log.Write("debug", "Exception: {0}", e);
-					if (queryFailed != null)
-						queryFailed();
-				}
-			};
-
-			new Download(url, _ => { }, onInfoComplete);
+			});
 		}
 
 		void LoadAsyncInternal()
@@ -182,7 +223,7 @@ namespace OpenRA
 			var maxKeepAlive = 5000 / emptyDelay;
 			var keepAlive = maxKeepAlive;
 
-			for (;;)
+			while (true)
 			{
 				List<MapPreview> todo;
 				lock (syncRoot)
@@ -229,13 +270,8 @@ namespace OpenRA
 				}
 			}
 
-			// The buffer is not fully reclaimed until changes are written out to the texture.
-			// We will access the texture in order to force changes to be written out, allowing the buffer to be freed.
-			Game.RunAfterTick(() =>
-			{
-				sheetBuilder.Current.ReleaseBuffer();
-				sheetBuilder.Current.GetTexture();
-			});
+			// Release the buffer by forcing changes to be written out to the texture, allowing the buffer to be reclaimed by GC.
+			Game.RunAfterTick(sheetBuilder.Current.ReleaseBuffer);
 			Log.Write("debug", "MapCache.LoadAsyncInternal ended");
 		}
 
@@ -253,8 +289,7 @@ namespace OpenRA
 				Game.RunAfterTick(() =>
 				{
 					// Wait for any existing thread to exit before starting a new one.
-					if (previewLoaderThread != null)
-						previewLoaderThread.Join();
+					previewLoaderThread?.Join();
 
 					previewLoaderThread = new Thread(LoadAsyncInternal)
 					{
@@ -290,17 +325,14 @@ namespace OpenRA
 			if (string.IsNullOrEmpty(initialUid) || previews[initialUid].Status != MapStatus.Available)
 			{
 				var selected = previews.Values.Where(IsSuitableInitialMap).RandomOrDefault(random) ??
-					previews.Values.First(m => m.Status == MapStatus.Available && m.Visibility.HasFlag(MapVisibility.Lobby));
-				return selected.Uid;
+					previews.Values.FirstOrDefault(m => m.Status == MapStatus.Available && m.Visibility.HasFlag(MapVisibility.Lobby));
+				return selected == null ? string.Empty : selected.Uid;
 			}
 
 			return initialUid;
 		}
 
-		public MapPreview this[string key]
-		{
-			get { return previews[key]; }
-		}
+		public MapPreview this[string key] => previews[key];
 
 		public IEnumerator<MapPreview> GetEnumerator()
 		{

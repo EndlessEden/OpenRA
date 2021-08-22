@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -15,12 +15,12 @@ using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
 {
-	public class TerrainTunnelLayerInfo : ITraitInfo, Requires<DomainIndexInfo>, ILobbyCustomRulesIgnore
+	public class TerrainTunnelLayerInfo : TraitInfo, Requires<DomainIndexInfo>, ILobbyCustomRulesIgnore
 	{
 		[Desc("Terrain type used by cells outside any tunnel footprint.")]
 		public readonly string ImpassableTerrainType = "Impassable";
 
-		public object Create(ActorInitializer init) { return new TerrainTunnelLayer(init.Self, this); }
+		public override object Create(ActorInitializer init) { return new TerrainTunnelLayer(init.Self, this); }
 	}
 
 	public class TerrainTunnelLayer : ICustomMovementLayer, IWorldLoaded
@@ -36,24 +36,25 @@ namespace OpenRA.Mods.Common.Traits
 			map = self.World.Map;
 			cellCenters = new CellLayer<WPos>(map);
 			terrainIndices = new CellLayer<byte>(map);
-			terrainIndices.Clear(map.Rules.TileSet.GetTerrainIndex(info.ImpassableTerrainType));
+			terrainIndices.Clear(map.Rules.TerrainInfo.GetTerrainIndex(info.ImpassableTerrainType));
 		}
 
 		public void WorldLoaded(World world, WorldRenderer wr)
 		{
 			var domainIndex = world.WorldActor.Trait<DomainIndex>();
+			var cellHeight = world.Map.CellHeightStep.Length;
 			foreach (var tti in world.WorldActor.Info.TraitInfos<TerrainTunnelInfo>())
 			{
 				enabled = true;
 
-				var terrain = map.Rules.TileSet.GetTerrainIndex(tti.TerrainType);
+				var terrain = map.Rules.TerrainInfo.GetTerrainIndex(tti.TerrainType);
 				foreach (var c in tti.TunnelCells())
 				{
 					var uv = c.ToMPos(map);
 					terrainIndices[uv] = terrain;
 
 					var pos = map.CenterOfCell(c);
-					cellCenters[uv] = pos - new WVec(0, 0, pos.Z - 512 * tti.Height);
+					cellCenters[uv] = pos - new WVec(0, 0, pos.Z - cellHeight * tti.Height);
 				}
 
 				var portal = tti.PortalCells();
@@ -67,21 +68,22 @@ namespace OpenRA.Mods.Common.Traits
 			}
 		}
 
-		bool ICustomMovementLayer.EnabledForActor(ActorInfo a, MobileInfo mi) { return enabled; }
-		byte ICustomMovementLayer.Index { get { return CustomMovementLayerType.Tunnel; } }
-		bool ICustomMovementLayer.InteractsWithDefaultLayer { get { return false; } }
+		bool ICustomMovementLayer.EnabledForActor(ActorInfo a, LocomotorInfo li) { return enabled; }
+		byte ICustomMovementLayer.Index => CustomMovementLayerType.Tunnel;
+		bool ICustomMovementLayer.InteractsWithDefaultLayer => false;
+		bool ICustomMovementLayer.ReturnToGroundLayerOnIdle => true;
 
 		WPos ICustomMovementLayer.CenterOfCell(CPos cell)
 		{
 			return cellCenters[cell];
 		}
 
-		int ICustomMovementLayer.EntryMovementCost(ActorInfo a, MobileInfo mi, CPos cell)
+		int ICustomMovementLayer.EntryMovementCost(ActorInfo a, LocomotorInfo li, CPos cell)
 		{
 			return portals.Contains(cell) ? 0 : int.MaxValue;
 		}
 
-		int ICustomMovementLayer.ExitMovementCost(ActorInfo a, MobileInfo mi, CPos cell)
+		int ICustomMovementLayer.ExitMovementCost(ActorInfo a, LocomotorInfo li, CPos cell)
 		{
 			return portals.Contains(cell) ? 0 : int.MaxValue;
 		}

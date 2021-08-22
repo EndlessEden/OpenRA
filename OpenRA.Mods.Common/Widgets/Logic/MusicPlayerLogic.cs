@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -10,7 +10,6 @@
 #endregion
 
 using System;
-using System.Linq;
 using OpenRA.GameRules;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Widgets;
@@ -93,7 +92,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				var totalMinutes = currentSong.Length / 60;
 				var totalSeconds = currentSong.Length % 60;
 
-				return "{0:D2}:{1:D2} / {2:D2}:{3:D2}".F(minutes, seconds, totalMinutes, totalSeconds);
+				return $"{minutes:D2}:{seconds:D2} / {totalMinutes:D2}:{totalSeconds:D2}";
 			};
 
 			var musicTitle = panel.GetOrNull<LabelWidget>("TITLE_LABEL");
@@ -133,11 +132,12 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			currentSong = musicPlaylist.CurrentSong();
 
 			musicList.RemoveChildren();
-			foreach (var s in music)
+			foreach (var song in music)
 			{
-				var song = s;
 				var item = ScrollItemWidget.Setup(song.Filename, itemTemplate, () => currentSong == song, () => { currentSong = song; Play(); }, () => { });
-				item.Get<LabelWidget>("TITLE").GetText = () => song.Title;
+				var label = item.Get<LabelWithTooltipWidget>("TITLE");
+				WidgetUtils.TruncateLabelToTooltip(label, song.Title);
+
 				item.Get<LabelWidget>("LENGTH").GetText = () => SongLengthLabel(song);
 				musicList.AddChild(item);
 			}
@@ -157,7 +157,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 		static string SongLengthLabel(MusicInfo song)
 		{
-			return "{0:D1}:{1:D2}".F(song.Length / 60, song.Length % 60);
+			return $"{song.Length / 60:D1}:{song.Length % 60:D2}";
 		}
 	}
 }

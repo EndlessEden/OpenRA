@@ -3,11 +3,13 @@
 	AlwaysVisible:
 	ScreenMap:
 	ActorMap:
+	Selection:
 	MusicPlaylist:
 		VictoryMusic: score
 		DefeatMusic: score
 	TerrainGeometryOverlay:
 	DebugVisualizations:
+	TerrainRenderer:
 	ShroudRenderer:
 		ShroudVariants: shrouda, shroudb, shroudc, shroudd
 		FogVariants: foga, fogb, fogc, fogd
@@ -15,6 +17,63 @@
 		OverrideFullShroud: shroudfull
 		OverrideFullFog: fogfull
 		ShroudBlend: Multiply
+	Locomotor@FOOT:
+		Name: foot
+		Crushes: crate, spicebloom
+		SharesCell: true
+		TerrainSpeeds:
+			Sand: 100
+			Rock: 100
+			Transition: 100
+			Concrete: 100
+			SpiceSand: 100
+			Spice: 100
+			SpiceBlobs: 100
+			Dune: 80
+			Rough: 80
+	Locomotor@VEHICLE:
+		Name: vehicle
+		Crushes: crate, spicebloom
+		TerrainSpeeds:
+			Sand: 100
+			Rock: 100
+			Transition: 100
+			Concrete: 100
+			SpiceSand: 100
+			Spice: 100
+			SpiceBlobs: 100
+			Dune: 50
+	Locomotor@TANK:
+		Name: tank
+		Crushes: crate, infantry, spicebloom
+		TerrainSpeeds:
+			Sand: 100
+			Rock: 100
+			Transition: 100
+			Concrete: 100
+			SpiceSand: 100
+			Spice: 100
+			SpiceBlobs: 100
+			Dune: 50
+	Locomotor@DEVASTATOR:
+		Name: devastator
+		Crushes: crate, infantry, spicebloom, wall
+		TerrainSpeeds:
+			Sand: 100
+			Rock: 100
+			Transition: 100
+			Concrete: 100
+			SpiceSand: 100
+			Spice: 100
+			SpiceBlobs: 100
+			Dune: 50
+	Locomotor@WORM:
+		Name: worm
+		TerrainSpeeds:
+			Sand: 100
+			Dune: 100
+			SpiceSand: 100
+			Spice: 100
 	Faction@Random:
 		Name: Any
 		InternalName: Random
@@ -48,18 +107,12 @@
 		Name: Fremen
 		InternalName: fremen
 		Selectable: false
-	ResourceType@Spice:
-		Type: Spice
-		Name: Spice
-		PipColor: green
-		ResourceType: 1
-		Palette: d2k
-		TerrainType: Spice
-		Sequences: spice
-		MaxDensity: 20
-		ValuePerUnit: 25
-		AllowedTerrainTypes: SpiceSand
-		AllowUnderActors: true
+	D2kResourceRenderer:
+		ResourceTypes:
+			Spice:
+				Sequences: spicea, spiceb, spicec, spiced
+				Palette: d2k
+				Name: Spice
 
 World:
 	Inherits: ^BaseWorld
@@ -72,7 +125,8 @@ World:
 	BuildingInfluence:
 	ProductionQueueFromSelection:
 		ProductionPaletteWidget: PRODUCTION_PALETTE
-	WormManager:
+	ActorSpawnManager:
+		Actors: sandworm
 	CrateSpawner:
 		Minimum: 0
 		Maximum: 2
@@ -80,32 +134,47 @@ World:
 		WaterChance: 0
 		ValidGround: Sand, Rock, Transition, Spice, SpiceSand, Dune, Concrete
 		InitialSpawnDelay: 1500
+		CheckboxDisplayOrder: 1
 	DomainIndex:
 	WarheadDebugOverlay:
 	BuildableTerrainLayer:
-	D2kResourceLayer:
+	ResourceLayer:
+		RecalculateResourceDensity: true
+		ResourceTypes:
+			Spice:
+				ResourceIndex: 1
+				TerrainType: Spice
+				AllowedTerrainTypes: SpiceSand
+				MaxDensity: 20
 	ResourceClaimLayer:
 	CustomTerrainDebugOverlay:
 	SmudgeLayer@Rock:
 		Type: RockCrater
 		Sequence: rockcraters
-		SmokePercentage: 0
 	SmudgeLayer@Sand:
 		Type: SandCrater
 		Sequence: sandcraters
-		SmokePercentage: 0
 	MapCreeps:
+		CheckboxLabel: Worms
+		CheckboxDescription: Worms roam the map and devour unprepared forces
+		CheckboxDisplayOrder: 5
 	SpawnMapActors:
 	MapBuildRadius:
+		AllyBuildRadiusCheckboxDisplayOrder: 4
+		BuildRadiusCheckboxVisible: False
 	MapOptions:
-	CreateMPPlayers:
-	MPStartLocations:
-	MPStartUnits@mcv:
+		ShortGameCheckboxDisplayOrder: 2
+		TechLevelDropdownDisplayOrder: 2
+		GameSpeedDropdownDisplayOrder: 3
+	CreateMapPlayers:
+	MapStartingLocations:
+		SeparateTeamSpawnsCheckboxDisplayOrder: 6
+	StartingUnits@mcv:
 		Class: none
 		ClassName: MCV Only
 		BaseActor: mcv
 		Factions: atreides, ordos, harkonnen
-	MPStartUnits@lightatreides:
+	StartingUnits@lightatreides:
 		Class: light
 		ClassName: Light Support
 		Factions: atreides
@@ -113,7 +182,7 @@ World:
 		SupportActors: light_inf, light_inf, light_inf, trooper, grenadier, trike, quad
 		InnerSupportRadius: 3
 		OuterSupportRadius: 5
-	MPStartUnits@lightharkonnen:
+	StartingUnits@lightharkonnen:
 		Class: light
 		ClassName: Light Support
 		Factions: harkonnen
@@ -121,7 +190,7 @@ World:
 		SupportActors: light_inf, light_inf, light_inf, trooper, trooper, trike, quad
 		InnerSupportRadius: 3
 		OuterSupportRadius: 5
-	MPStartUnits@lightordos:
+	StartingUnits@lightordos:
 		Class: light
 		ClassName: Light Support
 		Factions: ordos
@@ -129,7 +198,7 @@ World:
 		SupportActors: light_inf, light_inf, light_inf, trooper, engineer, raider, quad
 		InnerSupportRadius: 3
 		OuterSupportRadius: 5
-	MPStartUnits@heavyatreides:
+	StartingUnits@heavyatreides:
 		Class: heavy
 		ClassName: Heavy Support
 		Factions: atreides
@@ -137,7 +206,7 @@ World:
 		SupportActors: light_inf, light_inf, light_inf, trooper, grenadier, trike, combat_tank_a, missile_tank
 		InnerSupportRadius: 3
 		OuterSupportRadius: 5
-	MPStartUnits@heavyharkonnen:
+	StartingUnits@heavyharkonnen:
 		Class: heavy
 		ClassName: Heavy Support
 		Factions: harkonnen
@@ -145,7 +214,7 @@ World:
 		SupportActors: light_inf, light_inf, light_inf, trooper, engineer, quad, combat_tank_h, siege_tank
 		InnerSupportRadius: 3
 		OuterSupportRadius: 5
-	MPStartUnits@heavyordos:
+	StartingUnits@heavyordos:
 		Class: heavy
 		ClassName: Heavy Support
 		Factions: ordos
@@ -153,18 +222,42 @@ World:
 		SupportActors: light_inf, light_inf, light_inf, trooper, engineer, raider, combat_tank_o, missile_tank
 		InnerSupportRadius: 3
 		OuterSupportRadius: 5
-	SpawnMPUnits:
+	SpawnStartingUnits:
+		DropdownDisplayOrder: 1
 	PathFinder:
 	ValidateOrder:
 	DebugPauseState:
 	RadarPings:
 	ObjectivesPanel:
+		ExitDelay: 0
 		PanelName: SKIRMISH_STATS
 	LoadWidgetAtGameStart:
+	ScriptTriggers:
+	StartGameNotification:
+	TimeLimitManager:
+	ColorPickerManager:
+		PreviewActor: carryall.colorpicker
+		PresetHues: 0, 0.13, 0.18, 0.3, 0.475, 0.625, 0.82, 0.89, 0.97, 0.05, 0.23, 0.375, 0.525, 0.6, 0.75, 0.85
+		PresetSaturations: 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.5, 0.35, 0.4, 0.4, 0.5, 0.5, 0.4, 0.35
+	OrderEffects:
+		TerrainFlashImage: moveflsh
+		TerrainFlashSequence: idle
+		TerrainFlashPalette: moveflash
 
 EditorWorld:
 	Inherits: ^BaseWorld
 	EditorActorLayer:
-	D2kEditorResourceLayer:
+	EditorCursorLayer:
+	EditorResourceLayer:
+		RecalculateResourceDensity: true
+		ResourceTypes:
+			Spice:
+				ResourceIndex: 1
+				TerrainType: Spice
+				AllowedTerrainTypes: SpiceSand
+				MaxDensity: 20
 	EditorSelectionLayer:
 	LoadWidgetAtGameStart:
+	EditorActionManager:
+	BuildableTerrainOverlay:
+		AllowedTerrainTypes: Rock, Concrete

@@ -4,7 +4,7 @@ Container@LOBBY_PLAYER_BIN:
 	Children:
 		Container@LABEL_CONTAINER:
 			X: 5
-			Y: 0 - 25
+			Y: 0 - 24
 			Width: PARENT_RIGHT
 			Height: PARENT_BOTTOM
 			Children:
@@ -16,34 +16,41 @@ Container@LOBBY_PLAYER_BIN:
 					Font: Bold
 				Label@COLOR:
 					X: 210
-					Width: 76
+					Width: 94
 					Height: 25
 					Text: Color
 					Align: Center
 					Font: Bold
 				Label@FACTION:
-					X: 291
+					X: 309
 					Width: 120
 					Height: 25
 					Text: Faction
 					Align: Center
 					Font: Bold
 				Label@TEAM:
-					X: 416
+					X: 460-25
 					Width: 50
 					Height: 25
 					Text: Team
 					Align: Center
 					Font: Bold
+				Label@HANDICAP:
+					X: 491
+					Width: 75
+					Height: 25
+					Text: Handicap
+					Align: Center
+					Font: Bold
 				Label@SPAWN:
-					X: 471
+					X: 571
 					Width: 50
 					Height: 25
 					Text: Spawn
 					Align: Left
 					Font: Bold
 				Label@STATUS:
-					X: 527
+					X: 627
 					Width: 20
 					Height: 25
 					Text: Ready
@@ -61,11 +68,6 @@ Container@LOBBY_PLAYER_BIN:
 					Height: 25
 					Visible: false
 					Children:
-						Image@ADMIN_INDICATOR:
-							ImageCollection: lobby-bits
-							ImageName: admin
-							X: 2
-							Visible: false
 						Background@LATENCY:
 							Y: 6
 							Width: 11
@@ -78,18 +80,32 @@ Container@LOBBY_PLAYER_BIN:
 									Y: 2
 									Width: PARENT_RIGHT - 4
 									Height: PARENT_BOTTOM - 4
-						ClientTooltipRegion@CLIENT_REGION:
+						ClientTooltipRegion@LATENCY_REGION:
 							Width: 11
 							Height: 25
 							TooltipContainer: TOOLTIP_CONTAINER
-							Template: CLIENT_TOOLTIP
+							Template: LATENCY_TOOLTIP
 						TextField@NAME:
 							X: 15
 							Width: 190
 							Height: 25
 							Text: Name
+							LeftMargin: 24
 							MaxLength: 16
 							Visible: false
+							Children:
+								Image@PROFILE:
+									ImageCollection: lobby-bits
+									X: 3
+									Y: 3
+									Visible: false
+								ClientTooltipRegion@PROFILE_TOOLTIP:
+									X: 3
+									Y: 3
+									Width: 16
+									Height: 16
+									TooltipContainer: TOOLTIP_CONTAINER
+									Template: ANONYMOUS_PLAYER_TOOLTIP
 						DropDownButton@SLOT_OPTIONS:
 							X: 15
 							Width: 190
@@ -99,7 +115,7 @@ Container@LOBBY_PLAYER_BIN:
 							Visible: false
 						DropDownButton@COLOR:
 							X: 210
-							Width: 76
+							Width: 94
 							Height: 25
 							Font: Regular
 							IgnoreChildMouseOver: true
@@ -110,7 +126,7 @@ Container@LOBBY_PLAYER_BIN:
 									Width: PARENT_RIGHT - 35
 									Height: PARENT_BOTTOM - 12
 						DropDownButton@FACTION:
-							X: 291
+							X: 309
 							Width: 120
 							Height: 25
 							Font: Regular
@@ -129,17 +145,24 @@ Container@LOBBY_PLAYER_BIN:
 									Height: 25
 									Text: Faction
 						DropDownButton@TEAM_DROPDOWN:
-							X: 416
+							X: 435
 							Width: 50
 							Height: 25
 							Font: Regular
+						DropDownButton@HANDICAP_DROPDOWN:
+							X: 491
+							Width: 75
+							Height: 25
+							Font: Regular
+							TooltipContainer: TOOLTIP_CONTAINER
+							TooltipText: A handicap decreases the combat effectiveness of the player's forces
 						DropDownButton@SPAWN_DROPDOWN:
-							X: 471
+							X: 571
 							Width: 50
 							Height: 25
 							Font: Regular
 						Image@STATUS_IMAGE:
-							X: 521
+							X: 629
 							Y: 4
 							Width: 20
 							Height: 20
@@ -147,7 +170,7 @@ Container@LOBBY_PLAYER_BIN:
 							ImageName: checked
 							Visible: false
 						Checkbox@STATUS_CHECKBOX:
-							X: 527
+							X: 627
 							Y: 2
 							Width: 20
 							Height: 20
@@ -158,11 +181,6 @@ Container@LOBBY_PLAYER_BIN:
 					Height: 25
 					Visible: false
 					Children:
-						Image@ADMIN_INDICATOR:
-							X: 2
-							ImageCollection: lobby-bits
-							ImageName: admin
-							Visible: false
 						Background@LATENCY:
 							Y: 6
 							Width: 11
@@ -175,39 +193,61 @@ Container@LOBBY_PLAYER_BIN:
 									Y: 2
 									Width: PARENT_RIGHT - 4
 									Height: PARENT_BOTTOM - 4
-						ClientTooltipRegion@CLIENT_REGION:
+						ClientTooltipRegion@LATENCY_REGION:
 							Width: 11
 							Height: 25
 							TooltipContainer: TOOLTIP_CONTAINER
-							Template: CLIENT_TOOLTIP
+							Template: LATENCY_TOOLTIP
+						Image@PROFILE:
+							ImageCollection: lobby-bits
+							X: 18
+							Y: 3
+							Visible: false
+						ClientTooltipRegion@PROFILE_TOOLTIP:
+							X: 18
+							Y: 3
+							Width: 16
+							Height: 16
+							TooltipContainer: TOOLTIP_CONTAINER
+							Template: ANONYMOUS_PLAYER_TOOLTIP
 						Label@NAME:
-							X: 20
-							Y: 0 - 1
-							Width: 180
+							X: 39
+							Width: 161
 							Height: 25
-						Button@KICK:
-							X: 180
-							Width: 25
+						DropDownButton@PLAYER_ACTION:
+							X: 15
+							Width: 190
 							Height: 25
+							Font: Regular
+							Visible: false
+							Align: Left
+							LeftMargin: 24
 							Children:
-								Image:
+								Image@PROFILE:
 									ImageCollection: lobby-bits
-									ImageName: kick
-									X: 7
-									Y: 7
+									X: 3
+									Y: 3
+									Visible: false
+								ClientTooltipRegion@PROFILE_TOOLTIP:
+									X: 3
+									Y: 3
+									Width: 16
+									Height: 16
+									TooltipContainer: TOOLTIP_CONTAINER
+									Template: ANONYMOUS_PLAYER_TOOLTIP
 						ColorBlock@COLORBLOCK:
 							X: 215
 							Y: 6
-							Width: 41
+							Width: 59
 							Height: 13
 						Container@FACTION:
-							X: 291
+							X: 309
 							Width: 120
 							Height: 25
 							Children:
 								Image@FACTIONFLAG:
-									X: 5
-									Y: 5
+									X: 4
+									Y: 4
 									Width: 30
 									Height: 15
 								Label@FACTIONNAME:
@@ -216,29 +256,41 @@ Container@LOBBY_PLAYER_BIN:
 									Height: 25
 									Text: Faction
 						Label@TEAM:
-							X: 416
-							Width: 25
-							Height: 25
-							Align: Center
-						Label@SPAWN:
-							X: 471
+							X: 435
 							Width: 25
 							Height: 25
 							Align: Center
 						DropDownButton@TEAM_DROPDOWN:
-							X: 416
+							X: 435
 							Width: 50
 							Height: 25
 							Font: Regular
 							Visible: false
+						Label@HANDICAP:
+							X: 491
+							Width: 50
+							Height: 25
+							Align: Center
+						DropDownButton@HANDICAP_DROPDOWN:
+							X: 491
+							Width: 75
+							Height: 25
+							Font: Regular
+							TooltipContainer: TOOLTIP_CONTAINER
+							TooltipText: A handicap decreases the combat effectiveness of the player's forces
+						Label@SPAWN:
+							X: 571
+							Width: 25
+							Height: 25
+							Align: Center
 						DropDownButton@SPAWN_DROPDOWN:
-							X: 471
+							X: 571
 							Width: 50
 							Height: 25
 							Font: Regular
 							Visible: false
 						Image@STATUS_IMAGE:
-							X: 527
+							X: 629
 							Y: 4
 							Width: 20
 							Height: 20
@@ -260,13 +312,12 @@ Container@LOBBY_PLAYER_BIN:
 							Visible: false
 						Label@NAME:
 							X: 20
-							Y: 0 - 1
 							Width: 195
 							Height: 25
 							Visible: false
 						Button@JOIN:
 							X: 210
-							Width: 338
+							Width: 438
 							Height: 25
 							Text: Play in this slot
 							Font: Regular
@@ -276,11 +327,6 @@ Container@LOBBY_PLAYER_BIN:
 					Height: 25
 					Visible: false
 					Children:
-						Image@ADMIN_INDICATOR:
-							X: 2
-							ImageCollection: lobby-bits
-							ImageName: admin
-							Visible: false
 						Background@LATENCY:
 							Y: 6
 							Width: 11
@@ -293,26 +339,40 @@ Container@LOBBY_PLAYER_BIN:
 									Y: 2
 									Width: PARENT_RIGHT - 4
 									Height: PARENT_BOTTOM - 4
-						ClientTooltipRegion@CLIENT_REGION:
+						ClientTooltipRegion@LATENCY_REGION:
 							Width: 11
 							Height: 25
 							TooltipContainer: TOOLTIP_CONTAINER
-							Template: CLIENT_TOOLTIP
+							Template: LATENCY_TOOLTIP
 						TextField@NAME:
 							X: 15
 							Width: 190
 							Height: 25
 							Text: Name
+							LeftMargin: 24
 							MaxLength: 16
+							Children:
+								Image@PROFILE:
+									ImageCollection: lobby-bits
+									X: 3
+									Y: 3
+									Visible: false
+								ClientTooltipRegion@PROFILE_TOOLTIP:
+									X: 3
+									Y: 3
+									Width: 16
+									Height: 16
+									TooltipContainer: TOOLTIP_CONTAINER
+									Template: ANONYMOUS_PLAYER_TOOLTIP
 						Label@SPECTATOR:
 							X: 210
-							Width: 341
+							Width: 441
 							Height: 25
 							Text: Spectator
 							Align: Center
 							Font: Bold
 						Image@STATUS_IMAGE:
-							X: 521
+							X: 629
 							Y: 4
 							Width: 20
 							Height: 20
@@ -320,7 +380,7 @@ Container@LOBBY_PLAYER_BIN:
 							ImageName: checked
 							Visible: false
 						Checkbox@STATUS_CHECKBOX:
-							X: 527
+							X: 627
 							Y: 2
 							Width: 20
 							Height: 20
@@ -331,11 +391,6 @@ Container@LOBBY_PLAYER_BIN:
 					Height: 25
 					Visible: false
 					Children:
-						Image@ADMIN_INDICATOR:
-							X: 2
-							ImageCollection: lobby-bits
-							ImageName: admin
-							Visible: false
 						Background@LATENCY:
 							Y: 6
 							Width: 11
@@ -348,35 +403,57 @@ Container@LOBBY_PLAYER_BIN:
 									Y: 2
 									Width: PARENT_RIGHT - 4
 									Height: PARENT_BOTTOM - 4
-						ClientTooltipRegion@CLIENT_REGION:
+						ClientTooltipRegion@LATENCY_REGION:
 							Width: 11
 							Height: 25
 							TooltipContainer: TOOLTIP_CONTAINER
-							Template: CLIENT_TOOLTIP
+							Template: LATENCY_TOOLTIP
+						Image@PROFILE:
+							ImageCollection: lobby-bits
+							X: 18
+							Y: 3
+							Visible: false
+						ClientTooltipRegion@PROFILE_TOOLTIP:
+							X: 18
+							Y: 3
+							Width: 16
+							Height: 16
+							TooltipContainer: TOOLTIP_CONTAINER
+							Template: ANONYMOUS_PLAYER_TOOLTIP
 						Label@NAME:
-							X: 20
-							Y: 0 - 1
-							Width: 180
+							X: 39
+							Width: 161
 							Height: 25
-						Button@KICK:
-							X: 180
-							Width: 25
+						DropDownButton@PLAYER_ACTION:
+							X: 15
+							Width: 190
 							Height: 25
+							Font: Regular
+							Visible: false
+							Align: Left
+							LeftMargin: 24
 							Children:
-								Image:
+								Image@PROFILE:
 									ImageCollection: lobby-bits
-									ImageName: kick
-									X: 7
-									Y: 7
+									X: 3
+									Y: 3
+									Visible: false
+								ClientTooltipRegion@PROFILE_TOOLTIP:
+									X: 3
+									Y: 3
+									Width: 16
+									Height: 16
+									TooltipContainer: TOOLTIP_CONTAINER
+									Template: ANONYMOUS_PLAYER_TOOLTIP
 						Label@SPECTATOR:
 							X: 210
-							Width: 341
+							Width: 441
 							Height: 25
 							Text: Spectator
 							Align: Center
 							Font: Bold
 						Image@STATUS_IMAGE:
-							X: 527
+							X: 627
 							Y: 4
 							Width: 20
 							Height: 20
@@ -397,7 +474,7 @@ Container@LOBBY_PLAYER_BIN:
 							Text: Allow Spectators?
 						Button@SPECTATE:
 							X: 210
-							Width: 338
+							Width: 438
 							Height: 25
 							Text: Spectate
 							Font: Regular

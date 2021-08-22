@@ -9,13 +9,15 @@ ABAN01:
 	Armor:
 		Type: wood
 	Health:
-		HP: 600
-	EditorTilesetFilter:
+		HP: 60000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
+	IsometricSelectable:
+		Height: 72
 
 ABAN02:
 	Inherits: ^CivBuilding
@@ -28,13 +30,15 @@ ABAN02:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 600
-	EditorTilesetFilter:
+		HP: 60000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
+	IsometricSelectable:
+		Height: 48
 
 ABAN03:
 	Inherits: ^CivBuilding
@@ -47,13 +51,15 @@ ABAN03:
 	Armor:
 		Type: wood
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
+	IsometricSelectable:
+		Height: 48
 
 ABAN04:
 	Inherits: ^CivBuilding
@@ -66,8 +72,8 @@ ABAN04:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 4, 7
@@ -89,8 +95,8 @@ ABAN05:
 	Armor:
 		Type: wood
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN06:
@@ -104,8 +110,8 @@ ABAN06:
 	Armor:
 		Type: wood
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN07:
@@ -119,8 +125,8 @@ ABAN07:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 350
-	EditorTilesetFilter:
+		HP: 35000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN08:
@@ -134,8 +140,8 @@ ABAN08:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN09:
@@ -149,8 +155,8 @@ ABAN09:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 350
-	EditorTilesetFilter:
+		HP: 35000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN10:
@@ -164,8 +170,8 @@ ABAN10:
 	Armor:
 		Type: wood
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN11:
@@ -179,8 +185,8 @@ ABAN11:
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN12:
@@ -194,8 +200,8 @@ ABAN12:
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN13:
@@ -208,8 +214,8 @@ ABAN13:
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN14:
@@ -222,8 +228,8 @@ ABAN14:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 300
-	EditorTilesetFilter:
+		HP: 30000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN15:
@@ -236,8 +242,8 @@ ABAN15:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN16:
@@ -251,8 +257,8 @@ ABAN16:
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN17:
@@ -265,8 +271,8 @@ ABAN17:
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 ABAN18:
@@ -279,8 +285,8 @@ ABAN18:
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: TEMPERATE
 
 AMMOCRAT:
@@ -430,7 +436,7 @@ CA0001:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 400
+		HP: 40000
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
@@ -447,7 +453,7 @@ CA0002:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 400
+		HP: 40000
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
@@ -464,7 +470,7 @@ CA0003:
 	Armor:
 		Type: light
 	Health:
-		HP: 300
+		HP: 30000
 
 CA0004:
 	Inherits: ^CivBuilding
@@ -477,7 +483,7 @@ CA0004:
 	Armor:
 		Type: light
 	Health:
-		HP: 300
+		HP: 30000
 
 CA0005:
 	Inherits: ^CivBuilding
@@ -490,7 +496,7 @@ CA0005:
 	Armor:
 		Type: light
 	Health:
-		HP: 300
+		HP: 30000
 
 CA0006:
 	Inherits: ^CivBuilding
@@ -503,7 +509,7 @@ CA0006:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 300
+		HP: 30000
 
 CA0007:
 	Inherits: ^CivBuilding
@@ -516,7 +522,7 @@ CA0007:
 	Armor:
 		Type: light
 	Health:
-		HP: 400
+		HP: 40000
 
 CA0008:
 	Inherits: ^CivBuilding
@@ -529,7 +535,7 @@ CA0008:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 400
+		HP: 40000
 
 CA0009:
 	Inherits: ^CivBuilding
@@ -542,7 +548,7 @@ CA0009:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 400
+		HP: 40000
 
 CA0010:
 	Inherits: ^CivBuilding
@@ -555,7 +561,7 @@ CA0010:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 300
+		HP: 30000
 
 CA0011:
 	Inherits: ^CivBuilding
@@ -568,7 +574,7 @@ CA0011:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 200
+		HP: 20000
 
 CA0012:
 	Inherits: ^CivBuilding
@@ -581,7 +587,9 @@ CA0012:
 	Armor:
 		Type: light
 	Health:
-		HP: 100
+		HP: 10000
+	IsometricSelectable:
+		Height: 36
 
 CA0013:
 	Inherits: ^CivBuilding
@@ -594,7 +602,9 @@ CA0013:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 300
+		HP: 30000
+	IsometricSelectable:
+		Height: 48
 
 CA0014:
 	Inherits: ^CivBuilding
@@ -606,7 +616,9 @@ CA0014:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 300
+		HP: 30000
+	IsometricSelectable:
+		Height: 48
 
 CA0015:
 	Inherits: ^CivBuilding
@@ -618,7 +630,7 @@ CA0015:
 	Armor:
 		Type: light
 	Health:
-		HP: 300
+		HP: 30000
 
 CA0016:
 	Inherits: ^CivBuilding
@@ -630,7 +642,9 @@ CA0016:
 	Armor:
 		Type: light
 	Health:
-		HP: 300
+		HP: 30000
+	IsometricSelectable:
+		Height: 48
 
 CA0017:
 	Inherits: ^CivBuilding
@@ -642,7 +656,9 @@ CA0017:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 300
+		HP: 30000
+	IsometricSelectable:
+		Height: 48
 
 CA0018:
 	Inherits: ^CivBuilding
@@ -658,7 +674,9 @@ CA0018:
 	Armor:
 		Type: light
 	Health:
-		HP: 200
+		HP: 20000
+	IsometricSelectable:
+		Height: 48
 
 CA0019:
 	Inherits: ^CivBuilding
@@ -674,7 +692,9 @@ CA0019:
 	Armor:
 		Type: light
 	Health:
-		HP: 200
+		HP: 20000
+	IsometricSelectable:
+		Height: 48
 
 CA0020:
 	Inherits: ^CivBuilding
@@ -690,7 +710,9 @@ CA0020:
 	Armor:
 		Type: light
 	Health:
-		HP: 200
+		HP: 20000
+	IsometricSelectable:
+		Height: 48
 
 CA0021:
 	Inherits: ^CivBuilding
@@ -706,7 +728,9 @@ CA0021:
 	Armor:
 		Type: light
 	Health:
-		HP: 200
+		HP: 20000
+	IsometricSelectable:
+		Height: 48
 
 CAARAY:
 	Inherits: ^CivBuilding
@@ -719,13 +743,24 @@ CAARAY:
 	Armor:
 		Type: concrete
 	Health:
-		HP: 400
+		HP: 40000
 	RenderSprites:
 		Palette: player
+	WithIdleOverlay@SATELLITE:
+		Sequence: idle-satellite
+	WithIdleOverlay@RADAR:
+		Sequence: idle-radar
+	WithIdleOverlay@SCANNER:
+		Sequence: idle-scanner
+	WithIdleOverlay@LIGHT-bright:
+		Sequence: idle-light-bright
+		Palette: bright
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 7
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
+	IsometricSelectable:
+		Height: 72
 
 CAARMR:
 	Inherits: ^CivBuilding
@@ -738,12 +773,14 @@ CAARMR:
 	Armor:
 		Type: concrete
 	Health:
-		HP: 800
+		HP: 80000
 	RenderSprites:
 		Palette: player
 	ProvidesPrerequisite:
 		Prerequisite: barracks.upgraded
+	CaptureManager:
 	Capturable:
+		Types: building
 	ThrowsShrapnel@SMALL:
 		Pieces: 6, 9
 	ThrowsShrapnel@LARGE:
@@ -771,24 +808,34 @@ CAHOSP:
 	Inherits@shape: ^3x4Shape
 	Tooltip:
 		Name: Civilian Hospital
+	TooltipDescription@ally:
+		Description: Provides infantry with self-healing.
+		ValidRelationships: Ally
+	TooltipDescription@other:
+		Description: Capture to enable self-healing for infantry.
+		ValidRelationships: Neutral, Enemy
 	Building:
 		Footprint: XxX xxx xxx xxx
 		Dimensions: 3, 4
 	Armor:
 		Type: concrete
 	Health:
-		HP: 800
+		HP: 80000
 	RenderSprites:
 		Palette: player
+	CaptureManager:
 	Capturable:
+		Types: building
 	CaptureNotification:
 	ProvidesPrerequisite@BuildingName:
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
-	EditorTilesetFilter:
+	MapEditorData:
 		Categories: Civilian building
+	IsometricSelectable:
+		Height: 48
 
 CAPYR01:
 	Inherits: ^CivBuilding
@@ -801,9 +848,11 @@ CAPYR01:
 	Armor:
 		Type: concrete
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: SNOW
+	IsometricSelectable:
+		Height: 48
 
 CAPYR02:
 	Inherits: ^CivBuilding
@@ -816,13 +865,15 @@ CAPYR02:
 	Armor:
 		Type: concrete
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: SNOW
 	ThrowsShrapnel@SMALL:
 		Pieces: 6, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 3, 4
+	IsometricSelectable:
+		Height: 96
 
 CAPYR03:
 	Inherits: ^CivBuilding
@@ -835,13 +886,15 @@ CAPYR03:
 	Armor:
 		Type: concrete
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		ExcludeTilesets: SNOW
 	ThrowsShrapnel@SMALL:
 		Pieces: 6, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 3, 4
+	IsometricSelectable:
+		Height: 96
 
 CITY01:
 	Inherits: ^CivBuilding
@@ -854,13 +907,15 @@ CITY01:
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
+	IsometricSelectable:
+		Height: 72
 
 CITY02:
 	Inherits: ^CivBuilding
@@ -873,13 +928,15 @@ CITY02:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 700
-	EditorTilesetFilter:
+		HP: 70000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
+	IsometricSelectable:
+		Height: 72
 
 CITY03:
 	Inherits: ^CivBuilding
@@ -892,13 +949,15 @@ CITY03:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
+	IsometricSelectable:
+		Height: 48
 
 CITY04:
 	Inherits: ^CivBuilding
@@ -911,13 +970,15 @@ CITY04:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 600
-	EditorTilesetFilter:
+		HP: 60000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
+	IsometricSelectable:
+		Height: 72
 
 CITY05:
 	Inherits: ^CivBuilding
@@ -930,13 +991,15 @@ CITY05:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 600
-	EditorTilesetFilter:
+		HP: 60000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 2, 4
+	IsometricSelectable:
+		Height: 96
 
 CITY06:
 	Inherits: ^CivBuilding
@@ -949,13 +1012,15 @@ CITY06:
 	Armor:
 		Type: concrete
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 7, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 3, 4
+	IsometricSelectable:
+		Height: 72
 
 CITY07:
 	Inherits: ^CivBuilding
@@ -968,13 +1033,15 @@ CITY07:
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 7, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 3, 4
+	IsometricSelectable:
+		Height: 60
 
 CITY08:
 	Inherits: ^CivBuilding
@@ -987,8 +1054,8 @@ CITY08:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 300
-	EditorTilesetFilter:
+		HP: 30000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 
 CITY09:
@@ -1002,9 +1069,11 @@ CITY09:
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
-	EditorTilesetFilter:
+		HP: 40000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
+	IsometricSelectable:
+		Height: 48
 
 CITY10:
 	Inherits: ^CivBuilding
@@ -1017,9 +1086,11 @@ CITY10:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 300
-	EditorTilesetFilter:
+		HP: 30000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
+	IsometricSelectable:
+		Height: 48
 
 CITY11:
 	Inherits: ^CivBuilding
@@ -1032,9 +1103,11 @@ CITY11:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
+	IsometricSelectable:
+		Height: 96
 
 CITY12:
 	Inherits: ^CivBuilding
@@ -1047,9 +1120,11 @@ CITY12:
 	Armor:
 		Type: concrete
 	Health:
-		HP: 600
-	EditorTilesetFilter:
+		HP: 60000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
+	IsometricSelectable:
+		Height: 96
 
 CITY13:
 	Inherits: ^CivBuilding
@@ -1062,9 +1137,11 @@ CITY13:
 	Armor:
 		Type: wood
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
+	IsometricSelectable:
+		Height: 96
 
 CITY14:
 	Inherits: ^CivBuilding
@@ -1076,9 +1153,11 @@ CITY14:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 600
-	EditorTilesetFilter:
+		HP: 60000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
+	IsometricSelectable:
+		Height: 96
 
 CITY15:
 	Inherits: ^CivBuilding
@@ -1091,8 +1170,8 @@ CITY15:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 7, 9
@@ -1110,13 +1189,15 @@ CITY16:
 	Armor:
 		Type: wood
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 7, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 3, 4
+	IsometricSelectable:
+		Height: 72
 
 CITY17:
 	Inherits: ^CivBuilding
@@ -1129,13 +1210,15 @@ CITY17:
 	Armor:
 		Type: wood
 	Health:
-		HP: 300
-	EditorTilesetFilter:
+		HP: 30000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 7, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 3, 4
+	IsometricSelectable:
+		Height: 108
 
 CITY18:
 	Inherits: ^CivBuilding
@@ -1148,13 +1231,15 @@ CITY18:
 	Armor:
 		Type: concrete
 	Health:
-		HP: 600
-	EditorTilesetFilter:
+		HP: 60000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 	ThrowsShrapnel@SMALL:
 		Pieces: 8, 12
 	ThrowsShrapnel@LARGE:
 		Pieces: 5, 7
+	IsometricSelectable:
+		Height: 72
 
 CITY19:
 	Inherits: ^CivBuilding
@@ -1167,8 +1252,8 @@ CITY19:
 	Armor:
 		Type: wood
 	Health:
-		HP: 500
-	EditorTilesetFilter:
+		HP: 50000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 
 CITY20:
@@ -1181,8 +1266,8 @@ CITY20:
 	Armor:
 		Type: wood
 	Health:
-		HP: 250
-	EditorTilesetFilter:
+		HP: 25000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 
 CITY21:
@@ -1195,8 +1280,8 @@ CITY21:
 	Armor:
 		Type: none
 	Health:
-		HP: 100
-	EditorTilesetFilter:
+		HP: 10000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
 
 CITY22:
@@ -1210,9 +1295,11 @@ CITY22:
 	Armor:
 		Type: none
 	Health:
-		HP: 100
-	EditorTilesetFilter:
+		HP: 10000
+	MapEditorData:
 		RequireTilesets: TEMPERATE
+	IsometricSelectable:
+		Height: 72
 
 CTDAM:
 	Inherits: ^CivBuilding
@@ -1228,15 +1315,18 @@ CTDAM:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 1000
+		HP: 100000
 	ProvidesPrerequisite:
 		Prerequisite: anypower
-	EditorTilesetFilter:
+	MapEditorData:
 		ExcludeTilesets: SNOW
-	WithIdleOverlay@LIGHTS:
-		Sequence: idle-lights
-	WithIdleOverlay@WATER:
-		Sequence: idle-water
+	WithIdleOverlay@LIGHT-BRIGHT:
+		Sequence: idle-lights-bright
+		Palette: bright
+	WithIdleOverlay@WATER-A:
+		Sequence: idle-water-a
+	WithIdleOverlay@WATER-B:
+		Sequence: idle-water-b
 	ThrowsShrapnel@SMALL:
 		Pieces: 5, 9
 	ThrowsShrapnel@LARGE:
@@ -1253,13 +1343,15 @@ CTVEGA:
 	Armor:
 		Type: none
 	Health:
-		HP: 100
-	EditorTilesetFilter:
+		HP: 10000
+	MapEditorData:
 		ExcludeTilesets: SNOW
 	ThrowsShrapnel@SMALL:
 		Pieces: 7, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 3, 4
+	IsometricSelectable:
+		Height: 72
 
 GAKODK:
 	Inherits: ^CivBuilding
@@ -1274,15 +1366,30 @@ GAKODK:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 1500
+		HP: 150000
 	RenderSprites:
 		Palette: player
 	WithIdleOverlay@LARGELIGHTS:
 		Sequence: large-lights
+		Palette: player-nobright
+		IsPlayerPalette: True
+	WithIdleOverlay@LIGHT-BRIGHT:
+		Sequence: large-lights-bright
+		Palette: bright
 	WithIdleOverlay@SMALLLIGHT:
 		Sequence: small-light
+		Palette: player-nobright
+		IsPlayerPalette: True
+	WithIdleOverlay@SMALLLIGHT-BRIGHT:
+		Sequence: small-light-bright
+		Palette: bright
 	WithIdleOverlay@SMALLLIGHTS:
 		Sequence: small-lights
+		Palette: player-nobright
+		IsPlayerPalette: True
+	WithIdleOverlay@SMALLLIGHTS-BRIGHT:
+		Sequence: small-lights-bright
+		Palette: bright
 
 GAOLDCC1:
 	Inherits: ^OldBase
@@ -1295,16 +1402,22 @@ GAOLDCC2:
 		Name: Old Temple
 	Building:
 		Footprint: xx xX
+	IsometricSelectable:
+		Height: 36
 
 GAOLDCC3:
 	Inherits: ^OldBase
 	Tooltip:
 		Name: Old Weapons Factory
+	IsometricSelectable:
+		Height: 36
 
 GAOLDCC4:
 	Inherits: ^OldBase
 	Tooltip:
 		Name: Old Refinery
+	IsometricSelectable:
+		Height: 36
 
 GAOLDCC5:
 	Inherits: ^OldBase
@@ -1330,12 +1443,10 @@ GASAND:
 		DestroyedSounds: sandbag1.aud
 	Valued:
 		Cost: 25
-	CustomSellValue:
-		Value: 0
 	Tooltip:
 		Name: Sandbags
 	Health:
-		HP: 250
+		HP: 25000
 	Armor:
 		Type: Light
 	LineBuild:
@@ -1344,6 +1455,7 @@ GASAND:
 		Types: sandbags
 	WithWallSpriteBody:
 		Type: sandbags
+	-BlocksProjectiles:
 
 GASPOT:
 	Inherits: ^Building
@@ -1354,23 +1466,22 @@ GASPOT:
 	Building:
 		Footprint: x
 		Dimensions: 1, 1
-	Selectable:
-		Bounds: 48, 30, 0, -4
 	Power:
 		Amount: -10
 	Armor:
 		Type: wood
 	Health:
-		HP: 400
+		HP: 40000
 	RevealsShroud:
 		Range: 6c0
 		MaxHeightDelta: 3
-	WithIdleOverlay@LIGHTS:
-		Sequence: idle-lights
-	SelectionDecorations:
-		VisualBounds: 48, 82, 0, -25
-	EditorTilesetFilter:
+	WithIdleOverlay@LIGHTS-BRIGHT:
+		Sequence: idle-lights-bright
+		Palette: bright
+	MapEditorData:
 		Categories: Civilian building
+	IsometricSelectable:
+		Height: 72
 
 GALITE:
 	Inherits: ^Building
@@ -1379,11 +1490,14 @@ GALITE:
 	Tooltip:
 		Name: Light Post
 	RenderSprites:
+		Image: galite
 		Palette: terraindecoration
 	-WithMakeAnimation:
 	-WithDeathAnimation:
+	Sellable:
+		RequiresCondition: !being-demolished
 	Health:
-		HP: 600
+		HP: 60000
 	Armor:
 		Type: Wood
 	RevealsShroud:
@@ -1391,25 +1505,193 @@ GALITE:
 		MaxHeightDelta: 3
 	Power:
 		Amount: 0
-# TODO: should use terrain lighting instead, depends on https://github.com/OpenRA/OpenRA/issues/3605
-	WithIdleOverlay@LIGHTING:
-		Sequence: lighting
-		Palette: alpha
-	Selectable:
-		Bounds: 24, 24, 0, -4
-	SelectionDecorations:
-		VisualBounds: 25, 35, 0, -12
+	TerrainLightSource:
+		Range: 19c544
+		Intensity: 0.2
+		RedTint: 0.05
+		GreenTint: 0.05
+		BlueTint: 0.01
 	-Cloak@EXTERNALCLOAK:
 	-ExternalCondition@CLOAKGENERATOR:
 	-ExternalCondition@CRATE-CLOAK:
-	EditorTilesetFilter:
+	MapEditorData:
 		Categories: Civilian building
+	Capturable:
+		-RequiresCondition:
+
+INGALITE:
+	Interactable:
+	EditorOnlyTooltip:
+		Name: (Invisible Light Post)
+	AlwaysVisible:
+	Immobile:
+		OccupiesSpace: false
+	RenderSpritesEditorOnly:
+		Image: galite
+		Palette: terrainalpha
+	WithSpriteBody:
+	BodyOrientation:
+		QuantizedFacings: 1
+	MapEditorData:
+		Categories: System
+	RequiresSpecificOwners:
+		ValidOwnerNames: Neutral
+	TerrainLightSource:
+		Range: 19c544
+		Intensity: 0.2
+		RedTint: 0.05
+		GreenTint: 0.05
+		BlueTint: 0.01
+
+NEGLAMP:
+	Inherits: INGALITE
+	EditorOnlyTooltip:
+		Name: (Invisible Negative Light Post)
+	TerrainLightSource:
+		Range: 13c688
+		Intensity: -0.15
+		RedTint: 0.03
+		GreenTint: 0.04
+		BlueTint: 0.04
+
+REDLAMP:
+	Inherits: GALITE
+	Tooltip:
+		Name: Red Light Post
+	TerrainLightSource:
+		Range: 15c640
+		Intensity: 0.01
+		RedTint: 1.5
+		GreenTint: 0.01
+		BlueTint: 0.01
+
+NEGRED:
+	Inherits: GALITE
+	Tooltip:
+		Name: Negative Red Light Post
+	TerrainLightSource:
+		Range: 15c640
+		Intensity: -0.05
+		RedTint: -1.5
+		GreenTint: 0.01
+		BlueTint: 0.01
+
+GRENLAMP:
+	Inherits: GALITE
+	Tooltip:
+		Name: Green Light Post
+	TerrainLightSource:
+		Range: 15c640
+		Intensity: 0.01
+		RedTint: 0.01
+		GreenTint: 1.5
+		BlueTint: 0.01
+
+BLUELAMP:
+	Inherits: GALITE
+	Tooltip:
+		Name: Blue Light Post
+	TerrainLightSource:
+		Range: 15c640
+		Intensity: 0.01
+		RedTint: 0.01
+		GreenTint: 0.01
+		BlueTint: 0.7
+
+YELWLAMP:
+	Inherits: GALITE
+	Tooltip:
+		Name: Yellow Light Post
+	TerrainLightSource:
+		Range: 15c640
+		Intensity: 0.01
+		RedTint: 1.5
+		GreenTint: 1.5
+		BlueTint: 0.01
+
+INYELWLAMP:
+	Inherits: INGALITE
+	EditorOnlyTooltip:
+		Name: (Invisible Yellow Light Post)
+	TerrainLightSource:
+		Range: 15c640
+		Intensity: 0.01
+		RedTint: 1.5
+		GreenTint: 1.5
+		BlueTint: 0.01
+
+PURPLAMP:
+	Inherits: GALITE
+	Tooltip:
+		Name: Purple Light Post
+	TerrainLightSource:
+		Range: 11c736
+		Intensity: 0.01
+		RedTint: 2.0
+		GreenTint: 0.01
+		BlueTint: 2.0
+
+INPURPLAMP:
+	Inherits: INGALITE
+	EditorOnlyTooltip:
+		Name: (Invisible Purple Light Post)
+	TerrainLightSource:
+		Range: 11c736
+		Intensity: 0.01
+		RedTint: 2.0
+		GreenTint: 0.01
+		BlueTint: 2.0
+
+INORANLAMP:
+	Inherits: INGALITE
+	EditorOnlyTooltip:
+		Name: (Invisible Orange Light Post)
+	TerrainLightSource:
+		Range: 11c736
+		Intensity: 0.01
+		RedTint: 2.0
+		GreenTint: 1.4
+		BlueTint: 0.3
+
+INGRNLMP:
+	Inherits: INGALITE
+	EditorOnlyTooltip:
+		Name: (Invisible Green Light Post)
+	TerrainLightSource:
+		Range: 15c640
+		Intensity: 0.01
+		RedTint: 0.01
+		GreenTint: 1.5
+		BlueTint: 0.01
+
+INREDLMP:
+	Inherits: INGALITE
+	EditorOnlyTooltip:
+		Name: (Invisible Red Light Post)
+	TerrainLightSource:
+		Range: 15c640
+		Intensity: 0.01
+		RedTint: 1.5
+		GreenTint: 0.01
+		BlueTint: 0.01
+
+INBLULMP:
+	Inherits: INGALITE
+	EditorOnlyTooltip:
+		Name: (Invisible Blue Light Post)
+	TerrainLightSource:
+		Range: 15c640
+		Intensity: 0.01
+		RedTint: 0.01
+		GreenTint: 0.01
+		BlueTint: 0.7
 
 TSTLAMP:
 	Inherits: GALITE
-	RenderSprites:
-		Image: galite
-	Tooltip:
+	-TerrainLightSource:
+	WithIdleOverlay@LIGHTING:
+		Sequence: lighting
+		Palette: alpha
 
 GAICBM:
 	Inherits: ^Building
@@ -1419,7 +1701,7 @@ GAICBM:
 		Name: Deployed ICBM
 	-GivesBuildableArea:
 	Health:
-		HP: 400
+		HP: 40000
 	Armor:
 		Type: Wood
 	RevealsShroud:
@@ -1428,12 +1710,14 @@ GAICBM:
 	Transforms:
 		IntoActor: icbm
 		Offset: 1,1
-		Facing: 96
+		Facing: 384
 		TransformSounds: place2.aud
 		NoTransformSounds:
 	-WithDeathAnimation:
-	EditorTilesetFilter:
+	MapEditorData:
 		Categories: Vehicle
+	IsometricSelectable:
+		Height: 48
 
 NAMNTK:
 	Inherits: ^CivBuilding
@@ -1446,11 +1730,18 @@ NAMNTK:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 1500
+		HP: 150000
 	RenderSprites:
 		Palette: player
 	WithIdleOverlay@LIGHTS:
 		Sequence: idle-lights
+		Palette: player-nobright
+		IsPlayerPalette: True
+	WithIdleOverlay@LIGHT-BRIGHT:
+		Sequence: idle-lights-bright
+		Palette: bright
+	IsometricSelectable:
+		Height: 36
 
 NTPYRA:
 	Inherits: ^CivBuilding
@@ -1465,7 +1756,7 @@ NTPYRA:
 	Armor:
 		Type: heavy
 	Health:
-		HP: 1500
+		HP: 150000
 	RenderSprites:
 		Palette: player
 	WithIdleOverlay@LIGHTS:
@@ -1474,6 +1765,8 @@ NTPYRA:
 		Pieces: 7, 9
 	ThrowsShrapnel@LARGE:
 		Pieces: 3, 5
+	IsometricSelectable:
+		Height: 72
 
 UFO:
 	Inherits: ^CivBuilding
@@ -1483,19 +1776,17 @@ UFO:
 		Footprint: xxxxxx xxxxxx xxxxxx xxxxxx
 	RenderSprites:
 		Palette: terraindecoration
-	Selectable:
-		Bounds: 144, 72, 0, 0
 	Tooltip:
 		Name: Scrin Ship
 	Health:
-		HP: 1000
+		HP: 100000
 	Armor:
 		Type: Heavy
-	EditorTilesetFilter:
+	MapEditorData:
 		RequireTilesets: TEMPERATE
-	SelectionDecorations:
-		VisualBounds: 144, 72, 0, 0
 	ThrowsShrapnel@SMALL:
 		Pieces: 9, 12
 	ThrowsShrapnel@LARGE:
 		Pieces: 6, 8
+	IsometricSelectable:
+		Height: 144

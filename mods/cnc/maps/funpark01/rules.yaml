@@ -1,22 +1,22 @@
 World:
 	LuaScript:
-		Scripts: scj01ea.lua
+		Scripts: campaign-global.lua, scj01ea.lua
 	MusicPlaylist:
 		StartingMusic: j1
 	MissionData:
-		Briefing: There have been some reports of strange animals in this area. \n\nTake your units to investigate, and report back your findings.
+		Briefing: There have been some reports of strange animals in this area.\n\nTake your units to investigate, and report back your findings.
 		BriefingVideo: generic.vqa
 		StartVideo: dino.vqa
 	MapOptions:
-		ShortGameLocked: True
-		ShortGameEnabled: False
+		ShortGameCheckboxLocked: True
+		ShortGameCheckboxEnabled: False
 	ScriptLobbyDropdown@difficulty:
 		ID: difficulty
 		Label: Difficulty
 		Values:
 			easy: Easy
 			normal: Normal
-		Default: easy
+		Default: normal
 
 Player:
 	EnemyWatcher:
@@ -37,19 +37,9 @@ Player:
 ^CivBuilding:
 	AnnounceOnSeen:
 
-OLDLST:
-	Inherits: LST
-	-WithRoof:
-	-Selectable:
-	SelectionDecorations:
-		RenderSelectionBars: False
-	RejectsOrders:
-	Cargo:
-		Types: disabled
-
 TREX:
 	Health:
-		HP: 750
+		HP: 75000
 	Mobile:
 		Speed: 34
 	AutoTarget:
@@ -57,7 +47,7 @@ TREX:
 
 TRIC:
 	Health:
-		HP: 700
+		HP: 70000
 	Mobile:
 		Speed: 18
 	AutoTarget:
@@ -65,7 +55,7 @@ TRIC:
 
 STEG:
 	Health:
-		HP: 600
+		HP: 60000
 	Mobile:
 		Speed: 32
 

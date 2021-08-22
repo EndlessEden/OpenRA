@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -9,7 +9,6 @@
  */
 #endregion
 
-using System;
 using System.Linq;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Widgets;
@@ -27,32 +26,28 @@ namespace OpenRA.Mods.Common.Widgets
 		public StanceSelectorLogic(Widget widget, World world)
 		{
 			this.world = world;
-			var ks = Game.Settings.Keys;
 
 			var holdFireButton = widget.GetOrNull<ButtonWidget>("STANCE_HOLDFIRE");
 			if (holdFireButton != null)
-				BindStanceButton(holdFireButton, UnitStance.HoldFire, _ => ks.StanceHoldFireKey);
+				BindStanceButton(holdFireButton, UnitStance.HoldFire);
 
 			var returnFireButton = widget.GetOrNull<ButtonWidget>("STANCE_RETURNFIRE");
 			if (returnFireButton != null)
-				BindStanceButton(returnFireButton, UnitStance.ReturnFire, _ => ks.StanceReturnFireKey);
+				BindStanceButton(returnFireButton, UnitStance.ReturnFire);
 
 			var defendButton = widget.GetOrNull<ButtonWidget>("STANCE_DEFEND");
 			if (defendButton != null)
-				BindStanceButton(defendButton, UnitStance.Defend, _ => ks.StanceDefendKey);
+				BindStanceButton(defendButton, UnitStance.Defend);
 
 			var attackAnythingButton = widget.GetOrNull<ButtonWidget>("STANCE_ATTACKANYTHING");
 			if (attackAnythingButton != null)
-				BindStanceButton(attackAnythingButton, UnitStance.AttackAnything, _ => ks.StanceAttackAnythingKey);
+				BindStanceButton(attackAnythingButton, UnitStance.AttackAnything);
 		}
 
-		void BindStanceButton(ButtonWidget button, UnitStance stance, Func<ButtonWidget, Hotkey> getHotkey)
+		void BindStanceButton(ButtonWidget button, UnitStance stance)
 		{
-			var icon = button.Get<ImageWidget>("ICON");
-			icon.GetImageName = () => button.IsDisabled() ? icon.ImageName + "-disabled" :
-				button.IsHighlighted() ? icon.ImageName + "-active" : icon.ImageName;
+			WidgetUtils.BindButtonIcon(button);
 
-			button.GetKey = getHotkey;
 			button.IsDisabled = () => { UpdateStateIfNecessary(); return !actorStances.Any(); };
 			button.IsHighlighted = () => actorStances.Any(
 				at => !at.Trait.IsTraitDisabled && at.Trait.PredictedStance == stance);

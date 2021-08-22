@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -19,6 +19,9 @@ namespace OpenRA.Mods.Common.Traits
 	{
 		public readonly WDist Height = WDist.FromCells(1);
 
+		[Desc("Determines what projectiles to block based on their allegiance to the wall owner.")]
+		public readonly PlayerRelationship ValidRelationships = PlayerRelationship.Ally | PlayerRelationship.Neutral | PlayerRelationship.Enemy;
+
 		public override object Create(ActorInitializer init) { return new BlocksProjectiles(init.Self, this); }
 	}
 
@@ -27,7 +30,9 @@ namespace OpenRA.Mods.Common.Traits
 		public BlocksProjectiles(Actor self, BlocksProjectilesInfo info)
 			: base(info) { }
 
-		WDist IBlocksProjectiles.BlockingHeight { get { return Info.Height; } }
+		WDist IBlocksProjectiles.BlockingHeight => Info.Height;
+
+		PlayerRelationship IBlocksProjectiles.ValidRelationships { get { return Info.ValidRelationships; } }
 
 		public static bool AnyBlockingActorAt(World world, WPos pos)
 		{
@@ -39,15 +44,16 @@ namespace OpenRA.Mods.Common.Traits
 					.Any(Exts.IsTraitEnabled));
 		}
 
-		public static bool AnyBlockingActorsBetween(World world, WPos start, WPos end, WDist width, WDist overscan, out WPos hit)
+		public static bool AnyBlockingActorsBetween(World world, Player owner, WPos start, WPos end, WDist width, out WPos hit)
 		{
-			var actors = world.FindActorsOnLine(start, end, width, overscan);
+			var actors = world.FindBlockingActorsOnLine(start, end, width);
 			var length = (end - start).Length;
 
 			foreach (var a in actors)
 			{
 				var blockers = a.TraitsImplementing<IBlocksProjectiles>()
-					.Where(Exts.IsTraitEnabled).ToList();
+					.Where(Exts.IsTraitEnabled).Where(t => t.ValidRelationships.HasRelationship(a.Owner.RelationshipWith(owner)))
+					.ToList();
 
 				if (!blockers.Any())
 					continue;

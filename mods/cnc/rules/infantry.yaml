@@ -1,25 +1,27 @@
 E1:
 	Inherits: ^Soldier
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+	Inherits@DECORATIONS: ^InfantryExperienceHospitalHazmatOverrides
 	Valued:
 		Cost: 100
 	Tooltip:
 		Name: Minigunner
+	UpdatesPlayerStatistics:
+		AddToArmyValue: true
 	Buildable:
 		BuildPaletteOrder: 10
 		Prerequisites: barracks
 		Queue: Infantry.GDI, Infantry.Nod
 		Description: General-purpose infantry.\n  Strong vs Infantry\n  Weak vs Vehicles
 	Mobile:
-		Speed: 56
+		Speed: 54
 	Health:
-		HP: 50
+		HP: 5000
 	AutoTarget:
 		ScanRadius: 4
 	Armament:
 		Weapon: M16
-	AttackFrontal:
 	WithInfantryBody:
 		IdleSequences: idle1,idle2,idle3,idle4
 		DefaultAttackSequence: shoot
@@ -27,20 +29,23 @@ E1:
 E2:
 	Inherits: ^Soldier
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+	Inherits@DECORATIONS: ^InfantryExperienceHospitalHazmatOverrides
 	Valued:
 		Cost: 160
 	Tooltip:
 		Name: Grenadier
+	UpdatesPlayerStatistics:
+		AddToArmyValue: true
 	Buildable:
 		BuildPaletteOrder: 40
 		Prerequisites: anyhq, ~techlevel.medium
 		Queue: Infantry.GDI
 		Description: Fast infantry armed with grenades. \n  Strong vs Buildings, slow-moving targets
 	Mobile:
-		Speed: 71
+		Speed: 68
 	Health:
-		HP: 50
+		HP: 5000
 	AutoTarget:
 		ScanRadius: 4
 	Armament:
@@ -49,7 +54,6 @@ E2:
 		FireDelay: 15
 	TakeCover:
 		ProneOffset: 300,0,-227
-	AttackFrontal:
 	WithInfantryBody:
 		DefaultAttackSequence: throw
 	Explodes:
@@ -60,20 +64,23 @@ E2:
 E3:
 	Inherits: ^Soldier
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetAll
+	Inherits@AUTOTARGET: ^AutoTargetAllAssaultMove
+	Inherits@DECORATIONS: ^InfantryExperienceHospitalHazmatOverrides
 	Valued:
 		Cost: 300
 	Tooltip:
 		Name: Rocket Soldier
+	UpdatesPlayerStatistics:
+		AddToArmyValue: true
 	Buildable:
 		BuildPaletteOrder: 20
 		Prerequisites: barracks
 		Queue: Infantry.GDI, Infantry.Nod
 		Description: Anti-tank/Anti-aircraft infantry. \n  Strong vs Tanks, Aircraft\n  Weak vs Infantry
 	Mobile:
-		Speed: 42
+		Speed: 39
 	Health:
-		HP: 45
+		HP: 4500
 	AutoTarget:
 		ScanRadius: 6
 	Armament:
@@ -82,27 +89,29 @@ E3:
 		FireDelay: 5
 	TakeCover:
 		ProneOffset: 180,0,-200
-	AttackFrontal:
 	WithInfantryBody:
 		DefaultAttackSequence: shoot
 
 E4:
 	Inherits: ^Soldier
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+	Inherits@DECORATIONS: ^InfantryExperienceHospitalHazmatOverrides
 	Valued:
 		Cost: 200
 	Tooltip:
 		Name: Flamethrower
+	UpdatesPlayerStatistics:
+		AddToArmyValue: true
 	Buildable:
 		BuildPaletteOrder: 40
 		Prerequisites: anyhq, ~techlevel.medium
 		Queue: Infantry.Nod
 		Description: Advanced Anti-infantry unit.\n  Strong vs Infantry, Buildings\n  Weak vs Tanks
 	Mobile:
-		Speed: 56
+		Speed: 54
 	Health:
-		HP: 90
+		HP: 9000
 	AutoTarget:
 		ScanRadius: 4
 	Armament:
@@ -112,7 +121,6 @@ E4:
 		MuzzleSequence: muzzle
 	TakeCover:
 		ProneOffset: 190,0,-198
-	AttackFrontal:
 	WithMuzzleOverlay:
 	WithInfantryBody:
 		DefaultAttackSequence: shoot
@@ -120,25 +128,24 @@ E4:
 E5:
 	Inherits: ^Soldier
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+	Inherits@DECORATIONS: ^InfantryExperienceHospitalHazmatOverrides
 	Valued:
 		Cost: 300
 	Tooltip:
 		Name: Chemical Warrior
+	UpdatesPlayerStatistics:
+		AddToArmyValue: true
 	Buildable:
 		BuildPaletteOrder: 50
 		Prerequisites: tmpl, ~techlevel.high
 		Queue: Infantry.Nod
 		Description: Advanced general-purpose infantry.\n  Strong vs all Ground units
 	Mobile:
-		Speed: 56
-		TerrainSpeeds:
-			Tiberium: 90
-				PathingCost: 90
-			BlueTiberium: 90
-				PathingCost: 90
+		Speed: 54
+		Locomotor: chem
 	Health:
-		HP: 90
+		HP: 9000
 	AutoTarget:
 		ScanRadius: 4
 	Armament:
@@ -148,7 +155,6 @@ E5:
 		MuzzleSequence: muzzle
 	TakeCover:
 		ProneOffset: 190,0,-190
-	AttackFrontal:
 	WithMuzzleOverlay:
 	-DamagedByTerrain:
 	WithInfantryBody:
@@ -156,51 +162,61 @@ E5:
 
 E6:
 	Inherits: ^Soldier
+	Inherits@selection: ^SelectableSupportUnit
 	Valued:
 		Cost: 500
 	Tooltip:
 		Name: Engineer
+	UpdatesPlayerStatistics:
+		AddToArmyValue: true
 	Buildable:
 		BuildPaletteOrder: 30
 		Prerequisites: barracks
 		Queue: Infantry.GDI, Infantry.Nod
 		Description: Damages and captures enemy structures.\n  Repairs destroyed vehicles\n  Unarmed
 	Mobile:
-		Speed: 48
+		Speed: 46
 	Health:
-		HP: 30
+		HP: 3000
 	Passenger:
-		PipType: Yellow
+		CustomPipType: yellow
 	EngineerRepair:
 	RepairsBridges:
-	Captures:
+	CaptureManager:
+	Captures@SABOTAGE:
+		CaptureTypes: building-sabotage
+		SabotageThreshold: 55
+		PlayerExperience: 50
+	Captures@CAPTURES:
 		CaptureTypes: building, husk
 		PlayerExperience: 50
+	-AttackFrontal:
 
 RMBO:
 	Inherits: ^Soldier
 	Inherits@EXPERIENCE: ^GainsExperience
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+	Inherits@DECORATIONS: ^InfantryExperienceHospitalHazmatOverrides
 	Valued:
-		Cost: 2000
+		Cost: 1800
 	Tooltip:
 		Name: Commando
+	UpdatesPlayerStatistics:
+		AddToArmyValue: true
 	Buildable:
 		BuildPaletteOrder: 50
 		Prerequisites: eye, ~techlevel.high
 		Queue: Infantry.GDI
-		BuildDuration: 2000
-		BuildDurationModifier: 40
 		Description: Elite sniper infantry unit.\n  Strong vs Infantry, Buildings\n  Weak vs Vehicles
 	Mobile:
-		Speed: 71
+		Speed: 68
 		Voice: Move
 	Guard:
 		Voice: Move
 	Health:
-		HP: 150
+		HP: 15000
 	Passenger:
-		PipType: Red
+		CustomPipType: red
 		Voice: Move
 	RevealsShroud:
 		Range: 6c0
@@ -218,20 +234,24 @@ RMBO:
 	WithInfantryBody:
 		DefaultAttackSequence: shoot
 		IdleSequences: idle1,idle2,idle3
-	AnnounceOnBuild:
+	ExternalCondition@PRODUCED:
+		Condition: produced
+	VoiceAnnouncement:
+		RequiresCondition: produced
+		Voice: Build
 	AnnounceOnKill:
 	Voiced:
 		VoiceSet: CommandoVoice
 
 PVICE:
 	Inherits: ^Viceroid
-	Mobile:
-		Crushes: crate
 	Buildable:
 		Queue: Biolab
 		BuildPaletteOrder: 40
 		Description: Mutated abomination that spits liquid Tiberium.\n  Strong vs Infantry, Buildings\n  Weak vs Aircraft
 	Tooltip:
+	UpdatesPlayerStatistics:
+		AddToArmyValue: true
 	ActorLostNotification:
 
 STEG:
@@ -253,9 +273,8 @@ TREX:
 	Armament:
 		Weapon: teeth
 	Selectable:
-		Bounds: 48,36,2,1
-	SelectionDecorations:
-		VisualBounds: 52,38
+		Bounds: 2048, 1536, 85, 42
+		DecorationBounds: 2218, 1621
 	Buildable:
 		Description: Bipedal carnivore with a massive skull
 
@@ -265,10 +284,10 @@ TRIC:
 		Name: Triceratops
 	Armament:
 		Weapon: horn
-	SelectionDecorations:
-		VisualBounds: 34,24,0,2
 	Buildable:
 		Description: Quadruped with large bony frill and three horns
+	Selectable:
+		DecorationBounds: 1450, 1024, 0, 85
 
 RAPT:
 	Inherits: ^DINO

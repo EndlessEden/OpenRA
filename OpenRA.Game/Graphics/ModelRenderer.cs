@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using OpenRA.Primitives;
 
@@ -43,15 +42,17 @@ namespace OpenRA.Graphics
 		static readonly float[] ZVector = new float[] { 0, 0, 1, 1 };
 		static readonly float[] FlipMtx = Util.ScaleMatrix(1, -1, 1);
 		static readonly float[] ShadowScaleFlipMtx = Util.ScaleMatrix(2, -2, 2);
+		static readonly float[] GroundNormal = { 0, 0, 1, 1 };
 
 		readonly Renderer renderer;
 		readonly IShader shader;
 
 		readonly Dictionary<Sheet, IFrameBuffer> mappedBuffers = new Dictionary<Sheet, IFrameBuffer>();
 		readonly Stack<KeyValuePair<Sheet, IFrameBuffer>> unmappedBuffers = new Stack<KeyValuePair<Sheet, IFrameBuffer>>();
-		readonly List<Pair<Sheet, Action>> doRender = new List<Pair<Sheet, Action>>();
+		readonly List<(Sheet Sheet, Action Func)> doRender = new List<(Sheet, Action)>();
 
-		SheetBuilder sheetBuilder;
+		SheetBuilder sheetBuilderForFrame;
+		bool isInFrame;
 
 		public ModelRenderer(Renderer renderer, IShader shader)
 		{
@@ -64,10 +65,10 @@ namespace OpenRA.Graphics
 			shader.SetTexture("Palette", palette);
 		}
 
-		public void SetViewportParams(Size screen, float zoom, int2 scroll)
+		public void SetViewportParams(Size screen, int2 scroll)
 		{
 			var a = 2f / renderer.SheetSize;
-			var view = new float[]
+			var view = new[]
 			{
 				a, 0, 0, 0,
 				0, -a, 0, 0,
@@ -79,17 +80,23 @@ namespace OpenRA.Graphics
 		}
 
 		public ModelRenderProxy RenderAsync(
-			WorldRenderer wr, IEnumerable<ModelAnimation> models, WRot camera, float scale,
-			float[] groundNormal, WRot lightSource, float[] lightAmbientColor, float[] lightDiffuseColor,
+			WorldRenderer wr, IEnumerable<ModelAnimation> models, in WRot camera, float scale,
+			in WRot groundOrientation, in WRot lightSource, float[] lightAmbientColor, float[] lightDiffuseColor,
 			PaletteReference color, PaletteReference normals, PaletteReference shadowPalette)
 		{
+			if (!isInFrame)
+				throw new InvalidOperationException("BeginFrame has not been called. You cannot render until a frame has been started.");
+
 			// Correct for inverted y-axis
 			var scaleTransform = Util.ScaleMatrix(scale, scale, scale);
 
 			// Correct for bogus light source definition
 			var lightYaw = Util.MakeFloatMatrix(new WRot(WAngle.Zero, WAngle.Zero, -lightSource.Yaw).AsMatrix());
 			var lightPitch = Util.MakeFloatMatrix(new WRot(WAngle.Zero, -lightSource.Pitch, WAngle.Zero).AsMatrix());
-			var shadowTransform = Util.MatrixMultiply(lightPitch, lightYaw);
+			var ground = Util.MakeFloatMatrix(groundOrientation.AsMatrix());
+			var shadowTransform = Util.MatrixMultiply(Util.MatrixMultiply(lightPitch, lightYaw), Util.MatrixInverse(ground));
+
+			var groundNormal = Util.MatrixVectorMultiply(ground, GroundNormal);
 
 			var invShadowTransform = Util.MatrixInverse(shadowTransform);
 			var cameraTransform = Util.MakeFloatMatrix(camera.AsMatrix());
@@ -111,8 +118,7 @@ namespace OpenRA.Graphics
 				var offsetVec = Util.MatrixVectorMultiply(invCameraTransform, wr.ScreenVector(m.OffsetFunc()));
 				var offsetTransform = Util.TranslationMatrix(offsetVec[0], offsetVec[1], offsetVec[2]);
 
-				var worldTransform = m.RotationFunc().Aggregate(Util.IdentityMatrix(),
-					(x, y) => Util.MatrixMultiply(Util.MakeFloatMatrix(y.AsMatrix()), x));
+				var worldTransform = Util.MakeFloatMatrix(m.RotationFunc().AsMatrix());
 				worldTransform = Util.MatrixMultiply(scaleTransform, worldTransform);
 				worldTransform = Util.MatrixMultiply(offsetTransform, worldTransform);
 
@@ -158,13 +164,14 @@ namespace OpenRA.Graphics
 			}
 
 			// Shadows are rendered at twice the resolution to reduce artifacts
-			Size spriteSize, shadowSpriteSize;
-			int2 spriteOffset, shadowSpriteOffset;
-			CalculateSpriteGeometry(tl, br, 1, out spriteSize, out spriteOffset);
-			CalculateSpriteGeometry(stl, sbr, 2, out shadowSpriteSize, out shadowSpriteOffset);
+			CalculateSpriteGeometry(tl, br, 1, out var spriteSize, out var spriteOffset);
+			CalculateSpriteGeometry(stl, sbr, 2, out var shadowSpriteSize, out var shadowSpriteOffset);
 
-			var sprite = sheetBuilder.Allocate(spriteSize, 0, spriteOffset);
-			var shadowSprite = sheetBuilder.Allocate(shadowSpriteSize, 0, shadowSpriteOffset);
+			if (sheetBuilderForFrame == null)
+				sheetBuilderForFrame = new SheetBuilder(SheetType.BGRA, AllocateSheet);
+
+			var sprite = sheetBuilderForFrame.Allocate(spriteSize, 0, spriteOffset);
+			var shadowSprite = sheetBuilderForFrame.Allocate(shadowSpriteSize, 0, shadowSpriteOffset);
 			var sb = sprite.Bounds;
 			var ssb = shadowSprite.Bounds;
 			var spriteCenter = new float2(sb.Left + sb.Width / 2, sb.Top + sb.Height / 2);
@@ -175,7 +182,7 @@ namespace OpenRA.Graphics
 			var correctionTransform = Util.MatrixMultiply(translateMtx, FlipMtx);
 			var shadowCorrectionTransform = Util.MatrixMultiply(shadowTranslateMtx, ShadowScaleFlipMtx);
 
-			doRender.Add(Pair.New<Sheet, Action>(sprite.Sheet, () =>
+			doRender.Add((sprite.Sheet, () =>
 			{
 				foreach (var m in models)
 				{
@@ -183,8 +190,7 @@ namespace OpenRA.Graphics
 					var offsetVec = Util.MatrixVectorMultiply(invCameraTransform, wr.ScreenVector(m.OffsetFunc()));
 					var offsetTransform = Util.TranslationMatrix(offsetVec[0], offsetVec[1], offsetVec[2]);
 
-					var rotations = m.RotationFunc().Aggregate(Util.IdentityMatrix(),
-						(x, y) => Util.MatrixMultiply(Util.MakeFloatMatrix(y.AsMatrix()), x));
+					var rotations = Util.MakeFloatMatrix(m.RotationFunc().AsMatrix());
 					var worldTransform = Util.MatrixMultiply(scaleTransform, rotations);
 					worldTransform = Util.MatrixMultiply(offsetTransform, worldTransform);
 
@@ -203,7 +209,7 @@ namespace OpenRA.Graphics
 						var t = m.Model.TransformationMatrix(i, frame);
 						var it = Util.MatrixInverse(t);
 						if (it == null)
-							throw new InvalidOperationException("Failed to invert the transformed matrix of frame {0} during RenderAsync.".F(i));
+							throw new InvalidOperationException($"Failed to invert the transformed matrix of frame {i} during RenderAsync.");
 
 						// Transform light vector from shadow -> world -> limb coords
 						var lightDirection = ExtractRotationVector(Util.MatrixMultiply(it, lightTransform));
@@ -271,17 +277,20 @@ namespace OpenRA.Graphics
 			shader.SetVec("AmbientLight", ambientLight, 3);
 			shader.SetVec("DiffuseLight", diffuseLight, 3);
 
-			shader.Render(() => renderer.DrawBatch(cache.VertexBuffer, renderData.Start, renderData.Count, PrimitiveType.TriangleList));
+			shader.PrepareRender();
+			renderer.DrawBatch(cache.VertexBuffer, renderData.Start, renderData.Count, PrimitiveType.TriangleList);
 		}
 
 		public void BeginFrame()
 		{
+			if (isInFrame)
+				throw new InvalidOperationException("BeginFrame has already been called. A new frame cannot be started until EndFrame has been called.");
+
+			isInFrame = true;
+
 			foreach (var kv in mappedBuffers)
 				unmappedBuffers.Push(kv);
 			mappedBuffers.Clear();
-
-			sheetBuilder = new SheetBuilder(SheetType.BGRA, AllocateSheet);
-			doRender.Clear();
 		}
 
 		IFrameBuffer EnableFrameBuffer(Sheet s)
@@ -290,19 +299,25 @@ namespace OpenRA.Graphics
 			Game.Renderer.Flush();
 			fbo.Bind();
 
-			Game.Renderer.Device.EnableDepthBuffer();
+			Game.Renderer.Context.EnableDepthBuffer();
 			return fbo;
 		}
 
 		void DisableFrameBuffer(IFrameBuffer fbo)
 		{
 			Game.Renderer.Flush();
-			Game.Renderer.Device.DisableDepthBuffer();
+			Game.Renderer.Context.DisableDepthBuffer();
 			fbo.Unbind();
 		}
 
 		public void EndFrame()
 		{
+			if (!isInFrame)
+				throw new InvalidOperationException("BeginFrame has not been called. There is no frame to end.");
+
+			isInFrame = false;
+			sheetBuilderForFrame = null;
+
 			if (doRender.Count == 0)
 				return;
 
@@ -311,20 +326,22 @@ namespace OpenRA.Graphics
 			foreach (var v in doRender)
 			{
 				// Change sheet
-				if (v.First != currentSheet)
+				if (v.Sheet != currentSheet)
 				{
 					if (fbo != null)
 						DisableFrameBuffer(fbo);
 
-					currentSheet = v.First;
+					currentSheet = v.Sheet;
 					fbo = EnableFrameBuffer(currentSheet);
 				}
 
-				v.Second();
+				v.Func();
 			}
 
 			if (fbo != null)
 				DisableFrameBuffer(fbo);
+
+			doRender.Clear();
 		}
 
 		public Sheet AllocateSheet()
@@ -338,7 +355,7 @@ namespace OpenRA.Graphics
 			}
 
 			var size = new Size(renderer.SheetSize, renderer.SheetSize);
-			var framebuffer = renderer.Device.CreateFrameBuffer(size);
+			var framebuffer = renderer.Context.CreateFrameBuffer(size);
 			var sheet = new Sheet(SheetType.BGRA, framebuffer.Texture);
 			mappedBuffers.Add(sheet, framebuffer);
 

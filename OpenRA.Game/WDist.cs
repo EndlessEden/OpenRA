@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -21,10 +21,10 @@ namespace OpenRA
 	/// <summary>
 	/// 1d world distance - 1024 units = 1 cell.
 	/// </summary>
-	public struct WDist : IComparable, IComparable<WDist>, IEquatable<WDist>, IScriptBindable, ILuaAdditionBinding, ILuaSubtractionBinding, ILuaEqualityBinding, ILuaTableBinding
+	public readonly struct WDist : IComparable, IComparable<WDist>, IEquatable<WDist>, IScriptBindable, ILuaAdditionBinding, ILuaSubtractionBinding, ILuaEqualityBinding, ILuaTableBinding
 	{
 		public readonly int Length;
-		public long LengthSquared { get { return (long)Length * Length; } }
+		public long LengthSquared => (long)Length * Length;
 
 		public WDist(int r) { Length = r; }
 		public static readonly WDist Zero = new WDist(0);
@@ -114,9 +114,7 @@ namespace OpenRA
 		#region Scripting interface
 		public LuaValue Add(LuaRuntime runtime, LuaValue left, LuaValue right)
 		{
-			WDist a;
-			WDist b;
-			if (!left.TryGetClrValue(out a) || !right.TryGetClrValue(out b))
+			if (!left.TryGetClrValue(out WDist a) || !right.TryGetClrValue(out WDist b))
 				throw new LuaException("Attempted to call WDist.Add(WDist, WDist) with invalid arguments.");
 
 			return new LuaCustomClrObject(a + b);
@@ -124,9 +122,7 @@ namespace OpenRA
 
 		public LuaValue Subtract(LuaRuntime runtime, LuaValue left, LuaValue right)
 		{
-			WDist a;
-			WDist b;
-			if (!left.TryGetClrValue(out a) || !right.TryGetClrValue(out b))
+			if (!left.TryGetClrValue(out WDist a) || !right.TryGetClrValue(out WDist b))
 				throw new LuaException("Attempted to call WDist.Subtract(WDist, WDist) with invalid arguments.");
 
 			return new LuaCustomClrObject(a - b);
@@ -134,9 +130,7 @@ namespace OpenRA
 
 		public LuaValue Equals(LuaRuntime runtime, LuaValue left, LuaValue right)
 		{
-			WDist a;
-			WDist b;
-			if (!left.TryGetClrValue(out a) || !right.TryGetClrValue(out b))
+			if (!left.TryGetClrValue(out WDist a) || !right.TryGetClrValue(out WDist b))
 				throw new LuaException("Attempted to call WDist.Equals(WDist, WDist) with invalid arguments.");
 
 			return a == b;
@@ -149,15 +143,12 @@ namespace OpenRA
 				switch (key.ToString())
 				{
 					case "Length": return Length;
-					case "Range": Game.Debug("WDist.Range is deprecated. Use WDist.Length instead"); return Length;
-					default: throw new LuaException("WDist does not define a member '{0}'".F(key));
+					case "Range": TextNotificationsManager.Debug("WDist.Range is deprecated. Use WDist.Length instead"); return Length;
+					default: throw new LuaException($"WDist does not define a member '{key}'");
 				}
 			}
 
-			set
-			{
-				throw new LuaException("WDist is read-only. Use WDist.New to create a new value");
-			}
+			set => throw new LuaException("WDist is read-only. Use WDist.New to create a new value");
 		}
 		#endregion
 	}

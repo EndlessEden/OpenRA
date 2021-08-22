@@ -1,22 +1,25 @@
 BOAT:
 	Inherits: ^Ship
+	Inherits@SELECTABLE: ^SelectableCombatUnit
 	Inherits@EXPERIENCE: ^GainsExperience
 	Inherits@AUTOTARGET: ^AutoTargetAll
 	Valued:
 		Cost: 300
 	Tooltip:
 		Name: Gunboat
+	UpdatesPlayerStatistics:
+		AddToArmyValue: true
 	Health:
-		HP: 700
+		HP: 70000
 	Armor:
 		Type: Heavy
 	TDGunboat:
-		Speed: 28
+		Speed: 29
 	RevealsShroud:
 		Range: 7c0
 		Type: CenterPosition
 	Turreted:
-		TurnSpeed: 5
+		TurnSpeed: 20
 		Offset: 0,896,171
 	Armament:
 		Weapon: BoatMissile
@@ -28,12 +31,11 @@ BOAT:
 	WithGunboatBody:
 		Sequence: left # Just a work-around to avoid crash
 	Selectable:
-		Bounds: 42,24
+		Bounds: 1792, 1024
+		DecorationBounds: 1792, 1024
 	AutoTarget:
 		AllowMovement: false
 	RejectsOrders:
-	SelectionDecorations:
-		VisualBounds: 42,24
 	GrantConditionOnDamageState@HEAVY:
 		Condition: heavy-damage
 		ValidDamageStates: Heavy
@@ -49,43 +51,34 @@ BOAT:
 
 LST:
 	Inherits: ^Ship
+	Inherits@TRANSPORT: ^Transport
 	Valued:
 		Cost: 300
 	Tooltip:
 		Name: Landing Craft
-	Buildable:
-		Queue: Vehicle.GDI
-		BuildPaletteOrder: 1000
-		Prerequisites: ~disabled
 	Mobile:
-		Crushes: crate
-		TerrainSpeeds:
-			Clear: 100
-			Rough: 100
-			Road: 100
-			Water: 100
-			Tiberium: 100
-			BlueTiberium: 100
-			Beach: 100
-			River: 100
+		Locomotor: lcraft
 		InitialFacing: 0
-		TurnSpeed: 4
-		Speed: 142
-		RequiresCondition: !notmobile
+		TurnSpeed: 16
+		Speed: 170
+		PauseOnCondition: notmobile
 	Health:
-		HP: 400
+		HP: 40000
 	Armor:
 		Type: Heavy
 	RevealsShroud:
 		Range: 7c0
+	-BodyOrientation:
+	ClassicFacingBodyOrientation:
 	WithFacingSpriteBody:
-	WithRoof:
+	Interactable:
+		Bounds: 2048, 2048
 	WithCargo:
 		DisplayTypes: Infantry, Vehicle
 		LocalOffset: 390,-256,0, 390,256,0, 0,0,0, -390,-256,0, -390,256,0
 	Cargo:
-		Types: Infantry, Vehicle
+		Types: disabled
 		MaxWeight: 5
-		PipCount: 5
 		PassengerFacing: 0
 		LoadingCondition: notmobile
+	RejectsOrders:

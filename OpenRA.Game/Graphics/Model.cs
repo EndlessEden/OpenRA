@@ -1,6 +1,6 @@
-﻿#region Copyright & License Information
+#region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -10,7 +10,9 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using OpenRA.FileSystem;
+using OpenRA.Primitives;
 
 namespace OpenRA.Graphics
 {
@@ -23,9 +25,12 @@ namespace OpenRA.Graphics
 		float[] Size { get; }
 		float[] Bounds(uint frame);
 		ModelRenderData RenderData(uint section);
+
+		/// <summary>Returns the smallest rectangle that covers all rotations of all frames in a model</summary>
+		Rectangle AggregateBounds { get; }
 	}
 
-	public struct ModelRenderData
+	public readonly struct ModelRenderData
 	{
 		public readonly int Start;
 		public readonly int Count;
@@ -41,6 +46,7 @@ namespace OpenRA.Graphics
 
 	public interface IModelCache : IDisposable
 	{
+		IModel GetModel(string model);
 		IModel GetModelSequence(string model, string sequence);
 		bool HasModelSequence(string model, string sequence);
 		IVertexBuffer<Vertex> VertexBuffer { get; }
@@ -58,9 +64,14 @@ namespace OpenRA.Graphics
 
 		class PlaceholderModelCache : IModelCache
 		{
-			public IVertexBuffer<Vertex> VertexBuffer { get { throw new NotImplementedException(); } }
+			public IVertexBuffer<Vertex> VertexBuffer => throw new NotImplementedException();
 
 			public void Dispose() { }
+
+			public IModel GetModel(string model)
+			{
+				throw new NotImplementedException();
+			}
 
 			public IModel GetModelSequence(string model, string sequence)
 			{

@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -17,7 +17,7 @@ using System.Threading;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Network;
-using OpenRA.Primitives;
+using OpenRA.Video;
 using OpenRA.Widgets;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
@@ -37,7 +37,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		readonly ButtonWidget stopBriefingVideoButton;
 		readonly ButtonWidget startInfoVideoButton;
 		readonly ButtonWidget stopInfoVideoButton;
-		readonly VqaPlayerWidget videoPlayer;
+		readonly VideoPlayerWidget videoPlayer;
 		readonly BackgroundWidget fullscreenVideoPlayer;
 
 		readonly ScrollPanelWidget missionList;
@@ -72,7 +72,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			previewWidget.Preview = () => selectedMap;
 			previewWidget.IsVisible = () => playingVideo == PlayingVideo.None;
 
-			videoPlayer = widget.Get<VqaPlayerWidget>("MISSION_VIDEO");
+			videoPlayer = widget.Get<VideoPlayerWidget>("MISSION_VIDEO");
 			widget.Get("MISSION_BIN").IsVisible = () => playingVideo != PlayingVideo.None;
 			fullscreenVideoPlayer = Ui.LoadWidget<BackgroundWidget>("FULLSCREEN_PLAYER", Ui.Root, new WidgetArgs { { "world", world } });
 
@@ -105,14 +105,24 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 				foreach (var kv in yaml)
 				{
-					var missionMapPaths = kv.Value.Nodes.Select(n => Path.GetFullPath(n.Key)).ToList();
+					var missionMapPaths = kv.Value.Nodes.Select(n => n.Key).ToList();
 
 					var previews = modData.MapCache
-						.Where(p => p.Status == MapStatus.Available && missionMapPaths.Contains(p.Package.Name))
-						.OrderBy(p => missionMapPaths.IndexOf(p.Package.Name));
+						.Where(p => p.Class == MapClassification.System && p.Status == MapStatus.Available)
+						.Select(p => new
+						{
+							Preview = p,
+							Index = missionMapPaths.IndexOf(Path.GetFileName(p.Package.Name))
+						})
+						.Where(x => x.Index != -1)
+						.OrderBy(x => x.Index)
+						.Select(x => x.Preview);
 
-					CreateMissionGroup(kv.Key, previews);
-					allPreviews.AddRange(previews);
+					if (previews.Any())
+					{
+						CreateMissionGroup(kv.Key, previews);
+						allPreviews.AddRange(previews);
+					}
 				}
 			}
 
@@ -129,19 +139,16 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			if (allPreviews.Any())
 				SelectMap(allPreviews.First());
 
-			// Preload map preview and rules to reduce jank
+			// Preload map preview to reduce jank
 			new Thread(() =>
 			{
 				foreach (var p in allPreviews)
-				{
 					p.GetMinimap();
-					p.PreloadRules();
-				}
 			}).Start();
 
 			var startButton = widget.Get<ButtonWidget>("STARTGAME_BUTTON");
 			startButton.OnClick = StartMissionClicked;
-			startButton.IsDisabled = () => selectedMap == null || selectedMap.InvalidCustomRules;
+			startButton.IsDisabled = () => selectedMap == null;
 
 			widget.Get<ButtonWidget>("BACK_BUTTON").OnClick = () =>
 			{
@@ -155,6 +162,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		void OnGameStart()
 		{
 			Ui.CloseWindow();
+
+			DiscordService.UpdateStatus(DiscordState.PlayingCampaign);
+
 			onStart();
 		}
 
@@ -176,16 +186,16 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			header.Get<LabelWidget>("LABEL").GetText = () => title;
 			missionList.AddChild(header);
 
-			foreach (var p in previews)
+			foreach (var preview in previews)
 			{
-				var preview = p;
-
 				var item = ScrollItemWidget.Setup(template,
 					() => selectedMap != null && selectedMap.Uid == preview.Uid,
 					() => SelectMap(preview),
 					StartMissionClicked);
 
-				item.Get<LabelWidget>("TITLE").GetText = () => preview.Title;
+				var label = item.Get<LabelWithTooltipWidget>("TITLE");
+				WidgetUtils.TruncateLabelToTooltip(label, preview.Title);
+
 				missionList.AddChild(item);
 			}
 		}
@@ -206,7 +216,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			new Thread(() =>
 			{
-				var mapDifficulty = preview.Rules.Actors["world"].TraitInfos<ScriptLobbyDropdownInfo>()
+				var mapDifficulty = preview.WorldActorInfo.TraitInfos<ScriptLobbyDropdownInfo>()
 					.FirstOrDefault(sld => sld.ID == "difficulty");
 
 				if (mapDifficulty != null)
@@ -216,7 +226,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					difficultyDisabled = mapDifficulty.Locked;
 				}
 
-				var missionData = preview.Rules.Actors["world"].TraitInfoOrDefault<MissionDataInfo>();
+				var missionData = preview.WorldActorInfo.TraitInfoOrDefault<MissionDataInfo>();
 				if (missionData != null)
 				{
 					briefingVideo = missionData.BriefingVideo;
@@ -317,7 +327,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				Game.Sound.MusicVolume = cachedMusicVolume;
 		}
 
-		void PlayVideo(VqaPlayerWidget player, string video, PlayingVideo pv, Action onComplete = null)
+		void PlayVideo(VideoPlayerWidget player, string video, PlayingVideo pv, Action onComplete = null)
 		{
 			if (!modData.DefaultFileSystem.Exists(video))
 			{
@@ -338,8 +348,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				player.PlayThen(() =>
 				{
 					StopVideo(player);
-					if (onComplete != null)
-						onComplete();
+					onComplete?.Invoke();
 				});
 
 				// Mute other distracting sounds
@@ -347,7 +356,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			}
 		}
 
-		void StopVideo(VqaPlayerWidget player)
+		void StopVideo(VideoPlayerWidget player)
 		{
 			if (playingVideo == PlayingVideo.None)
 				return;
@@ -361,19 +370,17 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		{
 			StopVideo(videoPlayer);
 
-			if (selectedMap.InvalidCustomRules)
-				return;
+			var orders = new List<Order>();
+			if (difficulty != null)
+				orders.Add(Order.Command($"option difficulty {difficulty}"));
 
-			var orders = new[] {
-				Order.Command("option gamespeed {0}".F(gameSpeed)),
-				Order.Command("option difficulty {0}".F(difficulty)),
-				Order.Command("state {0}".F(Session.ClientState.Ready))
-			};
+			orders.Add(Order.Command($"option gamespeed {gameSpeed}"));
+			orders.Add(Order.Command($"state {Session.ClientState.Ready}"));
 
-			var missionData = selectedMap.Rules.Actors["world"].TraitInfoOrDefault<MissionDataInfo>();
+			var missionData = selectedMap.WorldActorInfo.TraitInfoOrDefault<MissionDataInfo>();
 			if (missionData != null && missionData.StartVideo != null && modData.DefaultFileSystem.Exists(missionData.StartVideo))
 			{
-				var fsPlayer = fullscreenVideoPlayer.Get<VqaPlayerWidget>("PLAYER");
+				var fsPlayer = fullscreenVideoPlayer.Get<VideoPlayerWidget>("PLAYER");
 				fullscreenVideoPlayer.Visible = true;
 				PlayVideo(fsPlayer, missionData.StartVideo, PlayingVideo.GameStart, () =>
 				{

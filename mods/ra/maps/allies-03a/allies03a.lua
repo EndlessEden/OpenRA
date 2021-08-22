@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -21,14 +21,6 @@ if Map.LobbyOption("difficulty") == "easy" then
 	TanyaType = "e7"
 else
 	TanyaType = "e7.noautotarget"
-end
-
-IdleHunt = function(actor)
-	Trigger.OnIdle(actor, function(a)
-		if a.IsInWorld then
-			a.Hunt()
-		end
-	end)
 end
 
 ProduceUnits = function(factory, count)
@@ -72,14 +64,19 @@ end
 
 SendUSSRParadrops = function()
 	local powerproxy = Actor.Create("powerproxy.paratroopers", false, { Owner = ussr })
-	local unitsA = powerproxy.SendParatroopers(ParadropLZ.CenterPosition, false, 128 + 32)
-	local unitsB = powerproxy.SendParatroopers(ParadropLZ.CenterPosition, false, 128 - 32)
 
-	Utils.Do(unitsA, function(unit)
-		IdleHunt(unit)
+	local aircraftA = powerproxy.TargetParatroopers(ParadropLZ.CenterPosition, Angle.SouthEast)
+	Utils.Do(aircraftA, function(a)
+		Trigger.OnPassengerExited(a, function(t, p)
+			IdleHunt(p)
+		end)
 	end)
-	Utils.Do(unitsB, function(unit)
-		IdleHunt(unit)
+
+	local aircraftB = powerproxy.TargetParatroopers(ParadropLZ.CenterPosition, Angle.SouthWest)
+	Utils.Do(aircraftB, function(a)
+		Trigger.OnPassengerExited(a, function(t, p)
+			IdleHunt(p)
+		end)
 	end)
 
 	powerproxy.Destroy()
@@ -114,11 +111,11 @@ InitObjectives = function()
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "New " .. string.lower(p.GetObjectiveType(id)) .. " objective")
 	end)
 
-	KillBridges = player.AddPrimaryObjective("Destroy all bridges.")
-	TanyaSurvive = player.AddPrimaryObjective("Tanya must survive.")
-	KillUSSR = player.AddSecondaryObjective("Destroy all Soviet oil pumps.")
-	FreePrisoners = player.AddSecondaryObjective("Free all Allied soldiers and keep them alive.")
-	ussr.AddPrimaryObjective("Bridges must not be destroyed.")
+	KillBridges = player.AddObjective("Destroy all bridges.")
+	TanyaSurvive = player.AddObjective("Tanya must survive.")
+	KillUSSR = player.AddObjective("Destroy all Soviet oil pumps.", "Secondary", false)
+	FreePrisoners = player.AddObjective("Free all Allied soldiers and keep them alive.", "Secondary", false)
+	ussr.AddObjective("Bridges must not be destroyed.")
 
 	Trigger.OnObjectiveCompleted(player, function(p, id)
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "Objective completed")
@@ -160,12 +157,20 @@ InitTriggers = function()
 		end
 	end)
 
+	local baseTrigger = Trigger.OnEnteredFootprint(CameraTriggerArea, function(a, id)
+		if a.Owner == player and not baseCamera then
+			Trigger.RemoveFootprintTrigger(id)
+			baseCamera = Actor.Create("camera", true, { Owner = player, Location = BaseCameraWaypoint.Location })
+		end
+	end)
+
 	Utils.Do(FirstUSSRBase, function(unit)
 		Trigger.OnDamaged(unit, function()
 			if not FirstBaseAlert then
 				FirstBaseAlert = true
-				if not baseCamera then -- TODO: remove the Trigger
+				if not baseCamera then
 					baseCamera = Actor.Create("camera", true, { Owner = player, Location = BaseCameraWaypoint.Location })
+					Trigger.RemoveFootprintTrigger(baseTrigger)
 				end
 				Utils.Do(FirstUSSRBase, function(unit)
 					if unit.HasProperty("Move") then
@@ -181,8 +186,10 @@ InitTriggers = function()
 			end
 		end)
 	end)
-	Trigger.OnAllRemovedFromWorld(FirstUSSRBase, function() -- The camera can remain when one building is captured
-		if baseCamera then baseCamera.Destroy() end
+	Trigger.OnAllKilledOrCaptured(FirstUSSRBase, function()
+		if baseCamera and baseCamera.IsInWorld then
+			baseCamera.Destroy()
+		end
 	end)
 
 	Utils.Do(SecondUSSRBase, function(unit)
@@ -215,12 +222,6 @@ InitTriggers = function()
 		end)
 	end)
 
-	Trigger.OnEnteredFootprint(CameraTriggerArea, function(a, id)
-		if a.Owner == player and not baseCamera then
-			Trigger.RemoveFootprintTrigger(id)
-			baseCamera = Actor.Create("camera", true, { Owner = player, Location = BaseCameraWaypoint.Location })
-		end
-	end)
 	Trigger.OnEnteredFootprint(WaterTransportTriggerArea, function(a, id)
 		if a.Owner == player and not waterTransportTriggered then
 			waterTransportTriggered = true
@@ -249,7 +250,11 @@ InitTriggers = function()
 		Trigger.OnAllKilled(bridges, function()
 			player.MarkCompletedObjective(KillBridges)
 			player.MarkCompletedObjective(TanyaSurvive)
-			player.MarkCompletedObjective(FreePrisoners)
+
+			-- The prisoners are free once their guards are dead
+			if PGuard1.IsDead and PGuard2.IsDead then
+				player.MarkCompletedObjective(FreePrisoners)
+			end
 		end)
 
 		local oilPumps = ussr.GetActorsByType("v19")

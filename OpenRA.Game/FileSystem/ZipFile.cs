@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ICSharpCode.SharpZipLib.Zip;
-using OpenRA.Primitives;
 
 namespace OpenRA.FileSystem
 {
@@ -33,7 +32,7 @@ namespace OpenRA.FileSystem
 			public ReadOnlyZipFile(Stream s, string filename)
 			{
 				Name = filename;
-				pkg = ZipFileHelper.Create(s);
+				pkg = new ZipFile(s);
 			}
 
 			public Stream GetStream(string filename)
@@ -44,7 +43,7 @@ namespace OpenRA.FileSystem
 
 				using (var z = pkg.GetInputStream(entry))
 				{
-					var ms = new MemoryStream();
+					var ms = new MemoryStream((int)entry.Size);
 					z.CopyTo(ms);
 					ms.Seek(0, SeekOrigin.Begin);
 					return ms;
@@ -67,8 +66,7 @@ namespace OpenRA.FileSystem
 
 			public void Dispose()
 			{
-				if (pkg != null)
-					pkg.Close();
+				pkg?.Close();
 			}
 
 			public IReadOnlyPackage OpenPackage(string filename, FileSystem context)
@@ -82,12 +80,11 @@ namespace OpenRA.FileSystem
 					return new ZipFolder(this, filename);
 
 				// Other package types can be loaded normally
-				IReadOnlyPackage package;
 				var s = GetStream(filename);
 				if (s == null)
 					return null;
 
-				if (context.TryParsePackage(s, filename, out package))
+				if (context.TryParsePackage(s, filename, out var package))
 					return package;
 
 				s.Dispose();
@@ -104,10 +101,16 @@ namespace OpenRA.FileSystem
 				// SharpZipLib breaks when asked to update archives loaded from outside streams or files
 				// We can work around this by creating a clean in-memory-only file, cutting all outside references
 				if (!create)
-					new MemoryStream(File.ReadAllBytes(filename)).CopyTo(pkgStream);
+				{
+					using (var copy = new MemoryStream(File.ReadAllBytes(filename)))
+					{
+						pkgStream.Capacity = (int)copy.Length;
+						copy.CopyTo(pkgStream);
+					}
+				}
 
 				pkgStream.Position = 0;
-				pkg = ZipFileHelper.Create(pkgStream);
+				pkg = new ZipFile(pkgStream);
 				Name = filename;
 			}
 
@@ -138,7 +141,7 @@ namespace OpenRA.FileSystem
 
 		sealed class ZipFolder : IReadOnlyPackage
 		{
-			public string Name { get { return path; } }
+			public string Name => path;
 			public ReadOnlyZipFile Parent { get; private set; }
 			readonly string path;
 

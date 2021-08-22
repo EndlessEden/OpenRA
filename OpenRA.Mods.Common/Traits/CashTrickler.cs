@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -9,17 +9,20 @@
  */
 #endregion
 
-using System;
+using System.Linq;
 using OpenRA.Mods.Common.Effects;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
 {
 	[Desc("Lets the actor generate cash in a set periodic time.")]
-	public class CashTricklerInfo : ConditionalTraitInfo
+	public class CashTricklerInfo : PausableConditionalTraitInfo, IRulesetLoaded
 	{
 		[Desc("Number of ticks to wait between giving money.")]
 		public readonly int Interval = 50;
+
+		[Desc("Number of ticks to wait before giving first money.")]
+		public readonly int InitialDelay = 0;
 
 		[Desc("Amount of money to give each time.")]
 		public readonly int Amount = 15;
@@ -30,19 +33,30 @@ namespace OpenRA.Mods.Common.Traits
 		[Desc("How long to show the cash tick indicator when enabled.")]
 		public readonly int DisplayDuration = 30;
 
+		[Desc("Use resource storage for cash granted.")]
+		public readonly bool UseResourceStorage = false;
+
+		void IRulesetLoaded<ActorInfo>.RulesetLoaded(Ruleset rules, ActorInfo info)
+		{
+			if (ShowTicks && !info.HasTraitInfo<IOccupySpaceInfo>())
+				throw new YamlException($"CashTrickler is defined with ShowTicks 'true' but actor '{info.Name}' occupies no space.");
+		}
+
 		public override object Create(ActorInitializer init) { return new CashTrickler(this); }
 	}
 
-	public class CashTrickler : ConditionalTrait<CashTricklerInfo>, ITick, ISync, INotifyCreated, INotifyOwnerChanged
+	public class CashTrickler : PausableConditionalTrait<CashTricklerInfo>, ITick, ISync, INotifyCreated, INotifyOwnerChanged
 	{
 		readonly CashTricklerInfo info;
 		PlayerResources resources;
-		[Sync] int ticks;
+		[Sync]
+		public int Ticks { get; private set; }
 
 		public CashTrickler(CashTricklerInfo info)
 			: base(info)
 		{
 			this.info = info;
+			Ticks = info.InitialDelay;
 		}
 
 		protected override void Created(Actor self)
@@ -60,38 +74,39 @@ namespace OpenRA.Mods.Common.Traits
 		void ITick.Tick(Actor self)
 		{
 			if (IsTraitDisabled)
+				Ticks = info.Interval;
+
+			if (IsTraitPaused || IsTraitDisabled)
 				return;
 
-			if (--ticks < 0)
+			if (--Ticks < 0)
 			{
-				ticks = info.Interval;
-				ModifyCash(self, self.Owner, info.Amount);
+				var cashTrickerModifier = self.TraitsImplementing<ICashTricklerModifier>().Select(x => x.GetCashTricklerModifier());
+
+				Ticks = info.Interval;
+				ModifyCash(self, Util.ApplyPercentageModifiers(info.Amount, cashTrickerModifier));
 			}
 		}
 
 		void AddCashTick(Actor self, int amount)
 		{
 			self.World.AddFrameEndTask(w => w.Add(
-				new FloatingText(self.CenterPosition, self.Owner.Color.RGB, FloatingText.FormatCashTick(amount), info.DisplayDuration)));
+				new FloatingText(self.CenterPosition, self.Owner.Color, FloatingText.FormatCashTick(amount), info.DisplayDuration)));
 		}
 
-		void ModifyCash(Actor self, Player newOwner, int amount)
+		void ModifyCash(Actor self, int amount)
 		{
-			if (amount < 0)
+			if (info.UseResourceStorage)
 			{
-				// Check whether the amount of cash to be removed would exceed available player cash, in that case only remove all the player cash
-				var drain = Math.Min(resources.Cash + resources.Resources, -amount);
-				resources.TakeCash(drain);
-
-				if (info.ShowTicks)
-					AddCashTick(self, -drain);
+				var initialAmount = resources.Resources;
+				resources.GiveResources(amount);
+				amount = resources.Resources - initialAmount;
 			}
 			else
-			{
-				resources.GiveCash(amount);
-				if (info.ShowTicks)
-					AddCashTick(self, amount);
-			}
+				amount = resources.ChangeCash(amount);
+
+			if (info.ShowTicks && amount != 0)
+				AddCashTick(self, amount);
 		}
 	}
 }

@@ -1,10 +1,11 @@
-﻿#region Copyright & License Information
+#region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
- * as published by the Free Software Foundation. For more information,
- * see COPYING.
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
  */
 #endregion
 
@@ -18,7 +19,7 @@ using OpenRA.Traits;
 namespace OpenRA.Mods.Cnc.Traits
 {
 	[Desc("Will open and be passable for actors that appear friendly when there are no enemies in range.")]
-	public class EnergyWallInfo : BuildingInfo, IObservesVariablesInfo, IRulesetLoaded
+	public class EnergyWallInfo : BuildingInfo, ITemporaryBlockerInfo, IObservesVariablesInfo, IRulesetLoaded
 	{
 		[FieldLoader.Require]
 		[WeaponReference]
@@ -35,11 +36,9 @@ namespace OpenRA.Mods.Cnc.Traits
 
 		public void RulesetLoaded(Ruleset rules, ActorInfo ai)
 		{
-			WeaponInfo weaponInfo;
-
 			var weaponToLower = Weapon.ToLowerInvariant();
-			if (!rules.Weapons.TryGetValue(weaponToLower, out weaponInfo))
-				throw new YamlException("Weapons Ruleset does not contain an entry '{0}'".F(weaponToLower));
+			if (!rules.Weapons.TryGetValue(weaponToLower, out var weaponInfo))
+				throw new YamlException($"Weapons Ruleset does not contain an entry '{weaponToLower}'");
 
 			WeaponInfo = weaponInfo;
 		}
@@ -89,7 +88,7 @@ namespace OpenRA.Mods.Cnc.Traits
 			{
 				var blockers = self.World.ActorMap.GetActorsAt(loc).Where(a => !a.IsDead && a != self);
 				foreach (var blocker in blockers)
-					info.WeaponInfo.Impact(Target.FromActor(blocker), self, Enumerable.Empty<int>());
+					info.WeaponInfo.Impact(Target.FromActor(blocker), self);
 			}
 		}
 
@@ -103,7 +102,7 @@ namespace OpenRA.Mods.Cnc.Traits
 			return !active;
 		}
 
-		public override void AddedToWorld(Actor self)
+		protected override void AddedToWorld(Actor self)
 		{
 			base.AddedToWorld(self);
 			blockedPositions = info.Tiles(self.Location);

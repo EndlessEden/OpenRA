@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -9,10 +9,9 @@
  */
 #endregion
 
-using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using NUnit.Framework;
 using OpenRA.Support;
 
@@ -21,13 +20,13 @@ namespace OpenRA.Test
 	[TestFixture]
 	public class VariableExpressionTest
 	{
-		IReadOnlyDictionary<string, int> testValues = new ReadOnlyDictionary<string, int>(new Dictionary<string, int>()
+		IReadOnlyDictionary<string, int> testValues = new Dictionary<string, int>
 		{
 			{ "t", 5 },
 			{ "t-1", 7 },
 			{ "one", 1 },
 			{ "five", 5 }
-		});
+		};
 
 		void AssertFalse(string expression)
 		{
@@ -52,8 +51,8 @@ namespace OpenRA.Test
 		void AssertParseFailure(string expression, string errorMessage)
 		{
 			var actualErrorMessage = Assert.Throws(typeof(InvalidDataException),
-			                                       () => new IntegerExpression(expression).Evaluate(testValues),
-			                                       expression).Message;
+				() => new IntegerExpression(expression).Evaluate(testValues),
+				expression).Message;
 			Assert.AreEqual(errorMessage, actualErrorMessage, expression + "   ===>   " + actualErrorMessage);
 		}
 

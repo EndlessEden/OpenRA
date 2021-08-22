@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -10,8 +10,8 @@
 #endregion
 
 using System;
-using System.Drawing;
-using System.Drawing.Imaging;
+using OpenRA.FileFormats;
+using OpenRA.Primitives;
 
 namespace OpenRA.Graphics
 {
@@ -19,87 +19,59 @@ namespace OpenRA.Graphics
 	{
 		// yes, our channel order is nuts.
 		static readonly int[] ChannelMasks = { 2, 1, 0, 3 };
-		static readonly float[] ChannelSelect = { 0.2f, 0.4f, 0.6f, 0.8f };
 
-		public static void FastCreateQuad(Vertex[] vertices, float3 o, Sprite r, float paletteTextureIndex, int nv, float3 size)
+		public static void FastCreateQuad(Vertex[] vertices, in float3 o, Sprite r, int2 samplers, float paletteTextureIndex, int nv, in float3 size, in float3 tint, float alpha)
 		{
 			var b = new float3(o.X + size.X, o.Y, o.Z);
 			var c = new float3(o.X + size.X, o.Y + size.Y, o.Z + size.Z);
 			var d = new float3(o.X, o.Y + size.Y, o.Z + size.Z);
-			FastCreateQuad(vertices, o, b, c, d, r, paletteTextureIndex, nv);
+			FastCreateQuad(vertices, o, b, c, d, r, samplers, paletteTextureIndex, tint, alpha, nv);
 		}
 
-		public static void FastCreateQuad(Vertex[] vertices, float3 a, float3 b, float3 c, float3 d, Sprite r, float paletteTextureIndex, int nv)
+		public static void FastCreateQuad(Vertex[] vertices,
+			in float3 a, in float3 b, in float3 c, in float3 d,
+			Sprite r, int2 samplers, float paletteTextureIndex,
+			in float3 tint, float alpha, int nv)
 		{
 			float sl = 0;
 			float st = 0;
 			float sr = 0;
 			float sb = 0;
-			var attribC = ChannelSelect[(int)r.Channel];
 
-			var ss = r as SpriteWithSecondaryData;
-			if (ss != null)
+			// See combined.vert for documentation on the channel attribute format
+			var attribC = r.Channel == TextureChannel.RGBA ? 0x02 : ((byte)r.Channel) << 1 | 0x01;
+			attribC |= samplers.X << 6;
+			if (r is SpriteWithSecondaryData ss)
 			{
 				sl = ss.SecondaryLeft;
 				st = ss.SecondaryTop;
 				sr = ss.SecondaryRight;
 				sb = ss.SecondaryBottom;
-				attribC = -(attribC + ChannelSelect[(int)ss.SecondaryChannel] / 10);
+
+				attribC |= ((byte)ss.SecondaryChannel) << 4 | 0x08;
+				attribC |= samplers.Y << 9;
 			}
 
-			vertices[nv] = new Vertex(a, r.Left, r.Top, sl, st, paletteTextureIndex, attribC);
-			vertices[nv + 1] = new Vertex(b, r.Right, r.Top, sr, st, paletteTextureIndex, attribC);
-			vertices[nv + 2] = new Vertex(c, r.Right, r.Bottom, sr, sb, paletteTextureIndex, attribC);
-			vertices[nv + 3] = new Vertex(c, r.Right, r.Bottom, sr, sb, paletteTextureIndex, attribC);
-			vertices[nv + 4] = new Vertex(d, r.Left, r.Bottom, sl, sb, paletteTextureIndex, attribC);
-			vertices[nv + 5] = new Vertex(a, r.Left, r.Top, sl, st, paletteTextureIndex, attribC);
+			var fAttribC = (float)attribC;
+			vertices[nv] = new Vertex(a, r.Left, r.Top, sl, st, paletteTextureIndex, fAttribC, tint, alpha);
+			vertices[nv + 1] = new Vertex(b, r.Right, r.Top, sr, st, paletteTextureIndex, fAttribC, tint, alpha);
+			vertices[nv + 2] = new Vertex(c, r.Right, r.Bottom, sr, sb, paletteTextureIndex, fAttribC, tint, alpha);
+			vertices[nv + 3] = new Vertex(c, r.Right, r.Bottom, sr, sb, paletteTextureIndex, fAttribC, tint, alpha);
+			vertices[nv + 4] = new Vertex(d, r.Left, r.Bottom, sl, sb, paletteTextureIndex, fAttribC, tint, alpha);
+			vertices[nv + 5] = new Vertex(a, r.Left, r.Top, sl, st, paletteTextureIndex, fAttribC, tint, alpha);
 		}
 
-		public static void FastCopyIntoChannel(Sprite dest, byte[] src)
+		public static void FastCopyIntoChannel(Sprite dest, byte[] src, SpriteFrameType srcType)
 		{
-			var data = dest.Sheet.GetData();
-			var srcStride = dest.Bounds.Width;
-			var destStride = dest.Sheet.Size.Width * 4;
-			var destOffset = destStride * dest.Bounds.Top + dest.Bounds.Left * 4 + ChannelMasks[(int)dest.Channel];
-			var destSkip = destStride - 4 * srcStride;
+			var destData = dest.Sheet.GetData();
+			var width = dest.Bounds.Width;
 			var height = dest.Bounds.Height;
 
-			var srcOffset = 0;
-			for (var j = 0; j < height; j++)
+			if (dest.Channel == TextureChannel.RGBA)
 			{
-				for (var i = 0; i < srcStride; i++, srcOffset++)
-				{
-					data[destOffset] = src[srcOffset];
-					destOffset += 4;
-				}
-
-				destOffset += destSkip;
-			}
-		}
-
-		public static void FastCopyIntoSprite(Sprite dest, Bitmap src)
-		{
-			var createdTempBitmap = false;
-			if (src.PixelFormat != PixelFormat.Format32bppArgb)
-			{
-				src = src.CloneWith32bbpArgbPixelFormat();
-				createdTempBitmap = true;
-			}
-
-			try
-			{
-				var destData = dest.Sheet.GetData();
 				var destStride = dest.Sheet.Size.Width;
-				var width = dest.Bounds.Width;
-				var height = dest.Bounds.Height;
-
-				var srcData = src.LockBits(src.Bounds(),
-					ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-
 				unsafe
 				{
-					var c = (int*)srcData.Scan0;
-
 					// Cast the data to an int array so we can copy the src data directly
 					fixed (byte* bd = &destData[0])
 					{
@@ -107,23 +79,115 @@ namespace OpenRA.Graphics
 						var x = dest.Bounds.Left;
 						var y = dest.Bounds.Top;
 
+						var k = 0;
 						for (var j = 0; j < height; j++)
 						{
 							for (var i = 0; i < width; i++)
 							{
-								var cc = Color.FromArgb(*(c + (j * srcData.Stride >> 2) + i));
+								byte r, g, b, a;
+								switch (srcType)
+								{
+									case SpriteFrameType.Bgra32:
+									case SpriteFrameType.Bgr24:
+									{
+										b = src[k++];
+										g = src[k++];
+										r = src[k++];
+										a = srcType == SpriteFrameType.Bgra32 ? src[k++] : (byte)255;
+										break;
+									}
+
+									case SpriteFrameType.Rgba32:
+									case SpriteFrameType.Rgb24:
+									{
+										r = src[k++];
+										g = src[k++];
+										b = src[k++];
+										a = srcType == SpriteFrameType.Rgba32 ? src[k++] : (byte)255;
+										break;
+									}
+
+									default:
+										throw new InvalidOperationException($"Unknown SpriteFrameType {srcType}");
+								}
+
+								var cc = Color.FromArgb(a, r, g, b);
 								data[(y + j) * destStride + x + i] = PremultiplyAlpha(cc).ToArgb();
 							}
 						}
 					}
 				}
-
-				src.UnlockBits(srcData);
 			}
-			finally
+			else
 			{
-				if (createdTempBitmap)
-					src.Dispose();
+				var destStride = dest.Sheet.Size.Width * 4;
+				var destOffset = destStride * dest.Bounds.Top + dest.Bounds.Left * 4 + ChannelMasks[(int)dest.Channel];
+				var destSkip = destStride - 4 * width;
+
+				var srcOffset = 0;
+				for (var j = 0; j < height; j++)
+				{
+					for (var i = 0; i < width; i++, srcOffset++)
+					{
+						destData[destOffset] = src[srcOffset];
+						destOffset += 4;
+					}
+
+					destOffset += destSkip;
+				}
+			}
+		}
+
+		public static void FastCopyIntoSprite(Sprite dest, Png src)
+		{
+			var destData = dest.Sheet.GetData();
+			var destStride = dest.Sheet.Size.Width;
+			var width = dest.Bounds.Width;
+			var height = dest.Bounds.Height;
+
+			unsafe
+			{
+				// Cast the data to an int array so we can copy the src data directly
+				fixed (byte* bd = &destData[0])
+				{
+					var data = (int*)bd;
+					var x = dest.Bounds.Left;
+					var y = dest.Bounds.Top;
+
+					var k = 0;
+					for (var j = 0; j < height; j++)
+					{
+						for (var i = 0; i < width; i++)
+						{
+							Color cc;
+							switch (src.Type)
+							{
+								case SpriteFrameType.Indexed8:
+								{
+									cc = src.Palette[src.Data[k++]];
+									break;
+								}
+
+								case SpriteFrameType.Rgba32:
+								case SpriteFrameType.Rgb24:
+								{
+									var r = src.Data[k++];
+									var g = src.Data[k++];
+									var b = src.Data[k++];
+									var a = src.Type == SpriteFrameType.Rgba32 ? src.Data[k++] : (byte)255;
+									cc = Color.FromArgb(a, r, g, b);
+									break;
+								}
+
+								// Pngs don't support BGR[A], so no need to include them here
+								default:
+									throw new InvalidOperationException($"Unknown SpriteFrameType {src.Type}");
+							}
+
+							data[(y + j) * destStride + x + i] = PremultiplyAlpha(cc).ToArgb();
+						}
+					}
+				}
 			}
 		}
 
@@ -323,12 +387,31 @@ namespace OpenRA.Graphics
 			return mtx;
 		}
 
-		public static float[] MakeFloatMatrix(int[] imtx)
+		public static float[] MakeFloatMatrix(Int32Matrix4x4 imtx)
 		{
-			var fmtx = new float[16];
-			for (var i = 0; i < 16; i++)
-				fmtx[i] = imtx[i] * 1f / imtx[15];
-			return fmtx;
+			var multipler = 1f / imtx.M44;
+			return new[]
+			{
+				imtx.M11 * multipler,
+				imtx.M12 * multipler,
+				imtx.M13 * multipler,
+				imtx.M14 * multipler,
+
+				imtx.M21 * multipler,
+				imtx.M22 * multipler,
+				imtx.M23 * multipler,
+				imtx.M24 * multipler,
+
+				imtx.M31 * multipler,
+				imtx.M32 * multipler,
+				imtx.M33 * multipler,
+				imtx.M34 * multipler,
+
+				imtx.M41 * multipler,
+				imtx.M42 * multipler,
+				imtx.M43 * multipler,
+				imtx.M44 * multipler,
+			};
 		}
 
 		public static float[] MatrixAABBMultiply(float[] mtx, float[] bounds)
@@ -339,13 +422,16 @@ namespace OpenRA.Graphics
 			var iz = new uint[] { 2, 5, 2, 5, 2, 5, 2, 5 };
 
 			// Vectors to opposing corner
-			var ret = new float[] { float.MaxValue, float.MaxValue, float.MaxValue,
-				float.MinValue, float.MinValue, float.MinValue };
+			var ret = new[]
+			{
+				float.MaxValue, float.MaxValue, float.MaxValue,
+				float.MinValue, float.MinValue, float.MinValue
+			};
 
 			// Transform vectors and find new bounding box
 			for (var i = 0; i < 8; i++)
 			{
-				var vec = new float[] { bounds[ix[i]], bounds[iy[i]], bounds[iz[i]], 1 };
+				var vec = new[] { bounds[ix[i]], bounds[iy[i]], bounds[iz[i]], 1 };
 				var tvec = MatrixVectorMultiply(mtx, vec);
 
 				ret[0] = Math.Min(ret[0], tvec[0] / tvec[3]);

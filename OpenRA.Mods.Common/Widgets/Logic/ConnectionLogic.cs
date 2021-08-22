@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -10,7 +10,6 @@
 #endregion
 
 using System;
-using OpenRA.Graphics;
 using OpenRA.Network;
 using OpenRA.Widgets;
 
@@ -21,21 +20,23 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		Action onConnect, onAbort;
 		Action<string> onRetry;
 
-		void ConnectionStateChanged(OrderManager om)
+		void ConnectionStateChanged(OrderManager om, string password, NetworkConnection connection)
 		{
-			if (om.Connection.ConnectionState == ConnectionState.Connected)
+			if (connection.ConnectionState == ConnectionState.Connected)
 			{
 				CloseWindow();
 				onConnect();
 			}
-			else if (om.Connection.ConnectionState == ConnectionState.NotConnected)
+			else if (connection.ConnectionState == ConnectionState.NotConnected)
 			{
 				CloseWindow();
 
-				var switchPanel = om.ServerExternalMod != null ? "CONNECTION_SWITCHMOD_PANEL" : "CONNECTIONFAILED_PANEL";
+				var switchPanel = CurrentServerSettings.ServerExternalMod != null ? "CONNECTION_SWITCHMOD_PANEL" : "CONNECTIONFAILED_PANEL";
 				Ui.OpenWindow(switchPanel, new WidgetArgs()
 				{
 					{ "orderManager", om },
+					{ "connection", connection },
+					{ "password", password },
 					{ "onAbort", onAbort },
 					{ "onRetry", onRetry }
 				});
@@ -49,7 +50,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		}
 
 		[ObjectCreator.UseCtor]
-		public ConnectionLogic(Widget widget, string host, int port, Action onConnect, Action onAbort, Action<string> onRetry)
+		public ConnectionLogic(Widget widget, ConnectionTarget endpoint, Action onConnect, Action onAbort, Action<string> onRetry)
 		{
 			this.onConnect = onConnect;
 			this.onAbort = onAbort;
@@ -60,19 +61,17 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var panel = widget;
 			panel.Get<ButtonWidget>("ABORT_BUTTON").OnClick = () => { CloseWindow(); onAbort(); };
 
-			widget.Get<LabelWidget>("CONNECTING_DESC").GetText = () =>
-				"Connecting to {0}:{1}...".F(host, port);
+			widget.Get<LabelWidget>("CONNECTING_DESC").GetText = () => $"Connecting to {endpoint}...";
 		}
 
-		public static void Connect(string host, int port, string password, Action onConnect, Action onAbort)
+		public static void Connect(ConnectionTarget endpoint, string password, Action onConnect, Action onAbort)
 		{
-			Game.JoinServer(host, port, password);
-			Action<string> onRetry = newPassword => Connect(host, port, newPassword, onConnect, onAbort);
+			Game.JoinServer(endpoint, password);
+			Action<string> onRetry = newPassword => Connect(endpoint, newPassword, onConnect, onAbort);
 
 			Ui.OpenWindow("CONNECTING_PANEL", new WidgetArgs()
 			{
-				{ "host", host },
-				{ "port", port },
+				{ "endpoint", endpoint },
 				{ "onConnect", onConnect },
 				{ "onAbort", onAbort },
 				{ "onRetry", onRetry }
@@ -86,7 +85,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		bool passwordOffsetAdjusted;
 
 		[ObjectCreator.UseCtor]
-		public ConnectionFailedLogic(Widget widget, OrderManager orderManager, Action onAbort, Action<string> onRetry)
+		public ConnectionFailedLogic(Widget widget, OrderManager orderManager, NetworkConnection connection, string password, Action onAbort, Action<string> onRetry)
 		{
 			var panel = widget;
 			var abortButton = panel.Get<ButtonWidget>("ABORT_BUTTON");
@@ -98,17 +97,16 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			retryButton.Visible = onRetry != null;
 			retryButton.OnClick = () =>
 			{
-				var password = passwordField != null && passwordField.IsVisible() ? passwordField.Text : orderManager.Password;
+				var pass = passwordField != null && passwordField.IsVisible() ? passwordField.Text : password;
 
 				Ui.CloseWindow();
-				onRetry(password);
+				onRetry(pass);
 			};
 
-			widget.Get<LabelWidget>("CONNECTING_DESC").GetText = () =>
-				"Could not connect to {0}:{1}".F(orderManager.Host, orderManager.Port);
+			widget.Get<LabelWidget>("CONNECTING_DESC").GetText = () => $"Could not connect to {connection.Target}";
 
 			var connectionError = widget.Get<LabelWidget>("CONNECTION_ERROR");
-			connectionError.GetText = () => orderManager.ServerError;
+			connectionError.GetText = () => orderManager.ServerError ?? connection.ErrorMessage ?? "Unknown error";
 
 			var panelTitle = widget.Get<LabelWidget>("TITLE");
 			panelTitle.GetText = () => orderManager.AuthenticationFailed ? "Password Required" : "Connection Failed";
@@ -120,8 +118,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				passwordField.IsVisible = () => orderManager.AuthenticationFailed;
 				var passwordLabel = widget.Get<LabelWidget>("PASSWORD_LABEL");
 				passwordLabel.IsVisible = passwordField.IsVisible;
-				passwordField.OnEnterKey = () => { retryButton.OnClick(); return true; };
-				passwordField.OnEscKey = () => { abortButton.OnClick(); return true; };
+				passwordField.OnEnterKey = _ => { retryButton.OnClick(); return true; };
+				passwordField.OnEscKey = _ => { abortButton.OnClick(); return true; };
 			}
 
 			passwordOffsetAdjusted = false;
@@ -153,20 +151,20 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 	public class ConnectionSwitchModLogic : ChromeLogic
 	{
 		[ObjectCreator.UseCtor]
-		public ConnectionSwitchModLogic(Widget widget, OrderManager orderManager, Action onAbort, Action<string> onRetry)
+		public ConnectionSwitchModLogic(Widget widget, OrderManager orderManager, string password, NetworkConnection connection, Action onAbort, Action<string> onRetry)
 		{
 			var panel = widget;
 			var abortButton = panel.Get<ButtonWidget>("ABORT_BUTTON");
 			var switchButton = panel.Get<ButtonWidget>("SWITCH_BUTTON");
 
-			var modTitle = orderManager.ServerExternalMod.Title;
-			var modVersion = orderManager.ServerExternalMod.Version;
-			var modIcon = orderManager.ServerExternalMod.Icon;
+			var mod = CurrentServerSettings.ServerExternalMod;
+			var modTitle = mod.Title;
+			var modVersion = mod.Version;
 
 			switchButton.OnClick = () =>
 			{
-				var launchCommand = "Launch.Connect=" + orderManager.Host + ":" + orderManager.Port;
-				Game.SwitchToExternalMod(orderManager.ServerExternalMod, new[] { launchCommand }, () =>
+				var launchCommand = $"Launch.URI={new UriBuilder("tcp", connection.EndPoint.Address.ToString(), connection.EndPoint.Port)}";
+				Game.SwitchToExternalMod(CurrentServerSettings.ServerExternalMod, new[] { launchCommand }, () =>
 				{
 					orderManager.ServerError = "Failed to switch mod.";
 					Ui.CloseWindow();
@@ -206,30 +204,42 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			}
 
 			var logo = panel.GetOrNull<RGBASpriteWidget>("MOD_ICON");
-			if (logo != null && modIcon != null)
-				logo.GetSprite = () => modIcon;
-
-			if (logo != null && modIcon == null)
+			if (logo != null)
 			{
-				// Hide the logo and center just the text
-				if (title != null)
-					title.Bounds.Offset(logo.Bounds.Left - title.Bounds.Left, 0);
+				logo.GetSprite = () =>
+				{
+					var ws = Game.Renderer.WindowScale;
+					if (ws > 2 && mod.Icon3x != null)
+						return mod.Icon3x;
 
-				if (version != null)
-					version.Bounds.Offset(logo.Bounds.Left - version.Bounds.Left, 0);
+					if (ws > 1 && mod.Icon2x != null)
+						return mod.Icon2x;
 
-				width -= logo.Bounds.Width;
-			}
-			else
-			{
-				// Add an equal logo margin on the right of the text
-				width += logo.Bounds.Width;
+					return mod.Icon;
+				};
+
+				if (mod.Icon == null)
+				{
+					// Hide the logo and center just the text
+					if (title != null)
+						title.Bounds.X = logo.Bounds.X;
+
+					if (version != null)
+						version.Bounds.X = logo.Bounds.X;
+
+					width -= logo.Bounds.Width;
+				}
+				else
+				{
+					// Add an equal logo margin on the right of the text
+					width += logo.Bounds.Width;
+				}
 			}
 
 			var container = panel.GetOrNull("MOD_CONTAINER");
 			if (container != null)
 			{
-				container.Bounds.Offset((container.Bounds.Width - width) / 2, 0);
+				container.Bounds.X += (container.Bounds.Width - width) / 2;
 				container.Bounds.Width = width;
 			}
 		}

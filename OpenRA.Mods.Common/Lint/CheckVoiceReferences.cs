@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -11,17 +11,29 @@
 
 using System;
 using System.Linq;
+using OpenRA.Mods.Common.Traits;
+using OpenRA.Server;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Lint
 {
-	public class CheckVoiceReferences : ILintRulesPass
+	public class CheckVoiceReferences : ILintRulesPass, ILintServerMapPass
 	{
-		public void Run(Action<string> emitError, Action<string> emitWarning, Ruleset rules)
+		void ILintRulesPass.Run(Action<string> emitError, Action<string> emitWarning, ModData modData, Ruleset rules)
+		{
+			Run(emitError, rules);
+		}
+
+		void ILintServerMapPass.Run(Action<string> emitError, Action<string> emitWarning, ModData modData, MapPreview map, Ruleset mapRules)
+		{
+			Run(emitError, mapRules);
+		}
+
+		void Run(Action<string> emitError, Ruleset rules)
 		{
 			foreach (var actorInfo in rules.Actors)
 			{
-				foreach (var traitInfo in actorInfo.Value.TraitInfos<ITraitInfo>())
+				foreach (var traitInfo in actorInfo.Value.TraitInfos<TraitInfo>())
 				{
 					var fields = traitInfo.GetType().GetFields().Where(f => f.HasAttribute<VoiceSetReferenceAttribute>());
 					foreach (var field in fields)
@@ -43,7 +55,7 @@ namespace OpenRA.Mods.Common.Lint
 		{
 			var soundInfo = rules.Voices[voiceSet.ToLowerInvariant()];
 
-			foreach (var traitInfo in actorInfo.TraitInfos<ITraitInfo>())
+			foreach (var traitInfo in actorInfo.TraitInfos<TraitInfo>())
 			{
 				var fields = traitInfo.GetType().GetFields().Where(f => f.HasAttribute<VoiceReferenceAttribute>());
 				foreach (var field in fields)
@@ -55,7 +67,7 @@ namespace OpenRA.Mods.Common.Lint
 							continue;
 
 						if (!soundInfo.Voices.Keys.Contains(voice))
-							emitError("Actor {0} using voice set {1} does not define {2} voice required by {3}.".F(actorInfo.Name, voiceSet, voice, traitInfo));
+							emitError($"Actor {actorInfo.Name} using voice set {voiceSet} does not define {voice} voice required by {traitInfo}.");
 					}
 				}
 			}

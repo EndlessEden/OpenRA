@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -293,13 +293,13 @@ WorldLoaded = function()
 		Media.PlaySpeechNotification(player, "Lose")
 	end)
 
-	alliedObjective = enemy.AddPrimaryObjective("Destroy all Soviet troops.")
-	sovietObjective1 = player.AddPrimaryObjective("Deactivate the security system.")
-	sovietObjective2 = player.AddPrimaryObjective("Rescue the engineers.")
-	sovietObjective3 = player.AddPrimaryObjective("Get the engineers to the coolant stations.")
-	sovietObjective4 = player.AddPrimaryObjective("Use an Engineer to reprogram the security system.")
-	sovietObjective5 = player.AddPrimaryObjective("Get an Engineer to the reactor core.")
-	sovietObjective6 = player.AddSecondaryObjective("Free the dogs.")
+	alliedObjective = enemy.AddObjective("Destroy all Soviet troops.")
+	sovietObjective1 = player.AddObjective("Deactivate the security system.")
+	sovietObjective2 = player.AddObjective("Rescue the engineers.")
+	sovietObjective3 = player.AddObjective("Get the engineers to the coolant stations.")
+	sovietObjective4 = player.AddObjective("Use an Engineer to reprogram the security system.")
+	sovietObjective5 = player.AddObjective("Get an Engineer to the reactor core.")
+	sovietObjective6 = player.AddObjective("Free the dogs.", "Secondary", false)
 end
 
 Tick = function()

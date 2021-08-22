@@ -10,22 +10,22 @@
 		Inaccuracy: 128
 		Image: DRAGON
 		TrailImage: small_smoke_trail
-		HorizontalRateOfTurn: 8
-		RangeLimit: 8c0
+		HorizontalRateOfTurn: 100
+		RangeLimit: 15c0
 		Palette: ra
 		MinimumLaunchSpeed: 75
 		Speed: 216
-		Acceleration: 6
+		Acceleration: 96
 		MinimumLaunchAngle: 128
 		MaximumLaunchAngle: 192
-		VerticalRateOfTurn: 11
-		CruiseAltitude: 2c124
+		VerticalRateOfTurn: 100
+		CruiseAltitude: 5c512
 		AllowSnapping: true
 		TerrainHeightAware: true
 	Warhead@1Dam: SpreadDamage
 		Spread: 108
 		Falloff: 100, 50, 25, 12, 6, 3, 0
-		Damage: 25
+		Damage: 2500
 		ValidTargets: Ground, Air
 		Versus:
 			None: 25
@@ -36,7 +36,6 @@
 		DamageTypes: Prone50Percent, TriggerProne, SmallExplosionDeath
 	Warhead@2Eff: CreateEffect
 		Explosions: small_clsn
-		ExplosionPalette: effect-ignore-lighting-alpha75
 		ImpactSounds: expnew12.aud
 		ValidTargets: Ground, Air
 	Warhead@3EffWater: CreateEffect
@@ -59,10 +58,8 @@ HoverMissile:
 	Burst: 2
 	Range: 8c0
 	Report: hovrmis1.aud
-	Projectile: Missile
-		RangeLimit: 11c0
 	Warhead@1Dam: SpreadDamage
-		Damage: 30
+		Damage: 3000
 
 MammothTusk:
 	Inherits: ^DefaultMissile
@@ -70,12 +67,9 @@ MammothTusk:
 	Report: misl1.aud
 	ValidTargets: Air
 	Burst: 2
-	Projectile: Missile
-		HorizontalRateOfTurn: 10
-		RangeLimit: 9c0
 	Warhead@1Dam: SpreadDamage
 		Spread: 144
-		Damage: 40
+		Damage: 4000
 		ValidTargets: Air
 		Versus:
 			None: 100
@@ -85,23 +79,18 @@ MammothTusk:
 			Concrete: 28
 		DamageTypes: Explosion
 	Warhead@2Eff: CreateEffect
-		VictimScanRadius: 0
+		ImpactActors: false
 		Explosions: medium_twlt
 		ImpactSounds: expnew07.aud
-		InvalidImpactTypes: Water
-	-Warhead@3EffWater: CreateEffect
+	-Warhead@3EffWater:
 
 BikeMissile:
 	Inherits: ^DefaultMissile
-	Burst: 2 # to make bike alternate between left and right launcher, no change in dmg/s compared to original TS
-	BurstDelay: 60
 	Range: 5c0
 	Report: misl1.aud
 	ValidTargets: Ground
-	Projectile: Missile
-		RangeLimit: 7c0
 	Warhead@1Dam: SpreadDamage
-		Damage: 40
+		Damage: 4000
 		ValidTargets: Ground, Air
 
 Dragon:
@@ -110,7 +99,7 @@ Dragon:
 	Burst: 2
 	Report: misl1.aud
 	Warhead@1Dam: SpreadDamage
-		Damage: 30
+		Damage: 3000
 
 Hellfire:
 	Inherits: ^DefaultMissile
@@ -120,7 +109,7 @@ Hellfire:
 	ValidTargets: Ground
 	Warhead@1Dam: SpreadDamage
 		Spread: 72
-		Damage: 30
+		Damage: 3000
 		ValidTargets: Ground, Air
 		Versus:
 			None: 30
@@ -136,17 +125,16 @@ RedEye2:
 	Report: samshot1.aud
 	ValidTargets: Air
 	Projectile: Missile
-		MaximumLaunchSpeed: 144
 		Arm: 1
-		HorizontalRateOfTurn: 5
+		VerticalRateOfTurn: 140
 		RangeLimit: 25c0
 		Speed: 288
 	Warhead@1Dam: SpreadDamage
 		Spread: 128
-		Damage: 33
+		Damage: 3300
 		ValidTargets: Air, Ground
 		DamageTypes: SmallExplosionDeath
 	Warhead@2Eff: CreateEffect
 		Explosions: large_grey_explosion
 		ImpactSounds: expnew13.aud
-		VictimScanRadius: 0
+		ImpactActors: false

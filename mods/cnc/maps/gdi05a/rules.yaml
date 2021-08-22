@@ -1,6 +1,6 @@
 World:
 	LuaScript:
-		Scripts: gdi05a.lua
+		Scripts: campaign-global.lua, gdi05a.lua
 	MusicPlaylist:
 		StartingMusic: rain
 	MissionData:
@@ -11,8 +11,8 @@ World:
 		WinVideo: nodlose.vqa
 		LossVideo: gdilose.vqa
 	MapOptions:
-		ShortGameLocked: True
-		ShortGameEnabled: False
+		ShortGameCheckboxLocked: True
+		ShortGameCheckboxEnabled: False
 	SmudgeLayer@SCORCH:
 		InitialSmudges:
 			41,55: sc4,0
@@ -33,7 +33,7 @@ World:
 			easy: Easy
 			normal: Normal
 			hard: Hard
-		Default: easy
+		Default: normal
 
 Player:
 	EnemyWatcher:
@@ -72,14 +72,8 @@ RMBO:
 		Prerequisites: ~disabled
 
 HARV:
-	Harvester:
-		SearchFromOrderRadius: 24
 	Buildable:
 		Prerequisites: ~disabled
-
-LTNK:
-	Buildable:
-		Prerequisites: ~afld
 
 MCV:
 	Buildable:
@@ -166,10 +160,8 @@ OBLI:
 		Prerequisites: ~disabled
 
 MoneyCrate:
-	Inherits: ^Crate
 	GiveCashCrateAction:
 		Amount: 500
-		UseCashTick: yes
 
 airstrike.proxy:
 	AirstrikePower:

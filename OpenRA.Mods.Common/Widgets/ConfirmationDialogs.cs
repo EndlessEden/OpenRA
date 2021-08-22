@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -71,11 +71,10 @@ namespace OpenRA.Mods.Common.Widgets
 				cancelButton.OnClick = () =>
 				{
 					Ui.CloseWindow();
-					if (onCancel != null)
-						onCancel();
+					onCancel();
 				};
 
-				if (!string.IsNullOrEmpty(cancelText) && cancelButton != null)
+				if (!string.IsNullOrEmpty(cancelText))
 					cancelButton.GetText = () => cancelText;
 			}
 
@@ -85,11 +84,10 @@ namespace OpenRA.Mods.Common.Widgets
 				otherButton.Bounds.Y += headerHeight;
 				otherButton.OnClick = () =>
 				{
-					if (onOther != null)
-						onOther();
-                };
+					onOther();
+				};
 
-				if (!string.IsNullOrEmpty(otherText) && otherButton != null)
+				if (!string.IsNullOrEmpty(otherText))
 					otherButton.GetText = () => otherText;
 			}
 		}
@@ -115,7 +113,7 @@ namespace OpenRA.Mods.Common.Widgets
 			var isValid = false;
 			input.Text = initialText;
 			input.IsValid = () => isValid;
-			input.OnEnterKey = () =>
+			input.OnEnterKey = _ =>
 			{
 				if (acceptButton.IsDisabled())
 					return false;
@@ -123,7 +121,7 @@ namespace OpenRA.Mods.Common.Widgets
 				acceptButton.OnClick();
 				return true;
 			};
-			input.OnEscKey = () =>
+			input.OnEscKey = _ =>
 			{
 				if (cancelButton.IsDisabled())
 					return false;
@@ -156,8 +154,7 @@ namespace OpenRA.Mods.Common.Widgets
 			cancelButton.OnClick = () =>
 			{
 				Ui.CloseWindow();
-				if (onCancel != null)
-					onCancel();
+				onCancel?.Invoke();
 			};
 
 			// Validation

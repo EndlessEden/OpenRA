@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -107,24 +107,24 @@ end
 
 SendParabombs = function()
 	local proxy = Actor.Create("powerproxy.parabombs", false, { Owner = soviets })
-	proxy.SendAirstrikeFrom(BadgerEntryPoint2.Location, ParabombPoint1.Location)
-	proxy.SendAirstrikeFrom(BadgerEntryPoint2.Location + CVec.New(0, 3), ParabombPoint2.Location)
+	proxy.TargetAirstrike(ParabombPoint1.CenterPosition, (BadgerEntryPoint2.CenterPosition - ParabombPoint1.CenterPosition).Facing)
+	proxy.TargetAirstrike(ParabombPoint2.CenterPosition, (Map.CenterOfCell(BadgerEntryPoint2.Location + CVec.New(0, 3)) - ParabombPoint2.CenterPosition).Facing)
 	proxy.Destroy()
 end
 
 SendParatroopers = function()
 	Utils.Do(Paratroopers, function(para)
 		local proxy = Actor.Create(para.proxy, false, { Owner = soviets })
-		local units = proxy.SendParatroopersFrom(para.entry, para.drop)
-		proxy.Destroy()
+		local target = Map.CenterOfCell(para.drop)
+		local dir = target - Map.CenterOfCell(para.entry)
 
-		Utils.Do(units, function(unit)
-			Trigger.OnIdle(unit, function(a)
-				if a.IsInWorld then
-					a.Hunt()
-				end
+		local aircraft = proxy.TargetParatroopers(target, dir.Facing)
+		Utils.Do(aircraft, function(a)
+			Trigger.OnPassengerExited(a, function(t, p)
+				IdleHunt(p)
 			end)
 		end)
+		proxy.Destroy()
 	end)
 end
 
@@ -234,7 +234,7 @@ SetupTriggers = function()
 
 	Trigger.OnAllKilledOrCaptured(Sams, function()
 		allies1.MarkCompletedObjective(objDestroySamSites)
-		objExtractEinstein = allies1.AddPrimaryObjective("Wait for a helicopter at the LZ and extract Einstein.")
+		objExtractEinstein = allies1.AddObjective("Wait for a helicopter at the LZ and extract Einstein.")
 		Actor.Create("flare", true, { Owner = allies1, Location = ExtractionLZ.Location + CVec.New(1, -1) })
 		Beacon.New(allies1, ExtractionLZ.CenterPosition)
 		Media.PlaySpeechNotification(allies1, "SignalFlareNorth")
@@ -263,7 +263,7 @@ SetupTriggers = function()
 			ReassignActors(TownUnits, neutral, allies1)
 			Utils.Do(TownUnits, function(a) a.Stance = "Defend" end)
 			allies1.MarkCompletedObjective(objFindEinstein)
-			objEinsteinSurvival = allies1.AddPrimaryObjective("Keep Einstein alive at all costs.")
+			objEinsteinSurvival = allies1.AddObjective("Keep Einstein alive at all costs.")
 			Trigger.OnKilled(Einstein, function()
 				allies1.MarkFailedObjective(objEinsteinSurvival)
 			end)
@@ -357,13 +357,13 @@ WorldLoaded = function()
 	ReassignActors(Map.ActorsInWorld, allies, allies2)
 	SpawnTanya()
 
-	objTanyaMustSurvive = allies1.AddPrimaryObjective("Tanya must survive.")
-	objFindEinstein = allies1.AddPrimaryObjective("Find Einstein's crashed helicopter.")
-	objDestroySamSites = allies1.AddPrimaryObjective("Destroy the SAM sites.")
+	objTanyaMustSurvive = allies1.AddObjective("Tanya must survive.")
+	objFindEinstein = allies1.AddObjective("Find Einstein's crashed helicopter.")
+	objDestroySamSites = allies1.AddObjective("Destroy the SAM sites.")
 
-	objHoldPosition = allies2.AddPrimaryObjective("Hold your position and protect the base.")
-	objLimitLosses = allies2.AddSecondaryObjective("Do not lose more than " .. DeathThreshold[Map.LobbyOption("difficulty")] .. " units.")
-	objCutSovietPower = allies2.AddSecondaryObjective("Take out the Soviet power grid.")
+	objHoldPosition = allies2.AddObjective("Hold your position and protect the base.")
+	objLimitLosses = allies2.AddObjective("Do not lose more than " .. DeathThreshold[Map.LobbyOption("difficulty")] .. " units.", "Secondary", false)
+	objCutSovietPower = allies2.AddObjective("Take out the Soviet power grid.", "Secondary", false)
 
 	SetupTriggers()
 	SetupSoviets()

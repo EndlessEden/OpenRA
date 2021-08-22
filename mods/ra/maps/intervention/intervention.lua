@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -35,10 +35,10 @@ end
 
 Village = { FarmHouse1, FarmHouse2, FarmHouse3, FarmHouse4, FarmHouse5, FarmHouse6, FarmHouse7, FarmHouse8, FarmHouse9, Church }
 VillageRaidInterval = DateTime.Minutes(3)
-VillageRaidAircraft = { "mig", "mig" }
+VillageRaidAircraft = { "mig.scripted", "mig.scripted" }
 VillageRaidWpts = { VillageRaidEntrypoint.Location, VillageRaidWpt1.Location, VillageRaidWpt2.Location }
 
-BaseRaidAircraft = { "mig", "mig" }
+BaseRaidAircraft = { "mig.scripted", "mig.scripted" }
 BaseRaidWpts = { BaseRaidEntrypoint.Location, UboatPatrolWpt1.Location, BaseRaidWpt2.Location }
 
 BaseFrontAttackUnits = { "e3", "e3", "e1", "e1", "e1", "3tnk", "3tnk", "apc" }
@@ -64,20 +64,17 @@ GroundPatrolUnits =
 
 ParadropSovietUnits = function()
 	local powerproxy = Actor.Create("powerproxy.paratroopers", false, { Owner = soviets })
-	local units = powerproxy.SendParatroopers(MCVDeployLocation.CenterPosition, false, 256 - 53)
-
-	Utils.Do(units, function(a)
-		Trigger.OnIdle(a, function(actor)
-			if actor.IsInWorld then
-				actor.Hunt()
-			end
+	local aircraft = powerproxy.TargetParatroopers(MCVDeployLocation.CenterPosition, Angle.New(812))
+	Utils.Do(aircraft, function(a)
+		Trigger.OnPassengerExited(a, function(t, p)
+			IdleHunt(p)
 		end)
 	end)
 
 	powerproxy.Destroy()
 end
 
-AirRaid = function(planeTypes, ingress, egress, target)
+AirRaid = function(planeTypes, ingress, target)
 	if target == nil then
 		return
 	end
@@ -89,8 +86,6 @@ AirRaid = function(planeTypes, ingress, egress, target)
 
 			Utils.Do(ingress, function(wpt) plane.Move(wpt) end)
 			plane.Attack(target)
-			Utils.Do(egress, function(wpt) plane.Move(wpt) end)
-			plane.Destroy()
 		end)
 	end
 end
@@ -106,7 +101,7 @@ BaseRaid = function()
 
 	local target = Utils.Random(targets)
 
-	AirRaid(BaseRaidAircraft, BaseRaidWpts, { VillageRaidEntrypoint.Location }, target)
+	AirRaid(BaseRaidAircraft, BaseRaidWpts, target)
 
 	Trigger.AfterDelay(BaseRaidInterval, BaseRaid)
 end
@@ -124,7 +119,7 @@ VillageRaid = function()
 		return
 	end
 
-	AirRaid(VillageRaidAircraft, VillageRaidWpts, { BaseRaidEntrypoint.Location }, target)
+	AirRaid(VillageRaidAircraft, VillageRaidWpts, target)
 
 	Trigger.AfterDelay(VillageRaidInterval, VillageRaid)
 end
@@ -267,9 +262,9 @@ WorldLoaded = function()
 		Media.PlaySpeechNotification(player, "MissionFailed")
 	end)
 
-	sovietObjective = soviets.AddPrimaryObjective("Destroy the village.")
-	villageObjective = player.AddPrimaryObjective("Save the village.")
-	beachheadObjective = player.AddPrimaryObjective("Get your MCV to the main island.")
+	sovietObjective = soviets.AddObjective("Destroy the village.")
+	villageObjective = player.AddObjective("Save the village.")
+	beachheadObjective = player.AddObjective("Get your MCV to the main island.")
 
 	beachheadTrigger = false
 	Trigger.OnExitedFootprint(BeachheadTrigger, function(a, id)
@@ -278,7 +273,7 @@ WorldLoaded = function()
 			Trigger.RemoveFootprintTrigger(id)
 			player.MarkCompletedObjective(beachheadObjective)
 
-			captureObjective = player.AddPrimaryObjective("Locate and capture the enemy's Air Force HQ.")
+			captureObjective = player.AddObjective("Locate and capture the enemy's Air Force HQ.")
 
 			if AirForceHQ.IsDead then
 				player.MarkFailedObjective(captureObjective)

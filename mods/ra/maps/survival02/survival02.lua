@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -43,14 +43,6 @@ ParaWaves =
 	{ delay = AttackTicks * 3, type = "SovietSquad", target = SovietParaDrop1 }
 }
 
-IdleHunt = function(unit)
-	Trigger.OnIdle(unit, function(a)
-		if a.IsInWorld then
-			a.Hunt()
-		end
-	end)
-end
-
 GuardHarvester = function(unit, harvester)
 	if not unit.IsDead then
 		unit.Stop()
@@ -82,7 +74,7 @@ Tick = function()
 		if DestroyObj then
 			allies.MarkCompletedObjective(DestroyObj)
 		else
-			DestroyObj = allies.AddPrimaryObjective("Destroy all Soviet forces in the area.")
+			DestroyObj = allies.AddObjective("Destroy all Soviet forces in the area.")
 			allies.MarkCompletedObjective(DestroyObj)
 		end
 	end
@@ -129,8 +121,12 @@ end
 
 SendSovietParadrops = function(table)
 	local paraproxy = Actor.Create(table.type, false, { Owner = soviets })
-	units = paraproxy.SendParatroopers(table.target.CenterPosition)
-	Utils.Do(units, function(unit) IdleHunt(unit) end)
+	local aircraft = paraproxy.TargetParatroopers(table.target.CenterPosition)
+	Utils.Do(aircraft, function(a)
+		Trigger.OnPassengerExited(a, function(t, p)
+			IdleHunt(p)
+		end)
+	end)
 	paraproxy.Destroy()
 end
 
@@ -181,9 +177,9 @@ FrenchReinforcements = function()
 	end
 
 	powerproxy = Actor.Create("powerproxy.parabombs", false, { Owner = allies })
-	powerproxy.SendAirstrike(drum1.CenterPosition, false, Facing.NorthEast + 4)
-	powerproxy.SendAirstrike(drum2.CenterPosition, false, Facing.NorthEast)
-	powerproxy.SendAirstrike(drum3.CenterPosition, false, Facing.NorthEast - 4)
+	powerproxy.TargetAirstrike(drum1.CenterPosition, Angle.NorthEast + Angle.New(16))
+	powerproxy.TargetAirstrike(drum2.CenterPosition, Angle.NorthEast)
+	powerproxy.TargetAirstrike(drum3.CenterPosition, Angle.NorthEast - Angle.New(16))
 	powerproxy.Destroy()
 
 	Trigger.AfterDelay(DateTime.Seconds(3), function()
@@ -216,7 +212,7 @@ FinalAttack = function()
 	Trigger.OnAllKilledOrCaptured(units, function()
 		if not DestroyObj then
 			Media.DisplayMessage("Excellent work Commander! We have reinforced our position enough to initiate a counter-attack.", "Incoming Report")
-			DestroyObj = allies.AddPrimaryObjective("Destroy the remaining Soviet forces in the area.")
+			DestroyObj = allies.AddObjective("Destroy the remaining Soviet forces in the area.")
 		end
 		allies.MarkCompletedObjective(SurviveObj)
 	end)
@@ -256,7 +252,7 @@ SetupBridges = function()
 	end
 
 	Media.DisplayMessage("Commander! The Soviets destroyed the bridges to disable our reinforcements. Repair them for additional reinforcements.", "Incoming Report")
-	RepairBridges = allies.AddSecondaryObjective("Repair the two southern bridges.")
+	RepairBridges = allies.AddObjective("Repair the two southern bridges.", "Secondary", false)
 
 	local bridgeA = Map.ActorsInCircle(BrokenBridge1.CenterPosition, WDist.FromCells(1), function(self) return self.Type == "bridge1" end)
 	local bridgeB = Map.ActorsInCircle(BrokenBridge2.CenterPosition, WDist.FromCells(1), function(self) return self.Type == "bridge1" end)
@@ -291,8 +287,8 @@ InitObjectives = function()
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "New " .. string.lower(p.GetObjectiveType(id)) .. " objective")
 	end)
 
-	SurviveObj = allies.AddPrimaryObjective("Enforce your position and hold-out the onslaught.")
-	SovietObj = soviets.AddPrimaryObjective("Eliminate all Allied forces.")
+	SurviveObj = allies.AddObjective("Enforce your position and hold-out the onslaught.")
+	SovietObj = soviets.AddObjective("Eliminate all Allied forces.")
 
 	Trigger.AfterDelay(DateTime.Seconds(15), function()
 		SetupBridges()

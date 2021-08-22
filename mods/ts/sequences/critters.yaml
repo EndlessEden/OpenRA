@@ -15,11 +15,11 @@ doggie:
 		Length: 4
 		Facings: 8
 		ShadowStart: 175
-	laydown: # TODO: Implement hiding when on a tiberium patch
+	laydown:
 		Start: 88
 		Length: 2
 		ShadowStart: 207
-	hide: # TODO: Implement hiding when on a tiberium patch
+	hide:
 		Start: 90
 		ShadowStart: 209
 	idle1:
@@ -46,6 +46,7 @@ doggie:
 		Start: 109
 		Length: 10
 		ShadowStart: 228
+		IgnoreWorldTint: True
 	die-melting:
 		Start: 109
 		Length: 10
@@ -90,3 +91,9 @@ floater:
 		ShadowStart: 48
 		Tick: 100
 		Offset: 0, 0, 16
+	attack-shock:
+		Length: 16
+		Start: 16
+		Tick: 100
+		Offset: 0, 0, 16
+		IgnoreWorldTint: True

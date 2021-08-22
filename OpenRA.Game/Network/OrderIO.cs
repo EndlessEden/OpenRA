@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -16,13 +16,14 @@ namespace OpenRA.Network
 {
 	public static class OrderIO
 	{
-		public static void Write(this Stream s, byte[] buf)
-		{
-			s.Write(buf, 0, buf.Length);
-		}
+		static readonly List<Order> EmptyOrderList = new List<Order>(0);
 
 		public static List<Order> ToOrderList(this byte[] bytes, World world)
 		{
+			// PERF: Skip empty order frames, often per client each frame
+			if (bytes.Length == 4)
+				return EmptyOrderList;
+
 			var ms = new MemoryStream(bytes, 4, bytes.Length - 4);
 			var reader = new BinaryReader(ms);
 			var ret = new List<Order>();
@@ -36,16 +37,17 @@ namespace OpenRA.Network
 			return ret;
 		}
 
-		public static byte[] SerializeSync(int sync)
+		public static byte[] SerializeSync(int sync, ulong defeatState)
 		{
-			var ms = new MemoryStream();
+			var ms = new MemoryStream(Order.SyncHashOrderLength);
 			using (var writer = new BinaryWriter(ms))
 			{
-				writer.Write((byte)0x65);
+				writer.Write((byte)OrderType.SyncHash);
 				writer.Write(sync);
+				writer.Write(defeatState);
 			}
 
-			return ms.ToArray();
+			return ms.GetBuffer();
 		}
 
 		public static int2 ReadInt2(this BinaryReader r)
@@ -63,8 +65,14 @@ namespace OpenRA.Network
 
 		public static void Write(this BinaryWriter w, CPos cell)
 		{
-			w.Write(cell.X);
-			w.Write(cell.Y);
+			w.Write(cell.Bits);
+		}
+
+		public static void Write(this BinaryWriter w, WPos pos)
+		{
+			w.Write(pos.X);
+			w.Write(pos.Y);
+			w.Write(pos.Z);
 		}
 	}
 }

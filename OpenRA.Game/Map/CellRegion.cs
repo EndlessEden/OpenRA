@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -40,6 +40,16 @@ namespace OpenRA
 			mapBottomRight = BottomRight.ToMPos(gridType);
 		}
 
+		public CellRegion(MapGridType gridType, MPos topLeft, MPos bottomRight)
+		{
+			this.gridType = gridType;
+			mapTopLeft = topLeft;
+			mapBottomRight = bottomRight;
+
+			TopLeft = topLeft.ToCPos(gridType);
+			BottomRight = bottomRight.ToCPos(gridType);
+		}
+
 		/// <summary>Expand the specified region with an additional cordon. This may expand the region outside the map borders.</summary>
 		public static CellRegion Expand(CellRegion region, int cordon)
 		{
@@ -52,7 +62,7 @@ namespace OpenRA
 		public static CellRegion BoundingRegion(MapGridType shape, IEnumerable<CPos> cells)
 		{
 			if (cells == null || !cells.Any())
-				throw new ArgumentException("cells must not be null or empty.", "cells");
+				throw new ArgumentException("cells must not be null or empty.", nameof(cells));
 
 			var minU = int.MaxValue;
 			var minV = int.MaxValue;
@@ -87,10 +97,7 @@ namespace OpenRA
 			return uv.U >= mapTopLeft.U && uv.U <= mapBottomRight.U && uv.V >= mapTopLeft.V && uv.V <= mapBottomRight.V;
 		}
 
-		public MapCoordsRegion MapCoords
-		{
-			get { return new MapCoordsRegion(mapTopLeft, mapBottomRight); }
-		}
+		public MapCoordsRegion MapCoords => new MapCoordsRegion(mapTopLeft, mapBottomRight);
 
 		public CellRegionEnumerator GetEnumerator()
 		{
@@ -107,7 +114,7 @@ namespace OpenRA
 			return GetEnumerator();
 		}
 
-		public sealed class CellRegionEnumerator : IEnumerator<CPos>
+		public struct CellRegionEnumerator : IEnumerator<CPos>
 		{
 			readonly CellRegion r;
 
@@ -118,9 +125,11 @@ namespace OpenRA
 			CPos current;
 
 			public CellRegionEnumerator(CellRegion region)
+				: this()
 			{
 				r = region;
 				Reset();
+				current = new MPos(u, v).ToCPos(r.gridType);
 			}
 
 			public bool MoveNext()
@@ -149,8 +158,8 @@ namespace OpenRA
 				v = r.mapTopLeft.V;
 			}
 
-			public CPos Current { get { return current; } }
-			object IEnumerator.Current { get { return Current; } }
+			public CPos Current => current;
+			object IEnumerator.Current => Current;
 			public void Dispose() { }
 		}
 	}

@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -22,12 +22,12 @@ namespace OpenRA
 {
 	public class Ruleset
 	{
-		public readonly IReadOnlyDictionary<string, ActorInfo> Actors;
+		public readonly ActorInfoDictionary Actors;
 		public readonly IReadOnlyDictionary<string, WeaponInfo> Weapons;
 		public readonly IReadOnlyDictionary<string, SoundInfo> Voices;
 		public readonly IReadOnlyDictionary<string, SoundInfo> Notifications;
 		public readonly IReadOnlyDictionary<string, MusicInfo> Music;
-		public readonly TileSet TileSet;
+		public readonly ITerrainInfo TerrainInfo;
 		public readonly SequenceProvider Sequences;
 		public readonly IReadOnlyDictionary<string, MiniYamlNode> ModelSequences;
 
@@ -37,16 +37,16 @@ namespace OpenRA
 			IReadOnlyDictionary<string, SoundInfo> voices,
 			IReadOnlyDictionary<string, SoundInfo> notifications,
 			IReadOnlyDictionary<string, MusicInfo> music,
-			TileSet tileSet,
+			ITerrainInfo terrainInfo,
 			SequenceProvider sequences,
 			IReadOnlyDictionary<string, MiniYamlNode> modelSequences)
 		{
-			Actors = actors;
+			Actors = new ActorInfoDictionary(actors);
 			Weapons = weapons;
 			Voices = voices;
 			Notifications = notifications;
 			Music = music;
-			TileSet = tileSet;
+			TerrainInfo = terrainInfo;
 			Sequences = sequences;
 			ModelSequences = modelSequences;
 
@@ -60,17 +60,28 @@ namespace OpenRA
 					}
 					catch (YamlException e)
 					{
-						throw new YamlException("Actor type {0}: {1}".F(a.Name, e.Message));
+						throw new YamlException($"Actor type {a.Name}: {e.Message}");
 					}
 				}
 			}
 
 			foreach (var weapon in Weapons)
 			{
+				if (weapon.Value.Projectile is IRulesetLoaded<WeaponInfo> projectileLoaded)
+				{
+					try
+					{
+						projectileLoaded.RulesetLoaded(this, weapon.Value);
+					}
+					catch (YamlException e)
+					{
+						throw new YamlException($"Projectile type {weapon.Key}: {e.Message}");
+					}
+				}
+
 				foreach (var warhead in weapon.Value.Warheads)
 				{
-					var cacher = warhead as IRulesetLoaded<WeaponInfo>;
-					if (cacher != null)
+					if (warhead is IRulesetLoaded<WeaponInfo> cacher)
 					{
 						try
 						{
@@ -78,7 +89,7 @@ namespace OpenRA
 						}
 						catch (YamlException e)
 						{
-							throw new YamlException("Weapon type {0}: {1}".F(weapon.Key, e.Message));
+							throw new YamlException($"Weapon type {weapon.Key}: {e.Message}");
 						}
 					}
 				}
@@ -87,16 +98,24 @@ namespace OpenRA
 
 		public IEnumerable<KeyValuePair<string, MusicInfo>> InstalledMusic { get { return Music.Where(m => m.Value.Exists); } }
 
-		static IReadOnlyDictionary<string, T> MergeOrDefault<T>(string name, IReadOnlyFileSystem fileSystem, IEnumerable<string> files, MiniYaml additional,
-			IReadOnlyDictionary<string, T> defaults, Func<MiniYamlNode, T> makeObject)
+		static IReadOnlyDictionary<string, T> MergeOrDefault<T>(string name,
+			IReadOnlyFileSystem fileSystem,
+			IEnumerable<string> files,
+			MiniYaml additional,
+			IReadOnlyDictionary<string, T> defaults,
+			Func<MiniYamlNode, T> makeObject,
+			Func<MiniYamlNode, bool> filterNode = null)
 		{
 			if (additional == null && defaults != null)
 				return defaults;
 
-			var result = MiniYaml.Load(fileSystem, files, additional)
-				.ToDictionaryWithConflictLog(k => k.Key.ToLowerInvariant(), makeObject, "LoadFromManifest<" + name + ">");
+			IEnumerable<MiniYamlNode> yamlNodes = MiniYaml.Load(fileSystem, files, additional);
 
-			return new ReadOnlyDictionary<string, T>(result);
+			// Optionally, the caller can filter out elements from the loaded set of nodes. Default behavior is unfiltered.
+			if (filterNode != null)
+				yamlNodes = yamlNodes.Where(k => !filterNode(k));
+
+			return yamlNodes.ToDictionaryWithConflictLog(k => k.Key.ToLowerInvariant(), makeObject, "LoadFromManifest<" + name + ">");
 		}
 
 		public static Ruleset LoadDefaults(ModData modData)
@@ -108,7 +127,8 @@ namespace OpenRA
 			Action f = () =>
 			{
 				var actors = MergeOrDefault("Manifest,Rules", fs, m.Rules, null, null,
-					k => new ActorInfo(modData.ObjectCreator, k.Key.ToLowerInvariant(), k.Value));
+					k => new ActorInfo(modData.ObjectCreator, k.Key.ToLowerInvariant(), k.Value),
+					filterNode: n => n.Key.StartsWith(ActorInfo.AbstractActorPrefix, StringComparison.Ordinal));
 
 				var weapons = MergeOrDefault("Manifest,Weapons", fs, m.Weapons, null, null,
 					k => new WeaponInfo(k.Key.ToLowerInvariant(), k.Value));
@@ -149,10 +169,10 @@ namespace OpenRA
 		public static Ruleset LoadDefaultsForTileSet(ModData modData, string tileSet)
 		{
 			var dr = modData.DefaultRules;
-			var ts = modData.DefaultTileSets[tileSet];
+			var terrainInfo = modData.DefaultTerrainInfo[tileSet];
 			var sequences = modData.DefaultSequences[tileSet];
 
-			return new Ruleset(dr.Actors, dr.Weapons, dr.Voices, dr.Notifications, dr.Music, ts, sequences, dr.ModelSequences);
+			return new Ruleset(dr.Actors, dr.Weapons, dr.Voices, dr.Notifications, dr.Music, terrainInfo, sequences, dr.ModelSequences);
 		}
 
 		public static Ruleset Load(ModData modData, IReadOnlyFileSystem fileSystem, string tileSet,
@@ -166,7 +186,8 @@ namespace OpenRA
 			Action f = () =>
 			{
 				var actors = MergeOrDefault("Rules", fileSystem, m.Rules, mapRules, dr.Actors,
-					k => new ActorInfo(modData.ObjectCreator, k.Key.ToLowerInvariant(), k.Value));
+					k => new ActorInfo(modData.ObjectCreator, k.Key.ToLowerInvariant(), k.Value),
+					filterNode: n => n.Key.StartsWith(ActorInfo.AbstractActorPrefix, StringComparison.Ordinal));
 
 				var weapons = MergeOrDefault("Weapons", fileSystem, m.Weapons, mapWeapons, dr.Weapons,
 					k => new WeaponInfo(k.Key.ToLowerInvariant(), k.Value));
@@ -180,19 +201,19 @@ namespace OpenRA
 				var music = MergeOrDefault("Music", fileSystem, m.Music, mapMusic, dr.Music,
 					k => new MusicInfo(k.Key, k.Value));
 
-				// TODO: Add support for merging custom tileset modifications
-				var ts = modData.DefaultTileSets[tileSet];
+				// TODO: Add support for merging custom terrain modifications
+				var terrainInfo = modData.DefaultTerrainInfo[tileSet];
 
 				// TODO: Top-level dictionary should be moved into the Ruleset instead of in its own object
 				var sequences = mapSequences == null ? modData.DefaultSequences[tileSet] :
-					new SequenceProvider(fileSystem, modData, ts, mapSequences);
+					new SequenceProvider(fileSystem, modData, tileSet, mapSequences);
 
 				var modelSequences = dr.ModelSequences;
 				if (mapModelSequences != null)
 					modelSequences = MergeOrDefault("ModelSequences", fileSystem, m.ModelSequences, mapModelSequences, dr.ModelSequences,
 						k => k);
 
-				ruleset = new Ruleset(actors, weapons, voices, notifications, music, ts, sequences, modelSequences);
+				ruleset = new Ruleset(actors, weapons, voices, notifications, music, terrainInfo, sequences, modelSequences);
 			};
 
 			if (modData.IsOnMainThread)
@@ -227,10 +248,13 @@ namespace OpenRA
 					{
 						var traitName = traitNode.Key.Split('@')[0];
 						var traitType = modData.ObjectCreator.FindType(traitName + "Info");
-						if (traitType.GetInterface("ILobbyCustomRulesIgnore") == null)
+						if (traitType != null && traitType.GetInterface("ILobbyCustomRulesIgnore") == null)
 							return true;
 					}
-					catch { }
+					catch (Exception ex)
+					{
+						Log.Write("debug", "Error in AnyFlaggedTraits\r\n" + ex.ToString());
+					}
 				}
 			}
 
@@ -241,7 +265,7 @@ namespace OpenRA
 			MiniYaml mapRules, MiniYaml mapWeapons, MiniYaml mapVoices, MiniYaml mapNotifications, MiniYaml mapSequences)
 		{
 			// Maps that define any weapon, voice, notification, or sequence overrides are always flagged
-			if (AnyCustomYaml(mapWeapons) || AnyCustomYaml(mapVoices) || AnyCustomYaml(mapNotifications) ||	AnyCustomYaml(mapSequences))
+			if (AnyCustomYaml(mapWeapons) || AnyCustomYaml(mapVoices) || AnyCustomYaml(mapNotifications) || AnyCustomYaml(mapSequences))
 				return true;
 
 			// Any trait overrides that aren't explicitly whitelisted are flagged

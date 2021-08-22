@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -13,9 +13,42 @@ CmdAtk = { Attacker1, Attacker2, Attacker3, Attacker4 }
 FleeingUnits = { Fleeing1, Fleeing2 }
 HuntingUnits = { Hunter1, Hunter2, Hunter3, Hunter4 }
 
+AttackWaypoints = { AttackWaypoint1, AttackWaypoint2 }
+AttackGroup = { }
+AttackGroupSize = 3
+AlliedInfantry = { "e1", "e1", "e3" }
+
+SendAttackGroup = function()
+	if #AttackGroup < AttackGroupSize then
+		return
+	end
+
+	local way = Utils.Random(AttackWaypoints)
+	Utils.Do(AttackGroup, function(unit)
+		if not unit.IsDead then
+			unit.AttackMove(way.Location)
+			Trigger.OnIdle(unit, unit.Hunt)
+		end
+	end)
+
+	AttackGroup = { }
+end
+
+ProduceInfantry = function()
+	if Tent.IsDead then
+		return
+	end
+
+	greece.Build({ Utils.Random(AlliedInfantry) }, function(units)
+		table.insert(AttackGroup, units[1])
+		SendAttackGroup()
+		Trigger.AfterDelay(DateTime.Seconds(10), ProduceInfantry)
+	end)
+end
+
 WorldLoaded = function()
 	player = Player.GetPlayer("USSR")
-	germany = Player.GetPlayer("Germany")
+	greece = Player.GetPlayer("Greece")
 
 	Trigger.OnObjectiveAdded(player, function(p, id)
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "New " .. string.lower(p.GetObjectiveType(id)) .. " objective")
@@ -27,8 +60,8 @@ WorldLoaded = function()
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "Objective failed")
 	end)
 
-	CommandCenterIntact = player.AddPrimaryObjective("Protect the Command Center.")
-	DestroyAllAllied = player.AddPrimaryObjective("Destroy all Allied units and structures.")
+	CommandCenterIntact = player.AddObjective("Protect the Command Center.")
+	DestroyAllAllied = player.AddObjective("Destroy all Allied units and structures.")
 
 	Trigger.OnPlayerWon(player, function()
 		Media.PlaySpeechNotification(player, "MissionAccomplished")
@@ -44,14 +77,14 @@ WorldLoaded = function()
 	end)
 
 	Trigger.AfterDelay(0, function()
-		local buildings = Utils.Where(Map.ActorsInWorld, function(self) return self.Owner == germany and self.HasProperty("StartBuildingRepairs") end)
+		local buildings = Utils.Where(Map.ActorsInWorld, function(self) return self.Owner == greece and self.HasProperty("StartBuildingRepairs") end)
 		Utils.Do(buildings, function(actor)
 			Trigger.OnDamaged(actor, function(building, attacker)
-				if building.Owner == germany and building.Health < building.MaxHealth * 0.8 then
+				if building.Owner == greece and building.Health < building.MaxHealth * 0.8 then
 					building.StartBuildingRepairs()
 					if attacker.Type ~= "yak" and not AlreadyHunting then
 						AlreadyHunting = true
-						Utils.Do(germany.GetGroundAttackers(), function(unit)
+						Utils.Do(greece.GetGroundAttackers(), function(unit)
 							Trigger.OnIdle(unit, unit.Hunt)
 						end)
 					end
@@ -60,20 +93,20 @@ WorldLoaded = function()
 		end)
 
 		-- Find the bridge actors
-		bridgepart1 = Map.ActorsInBox(waypoint23.CenterPosition, waypoint49.CenterPosition, function(self) return self.Type == "br1" end)[1]
-		bridgepart2 = Map.ActorsInBox(waypoint23.CenterPosition, waypoint49.CenterPosition, function(self) return self.Type == "br2" end)[1]
+		bridgepart1 = Map.ActorsInBox(Box1.CenterPosition, Box2.CenterPosition, function(self) return self.Type == "br1" end)[1]
+		bridgepart2 = Map.ActorsInBox(Box1.CenterPosition, Box2.CenterPosition, function(self) return self.Type == "br2" end)[1]
 	end)
 
 	-- Discover the area around the bridge exposing the two german soldiers
 	-- When the two infantry near the bridge are discovered move them across the bridge to waypoint4
 	-- in the meanwhile one USSR soldier hunts them down
 	Trigger.AfterDelay(DateTime.Seconds(1), function()
-		Actor.Create("camera", true, { Owner = player, Location = waypoint23.Location })
+		Actor.Create("camera", true, { Owner = player, Location = Box1.Location })
 
 		Utils.Do(FleeingUnits, function(unit)
-			unit.Move(waypoint4.Location)
+			unit.Move(RifleRetreat.Location)
 		end)
-		Follower.AttackMove(waypoint4.Location)
+		Follower.AttackMove(RifleRetreat.Location)
 	end)
 
 	-- To make it look more smooth we will blow up the bridge when the barrel closest to it blows up
@@ -123,14 +156,17 @@ WorldLoaded = function()
 	-- When destroying the allied radar dome or the refinery drop 2 badgers with 5 grenadiers each
 	Trigger.OnAnyKilled({ AlliedDome, AlliedProc }, function()
 		local powerproxy = Actor.Create("powerproxy.paratroopers", true, { Owner = player })
-		powerproxy.SendParatroopers(ParadropLZ.CenterPosition, false, Facing.South)
-		powerproxy.SendParatroopers(ParadropLZ.CenterPosition, false, Facing.SouthEast)
+		powerproxy.TargetParatroopers(ParadropLZ.CenterPosition, Angle.South)
+		powerproxy.TargetParatroopers(ParadropLZ.CenterPosition, Angle.SouthEast)
 		powerproxy.Destroy()
 	end)
+
+	greece.Resources = 2000
+	Trigger.AfterDelay(DateTime.Seconds(30), ProduceInfantry)
 end
 
 Tick = function()
-	if germany.HasNoRequiredUnits() then
+	if greece.HasNoRequiredUnits() then
 		player.MarkCompletedObjective(CommandCenterIntact)
 		player.MarkCompletedObjective(DestroyAllAllied)
 	end
@@ -139,7 +175,7 @@ Tick = function()
 		player.MarkFailedObjective(DestroyAllAllied)
 	end
 
-	if germany.Resources > germany.ResourceCapacity / 2 then
-		germany.Resources = germany.ResourceCapacity / 2
+	if greece.Resources > greece.ResourceCapacity / 2 then
+		greece.Resources = greece.ResourceCapacity / 2
 	end
 end

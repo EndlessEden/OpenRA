@@ -2,12 +2,15 @@ DOGGIE:
 	Inherits@1: ^Infantry
 	Inherits@2: ^RegularInfantryDeath
 	Inherits@3: ^HealsOnTiberium
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+	MapEditorData:
+		Categories: Critter
 	Tooltip:
 		Name: Tiberian Fiend
 	Health:
-		HP: 250
+		HP: 25000
 	Selectable:
-		Bounds: 24,24
+		Bounds: 724, 1448
 	Valued:
 		Cost: 100
 	Armor:
@@ -19,7 +22,7 @@ DOGGIE:
 	Voiced:
 		VoiceSet: Fiend
 	Targetable:
-		TargetTypes: Ground
+		TargetTypes: Ground, Creep
 	Armament:
 		Weapon: FiendShard
 	AttackFrontal:
@@ -36,28 +39,53 @@ DOGGIE:
 	HitShape:
 		Type: Circle
 			Radius: 213
+	GrantConditionOnTerrain:
+		Condition: hidingplace
+		TerrainTypes: Tiberium, BlueTiberium
+	GrantConditionOnMovement:
+		Condition: moving
+	GrantConditionOnAttack:
+		ArmamentNames: primary
+		Condition: attacking
+	RenderSprites:
+		Palette: greentiberium
+	WithSpriteBody:
+		RequiresCondition: hidingplace && !moving && !attacking
+		StartSequence: laydown
+		Sequence: hide
+	WithInfantryBody:
+		RequiresCondition: !hidingplace || moving || attacking
 
 VISC_SML:
 	Inherits: ^Visceroid
 	Tooltip:
 		Name: Baby Visceroid
 	Health:
-		HP: 200
+		HP: 20000
 	AttackWander:
 		WanderMoveRadius: 2
 		MinMoveDelay: 30
 		MaxMoveDelay: 60
 	RenderSprites:
 		Image: vissml
+	Mobile:
+		Locomotor: smallvisc
+	Crushable:
+		CrushClasses: visceroid-fusing
+		WarnProbability: 0
+		CrushedByFriendlies: True
+	TransformCrusherOnCrush:
+		IntoActor: visc_lrg
+		CrushClasses: visceroid-fusing
 
 VISC_LRG:
 	Inherits: ^Visceroid
 	Inherits@CRATESTATS: ^CrateStatModifiers
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
 	Tooltip:
 		Name: Adult Visceroid
 	Health:
-		HP: 500
+		HP: 50000
 	Armor:
 		Type: Heavy
 	RevealsShroud:
@@ -74,31 +102,23 @@ VISC_LRG:
 		MinMoveDelay: 25
 		MaxMoveDelay: 50
 	WithAttackAnimation:
-		AttackSequence: attack
-	Mobile:
-		Crushes: crate, infantry
+		Sequence: attack
 	RenderSprites:
 		Image: vislrg
 
 JFISH:
 	Inherits: ^Visceroid
 	Inherits@CRATESTATS: ^CrateStatModifiers
-	Inherits@AUTOTARGET: ^AutoTargetGround
+	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
 	Tooltip:
 		Name: Tiberium Floater
 	Health:
-		HP: 500
+		HP: 50000
 	RevealsShroud:
 		Range: 5c0
 	Mobile:
 		Speed: 72
-		Crushes: crate
-		TerrainSpeeds:
-			Clear: 100
-			Rail: 100
-			DirtRoad: 100
-			Rough: 100
-			Water: 100
+		Locomotor: hover
 	Armament:
 		Weapon: Tentacle
 		FireDelay: 10
@@ -110,11 +130,15 @@ JFISH:
 		MinMoveDelay: 250
 		MaxMoveDelay: 600
 	WithAttackAnimation:
-		AttackSequence: attack
+		Sequence: attack
+	WithAttackOverlay@muzzle:
+		Sequence: attack-shock
+		Palette: bright
 	RenderSprites:
 		Image: floater
+		Palette: player-nobright
 	Selectable:
-		Bounds: 32,32,0,-5
+		Bounds: 965, 1930, 0, -301
 	AmbientSound:
 		SoundFiles: floatmov.aud, flotmov2.aud, flotmov3.aud, flotmov4.aud
 		Delay: 150, 450

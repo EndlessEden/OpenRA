@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -12,19 +12,29 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace OpenRA
 {
 	public enum PlatformType { Unknown, Windows, OSX, Linux }
 
+	public enum SupportDirType { System, ModernUser, LegacyUser, User }
+
 	public static class Platform
 	{
-		public static PlatformType CurrentPlatform { get { return currentPlatform.Value; } }
+		public static PlatformType CurrentPlatform => currentPlatform.Value;
 		public static readonly Guid SessionGUID = Guid.NewGuid();
 
 		static Lazy<PlatformType> currentPlatform = Exts.Lazy(GetCurrentPlatform);
+
+		static bool engineDirAccessed;
+		static string engineDir;
+
+		static bool supportDirInitialized;
+		static string systemSupportPath;
+		static string legacyUserSupportPath;
+		static string modernUserSupportPath;
+		static string userSupportPath;
 
 		static PlatformType GetCurrentPlatform()
 		{
@@ -54,79 +64,153 @@ namespace OpenRA
 			{
 				var mono = Type.GetType("Mono.Runtime");
 				if (mono == null)
-					return ".NET CLR {0}".F(Environment.Version);
+					return $".NET CLR {Environment.Version}";
 
 				var version = mono.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static);
 				if (version == null)
-					return "Mono (unknown version) CLR {0}".F(Environment.Version);
+					return $"Mono (unknown version) CLR {Environment.Version}";
 
-				return "Mono {0} CLR {1}".F(version.Invoke(null, null), Environment.Version);
+				return $"Mono {version.Invoke(null, null)} CLR {Environment.Version}";
 			}
 		}
 
 		/// <summary>
 		/// Directory containing user-specific support files (settings, maps, replays, game data, etc).
-		/// The directory will automatically be created if it does not exist when this is queried.
 		/// </summary>
-		public static string SupportDir { get { return supportDir.Value; } }
-		static Lazy<string> supportDir = Exts.Lazy(GetSupportDir);
+		public static string SupportDir => GetSupportDir(SupportDirType.User);
 
-		static string GetSupportDir()
+		public static string GetSupportDir(SupportDirType type)
 		{
-			// Use a local directory in the game root if it exists (shared with the system support dir)
-			var localSupportDir = Path.Combine(GameDir, "Support");
-			if (Directory.Exists(localSupportDir))
-				return localSupportDir + Path.DirectorySeparatorChar;
+			if (!supportDirInitialized)
+				InitializeSupportDir();
 
-			var dir = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+			switch (type)
+			{
+				case SupportDirType.System: return systemSupportPath;
+				case SupportDirType.LegacyUser: return legacyUserSupportPath;
+				case SupportDirType.ModernUser: return modernUserSupportPath;
+				default: return userSupportPath;
+			}
+		}
 
+		static void InitializeSupportDir()
+		{
+			// The preferred support dir location for Windows and Linux was changed in mid 2019 to match modern platform conventions
 			switch (CurrentPlatform)
 			{
 				case PlatformType.Windows:
-					dir += Path.DirectorySeparatorChar + "OpenRA";
+				{
+					modernUserSupportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "OpenRA");
+					legacyUserSupportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "OpenRA");
+					systemSupportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "OpenRA") + Path.DirectorySeparatorChar;
 					break;
+				}
+
 				case PlatformType.OSX:
-					dir += "/Library/Application Support/OpenRA";
+				{
+					modernUserSupportPath = legacyUserSupportPath = Path.Combine(
+						Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+						"Library", "Application Support", "OpenRA");
+
+					systemSupportPath = "/Library/Application Support/OpenRA/";
 					break;
+				}
+
+				case PlatformType.Linux:
+				{
+					legacyUserSupportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".openra");
+
+					var xdgConfigHome = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+					if (string.IsNullOrEmpty(xdgConfigHome))
+						xdgConfigHome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".config");
+
+					modernUserSupportPath = Path.Combine(xdgConfigHome, "openra");
+					systemSupportPath = "/var/games/openra/";
+
+					break;
+				}
+
 				default:
-					dir += "/.openra";
+				{
+					modernUserSupportPath = legacyUserSupportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".openra");
+					systemSupportPath = "/var/games/openra/";
 					break;
+				}
 			}
 
-			if (!Directory.Exists(dir))
-				Directory.CreateDirectory(dir);
+			// Use a local directory in the game root if it exists (shared with the system support dir)
+			var localSupportDir = Path.Combine(EngineDir, "Support");
+			if (Directory.Exists(localSupportDir))
+				userSupportPath = systemSupportPath = localSupportDir + Path.DirectorySeparatorChar;
 
-			return dir + Path.DirectorySeparatorChar;
+			// Use the fallback directory if it exists and the preferred one does not
+			else if (!Directory.Exists(modernUserSupportPath) && Directory.Exists(legacyUserSupportPath))
+				userSupportPath = legacyUserSupportPath + Path.DirectorySeparatorChar;
+			else
+				userSupportPath = modernUserSupportPath + Path.DirectorySeparatorChar;
+
+			supportDirInitialized = true;
 		}
 
 		/// <summary>
-		/// Directory containing system-wide support files (mod metadata).
-		/// This directory is not guaranteed to exist or be writable.
-		/// Consumers are expected to check the validity of the returned value, and
-		/// fall back to the user support directory if necessary.
+		/// Specify a custom support directory that already exists on the filesystem.
+		/// Cannot be called after Platform.SupportDir / GetSupportDir have been accessed.
 		/// </summary>
-		public static string SystemSupportDir { get { return systemSupportDir.Value; } }
-		static Lazy<string> systemSupportDir = Exts.Lazy(GetSystemSupportDir);
-
-		static string GetSystemSupportDir()
+		public static void OverrideSupportDir(string path)
 		{
-			// Use a local directory in the game root if it exists (shared with the system support dir)
-			var localSupportDir = Path.Combine(GameDir, "Support");
-			if (Directory.Exists(localSupportDir))
-				return localSupportDir + Path.DirectorySeparatorChar;
+			if (supportDirInitialized)
+				throw new InvalidOperationException("Attempted to override user support directory after it has already been accessed.");
 
-			switch (CurrentPlatform)
+			if (!Directory.Exists(path))
+				throw new DirectoryNotFoundException(path);
+
+			if (!path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) &&
+					!path.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+				path += Path.DirectorySeparatorChar;
+
+			InitializeSupportDir();
+			userSupportPath = path;
+		}
+
+		public static string EngineDir
+		{
+			get
 			{
-				case PlatformType.Windows:
-					return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "OpenRA") + Path.DirectorySeparatorChar;
-				case PlatformType.OSX:
-					return "/Library/Application Support/OpenRA/";
-				default:
-					return "/var/games/openra/";
+				// Engine directory defaults to the location of the binaries,
+				// unless OverrideGameDir is called during startup.
+				if (!engineDirAccessed)
+					engineDir = BinDir;
+
+				engineDirAccessed = true;
+				return engineDir;
 			}
 		}
 
-		public static string GameDir
+		/// <summary>
+		/// Specify a custom engine directory that already exists on the filesystem.
+		/// Cannot be called after Platform.EngineDir has been accessed.
+		/// </summary>
+		public static void OverrideEngineDir(string path)
+		{
+			if (engineDirAccessed)
+				throw new InvalidOperationException("Attempted to override engine directory after it has already been accessed.");
+
+			// Note: Relative paths are interpreted as being relative to BinDir, not the current working dir.
+			if (!Path.IsPathRooted(path))
+				path = Path.Combine(BinDir, path);
+
+			if (!Directory.Exists(path))
+				throw new DirectoryNotFoundException(path);
+
+			if (!path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) &&
+			    !path.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+				path += Path.DirectorySeparatorChar;
+
+			engineDirAccessed = true;
+			engineDir = path;
+		}
+
+		public static string BinDir
 		{
 			get
 			{
@@ -145,34 +229,23 @@ namespace OpenRA
 		{
 			path = path.TrimEnd(' ', '\t');
 
-			// Paths starting with ^ are relative to the support dir
-			if (path.StartsWith("^", StringComparison.Ordinal))
-				path = SupportDir + path.Substring(1);
+			if (path == "^SupportDir")
+				return SupportDir;
 
-			// Paths starting with . are relative to the game dir
-			if (path == ".")
-				return GameDir;
+			if (path == "^EngineDir")
+				return EngineDir;
 
-			if (path.StartsWith("./", StringComparison.Ordinal) || path.StartsWith(".\\", StringComparison.Ordinal))
-				path = GameDir + path.Substring(2);
+			if (path == "^BinDir")
+				return BinDir;
 
-			return path;
-		}
+			if (path.StartsWith("^SupportDir|", StringComparison.Ordinal))
+				path = SupportDir + path.Substring(12);
 
-		/// <summary>Replace special character prefixes with full paths.</summary>
-		public static string ResolvePath(params string[] path)
-		{
-			return ResolvePath(path.Aggregate(Path.Combine));
-		}
+			if (path.StartsWith("^EngineDir|", StringComparison.Ordinal))
+				path = EngineDir + path.Substring(11);
 
-		/// <summary>Replace the full path prefix with the special notation characters ^ or .</summary>
-		public static string UnresolvePath(string path)
-		{
-			if (path.StartsWith(SupportDir, StringComparison.Ordinal))
-				path = "^" + path.Substring(SupportDir.Length);
-
-			if (path.StartsWith(GameDir, StringComparison.Ordinal))
-				path = "./" + path.Substring(GameDir.Length);
+			if (path.StartsWith("^BinDir|", StringComparison.Ordinal))
+				path = BinDir + path.Substring(8);
 
 			return path;
 		}

@@ -1,6 +1,6 @@
 #region Copyright & License Information
 /*
- * Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+ * Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
  * available to you under the terms of the GNU General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -27,28 +27,40 @@ namespace OpenRA.Platforms.Default
 			OpenGL.CheckGLError();
 			Bind();
 
-			var ptr = GCHandle.Alloc(new T[size], GCHandleType.Pinned);
+			// Generates a buffer with uninitialized memory.
+			OpenGL.glBufferData(OpenGL.GL_ARRAY_BUFFER,
+					new IntPtr(VertexSize * size),
+					IntPtr.Zero,
+					OpenGL.GL_DYNAMIC_DRAW);
+			OpenGL.CheckGLError();
+
+			// We need to zero all the memory. Let's generate a smallish array and copy that over the whole buffer.
+			var zeroedArrayElementSize = Math.Min(size, 2048);
+			var ptr = GCHandle.Alloc(new T[zeroedArrayElementSize], GCHandleType.Pinned);
 			try
 			{
-				OpenGL.glBufferData(OpenGL.GL_ARRAY_BUFFER,
-					new IntPtr(VertexSize * size),
-					ptr.AddrOfPinnedObject(),
-					OpenGL.GL_DYNAMIC_DRAW);
+				for (var offset = 0; offset < size; offset += zeroedArrayElementSize)
+				{
+					var length = Math.Min(zeroedArrayElementSize, size - offset);
+					OpenGL.glBufferSubData(OpenGL.GL_ARRAY_BUFFER,
+						new IntPtr(VertexSize * offset),
+						new IntPtr(VertexSize * length),
+						ptr.AddrOfPinnedObject());
+					OpenGL.CheckGLError();
+				}
 			}
 			finally
 			{
 				ptr.Free();
 			}
-
-			OpenGL.CheckGLError();
 		}
 
 		public void SetData(T[] data, int length)
 		{
-			SetData(data, 0, length);
+			SetData(data, 0, 0, length);
 		}
 
-		public void SetData(T[] data, int start, int length)
+		public void SetData(T[] data, int offset, int start, int length)
 		{
 			Bind();
 
@@ -58,23 +70,13 @@ namespace OpenRA.Platforms.Default
 				OpenGL.glBufferSubData(OpenGL.GL_ARRAY_BUFFER,
 					new IntPtr(VertexSize * start),
 					new IntPtr(VertexSize * length),
-					ptr.AddrOfPinnedObject());
+					ptr.AddrOfPinnedObject() + VertexSize * offset);
 			}
 			finally
 			{
 				ptr.Free();
 			}
 
-			OpenGL.CheckGLError();
-		}
-
-		public void SetData(IntPtr data, int start, int length)
-		{
-			Bind();
-			OpenGL.glBufferSubData(OpenGL.GL_ARRAY_BUFFER,
-				new IntPtr(VertexSize * start),
-				new IntPtr(VertexSize * length),
-				data);
 			OpenGL.CheckGLError();
 		}
 
@@ -89,16 +91,13 @@ namespace OpenRA.Platforms.Default
 			OpenGL.CheckGLError();
 			OpenGL.glVertexAttribPointer(Shader.TexMetadataAttributeIndex, 2, OpenGL.GL_FLOAT, false, VertexSize, new IntPtr(28));
 			OpenGL.CheckGLError();
-		}
-
-		~VertexBuffer()
-		{
-			Game.RunAfterTick(() => Dispose(false));
+			OpenGL.glVertexAttribPointer(Shader.TintAttributeIndex, 4, OpenGL.GL_FLOAT, false, VertexSize, new IntPtr(36));
+			OpenGL.CheckGLError();
 		}
 
 		public void Dispose()
 		{
-			Game.RunAfterTick(() => Dispose(true));
+			Dispose(true);
 			GC.SuppressFinalize(this);
 		}
 
@@ -108,6 +107,7 @@ namespace OpenRA.Platforms.Default
 				return;
 			disposed = true;
 			OpenGL.glDeleteBuffers(1, ref buffer);
+			OpenGL.CheckGLError();
 		}
 	}
 }

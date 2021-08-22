@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -15,18 +15,51 @@ EnemyBaseShroudTrigger = { CPos.New(64, 52), CPos.New(64, 53), CPos.New(64, 54),
 ParachuteTrigger = { CPos.New(80, 66), CPos.New(81, 66), CPos.New(82, 66), CPos.New(83, 66), CPos.New(84, 66), CPos.New(85, 66),CPos.New(86, 66), CPos.New(87, 66), CPos.New(88, 66), CPos.New(89, 66) }
 EnemyBaseEntranceShroudTrigger = { CPos.New(80, 73), CPos.New(81, 73), CPos.New(82, 73), CPos.New(83, 73), CPos.New(84, 73), CPos.New(85, 73),CPos.New(86, 73), CPos.New(87, 73), CPos.New(88, 73), CPos.New(89, 73) }
 
+AttackWaypoints = { AttackWaypoint1, AttackWaypoint2 }
+AttackGroup = { }
+AttackGroupSize = 3
+AlliedInfantry = { "e1", "e1", "e3" }
+
+SendAttackGroup = function()
+	if #AttackGroup < AttackGroupSize then
+		return
+	end
+
+	local way = Utils.Random(AttackWaypoints)
+	Utils.Do(AttackGroup, function(unit)
+		if not unit.IsDead then
+			unit.AttackMove(way.Location)
+			Trigger.OnIdle(unit, unit.Hunt)
+		end
+	end)
+
+	AttackGroup = { }
+end
+
+ProduceInfantry = function()
+	if Tent.IsDead then
+		return
+	end
+
+	enemy.Build({ Utils.Random(AlliedInfantry) }, function(units)
+		table.insert(AttackGroup, units[1])
+		SendAttackGroup()
+		Trigger.AfterDelay(DateTime.Seconds(10), ProduceInfantry)
+	end)
+end
+
 SendUSSRParadrops = function()
 	paraproxy1 = Actor.Create("powerproxy.paratroopers", false, { Owner = player })
-	paraproxy1.SendParatroopers(ParachuteBaseEntrance.CenterPosition, false,  Facing.North)
+	paraproxy1.TargetParatroopers(ParachuteBaseEntrance.CenterPosition, Angle.North)
 	paraproxy1.Destroy()
 end
 
 SendUSSRParadropsBase = function()
 	paraproxy2 = Actor.Create("powerproxy.paratroopers2", false, { Owner = player })
-	paraproxy2.SendParatroopers(ParachuteBase1.CenterPosition, false, Facing.East)
+	paraproxy2.TargetParatroopers(ParachuteBase1.CenterPosition, Angle.East)
 	paraproxy2.Destroy()
 	paraproxy3 = Actor.Create("powerproxy.paratroopers3", false, { Owner = player })
-	paraproxy3.SendParatroopers(ParachuteBase2.CenterPosition, false, Facing.East)
+	paraproxy3.TargetParatroopers(ParachuteBase2.CenterPosition, Angle.East)
 	paraproxy3.Destroy()
 end
 
@@ -129,7 +162,7 @@ end)
 
 WorldLoaded = function()
 	player = Player.GetPlayer("USSR")
-	enemy = Player.GetPlayer("Germany")
+	enemy = Player.GetPlayer("Greece")
 	Utils.Do(IntroAttackers, function(actor)
 		if not actor.IsDead then
 			Trigger.OnIdle(actor, actor.Hunt)
@@ -160,9 +193,12 @@ WorldLoaded = function()
 	Trigger.OnPlayerLost(player, function()
 		Media.PlaySpeechNotification(player, "Lose")
 	end)
-	alliedObjective = enemy.AddPrimaryObjective("Destroy all Soviet troops.")
-	sovietObjective1 = player.AddPrimaryObjective("Protect the Command Center.")
-	sovietObjective2 = player.AddPrimaryObjective("Destroy all Allied units and structures.")
+	alliedObjective = enemy.AddObjective("Destroy all Soviet troops.")
+	sovietObjective1 = player.AddObjective("Protect the Command Center.")
+	sovietObjective2 = player.AddObjective("Destroy all Allied units and structures.")
+
+	enemy.Resources = 2000
+	Trigger.AfterDelay(DateTime.Seconds(30), ProduceInfantry)
 end
 
 Tick = function()

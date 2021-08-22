@@ -1,5 +1,5 @@
 --[[
-   Copyright 2007-2017 The OpenRA Developers (see AUTHORS)
+   Copyright 2007-2021 The OpenRA Developers (see AUTHORS)
    This file is part of OpenRA, which is free software. It is made
    available to you under the terms of the GNU General Public License
    as published by the Free Software Foundation, either version 3 of
@@ -34,14 +34,6 @@ else
 	TanyaType = "e7.noautotarget"
 end
 
-IdleHunt = function(actor)
-	Trigger.OnIdle(actor, function(a)
-		if a.IsInWorld then
-			a.Hunt()
-		end
-	end)
-end
-
 Tick = function()
 	if TeleportJeepCamera and Jeep.IsInWorld then
 		JeepCamera.Teleport(Jeep.Location)
@@ -68,7 +60,7 @@ ProduceUnits = function(factory, count)
 end
 
 SetupAlliedUnits = function()
-	Tanya = Actor.Create(TanyaType, true, { Owner = player, Location = TanyaWaypoint.Location, Facing = 128 })
+	Tanya = Actor.Create(TanyaType, true, { Owner = player, Location = TanyaWaypoint.Location, Facing = Angle.South })
 
 	if TanyaType == "e7.noautotarget" then
 		Trigger.AfterDelay(DateTime.Seconds(2), function()
@@ -89,15 +81,17 @@ SetupTopRightIsland = function()
 	player.MarkCompletedObjective(FindAllies)
 	Media.PlaySpeechNotification(player, "AlliedReinforcementsArrived")
 	Reinforcements.Reinforce(player, AlliedIslandReinforcements, { AlliedIslandReinforcementsEntry.Location, IslandParadropReinforcementsDropzone.Location })
-	SendUSSRParadrops(128 + 52, IslandParadropReinforcementsDropzone)
+	SendUSSRParadrops(Angle.New(720), IslandParadropReinforcementsDropzone)
 end
 
 SendUSSRParadrops = function(facing, dropzone)
 	local paraproxy = Actor.Create("powerproxy.paratroopers", false, { Owner = ussr })
 
-	local units = paraproxy.SendParatroopers(dropzone.CenterPosition, false, facing)
-	Utils.Do(units, function(unit)
-		IdleHunt(unit)
+	local aircraft = paraproxy.TargetParatroopers(dropzone.CenterPosition, facing)
+	Utils.Do(aircraft, function(a)
+		Trigger.OnPassengerExited(a, function(t, p)
+			IdleHunt(p)
+		end)
 	end)
 
 	paraproxy.Destroy()
@@ -181,11 +175,11 @@ InitObjectives = function()
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "New " .. string.lower(p.GetObjectiveType(id)) .. " objective")
 	end)
 
-	KillBridges = player.AddPrimaryObjective("Destroy all bridges.")
-	TanyaSurvive = player.AddPrimaryObjective("Tanya must survive.")
-	FindAllies = player.AddSecondaryObjective("Find our lost tanks.")
-	FreePrisoners = player.AddSecondaryObjective("Free all Allied soldiers and keep them alive.")
-	ussr.AddPrimaryObjective("Bridges must not be destroyed.")
+	KillBridges = player.AddObjective("Destroy all bridges.")
+	TanyaSurvive = player.AddObjective("Tanya must survive.")
+	FindAllies = player.AddObjective("Find our lost tanks.", "Secondary", false)
+	FreePrisoners = player.AddObjective("Free all Allied soldiers and keep them alive.", "Secondary", false)
+	ussr.AddObjective("Bridges must not be destroyed.")
 
 	Trigger.OnObjectiveCompleted(player, function(p, id)
 		Media.DisplayMessage(p.GetObjectiveDescription(id), "Objective completed")
@@ -221,6 +215,10 @@ InitTriggers = function()
 	end)
 
 	Trigger.OnKilled(ExplosiveBarrel, function()
+		if reinforcementsTriggered then
+			return
+		end
+
 		if not ExplodingBridge.IsDead then ExplodingBridge.Kill() end
 		reinforcementsTriggered = true
 		Trigger.AfterDelay(DateTime.Seconds(1), SendUSSRTankReinforcements)
@@ -248,8 +246,10 @@ InitTriggers = function()
 			AlertFirstBase()
 		end)
 	end)
-	Trigger.OnAllRemovedFromWorld(FirstUSSRBase, function() -- The camera can remain when one building is captured
-		if baseCamera then baseCamera.Destroy() end
+	Trigger.OnAllKilledOrCaptured(FirstUSSRBase, function()
+		if baseCamera and baseCamera.IsInWorld then
+			baseCamera.Destroy()
+		end
 	end)
 
 	Trigger.OnDamaged(USSRBarracks3, function()
@@ -328,7 +328,7 @@ InitTriggers = function()
 		if a.Owner == player and a.Type ~= "jeep.mission" and not paradropsTriggered then
 			paradropsTriggered = true
 			Trigger.RemoveFootprintTrigger(id)
-			SendUSSRParadrops(54, ParadropReinforcementsDropzone)
+			SendUSSRParadrops(Angle.New(216), ParadropReinforcementsDropzone)
 		end
 	end)
 	Trigger.OnEnteredFootprint(ReinforcementsTriggerArea, function(a, id)
@@ -353,6 +353,14 @@ InitTriggers = function()
 		end
 	end)
 
+	-- The engineers need to leave the enemy base to count as 'freed'
+	Trigger.OnExitedProximityTrigger(BaseCameraWaypoint.CenterPosition, WDist.New(7 * 1024), function(a, id)
+		if a.Type == "e6" and not EngisFreed then
+			EngisFreed = true
+			Trigger.RemoveProximityTrigger(id)
+		end
+	end)
+
 	Trigger.AfterDelay(0, function()
 		local bridges = Utils.Where(Map.ActorsInWorld, function(actor) return actor.Type == "bridge1" or actor.Type == "bridge2" end)
 		ExplodingBridge = bridges[1]
@@ -360,7 +368,11 @@ InitTriggers = function()
 		Trigger.OnAllKilled(bridges, function()
 			player.MarkCompletedObjective(KillBridges)
 			player.MarkCompletedObjective(TanyaSurvive)
-			player.MarkCompletedObjective(FreePrisoners)
+
+			-- The medic is freed once his guard is dead
+			if MediFreed and MediGuard.IsDead and EngisFreed then
+				player.MarkCompletedObjective(FreePrisoners)
+			end
 		end)
 	end)
 end
