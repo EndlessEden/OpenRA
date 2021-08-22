@@ -192,17 +192,17 @@ SectionEnd
 ;***************************
 Section "-Uninstaller"
 	WriteUninstaller $INSTDIR\uninstaller.exe
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "DisplayName" "OpenRA-Kang${SUFFIX}"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "UninstallString" "$INSTDIR\uninstaller.exe"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "InstallLocation" "$INSTDIR"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "DisplayIcon" "$INSTDIR\ra.ico"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "Publisher" "OpenRA developers"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "URLInfoAbout" "http://openra.net"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "Readme" "$INSTDIR\README.html"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "DisplayVersion" "${TAG}"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "NoModify" "1"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}" "NoRepair" "1"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "DisplayName" "OpenRA-Kang${SUFFIX}"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "UninstallString" "$INSTDIR\uninstaller.exe"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "InstallLocation" "$INSTDIR"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "DisplayIcon" "$INSTDIR\ra.ico"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "Publisher" "OpenRA developers"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "URLInfoAbout" "http://openra.net"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "Readme" "$INSTDIR\README.html"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "DisplayVersion" "${TAG}"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "NoModify" "1"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}" "NoRepair" "1"
 SectionEnd
 
 !macro Clean UN
@@ -229,7 +229,7 @@ Function ${UN}Clean
 	
 	RMDir /r $INSTDIR\Support
 
-	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA${SUFFIX}"
+	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenRA-Kang${SUFFIX}"
 	DeleteRegKey HKLM "Software\Classes\openra-kang-ra-${TAG}"
 	DeleteRegKey HKLM "Software\Classes\openra-kang-cnc-${TAG}"
 	DeleteRegKey HKLM "Software\Classes\openra-kang-d2k-${TAG}"
