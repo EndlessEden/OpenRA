@@ -1,10 +1,10 @@
 # OpenRA - Kang
 
-**(Forked from https://github.com/BangL/OpenRA#bleed - As it was abandoned. See commit#2 - CURRENTLY IN A BAD STATE, i am working on it...)
+* (Forked from https://github.com/BangL/OpenRA#bleed - As it was abandoned. See commit#2 - CURRENTLY IN A BAD STATE, i am working on it...)
 
-A Libre/Free Real Time Strategy game engine supporting early Westwood classics. | The "Kang" version differentiates its self from the main(#bleed) branch by bundling RA2[https://github.com/OpenRA/ra2](https://github.com/OpenRA/ra2) and D2[https://github.com/OpenRA/D2](https://github.com/OpenRA/D2) Directly into the main "mod" bundle. 
+A Libre/Free Real Time Strategy game engine supporting early Westwood classics. | The "Kang" version differentiates its self from the main(#bleed) branch by bundling RA2 and D2 Directly into the main "mod" bundle. 
 
-It is expected that the OpenRA[https://github.com/OpenRA/OpenRA](https://github.com/OpenRA/OpenRA) Main(#Bleed) branch will intergrate RA2 and D2 into OpenRA in the future making the Kang Version Deprecated at a later date. However, until that point a tightly integrated and distributable branch is necessary for many System Packagers and Portable installations.
+It is expected that the OpenRA Main(#bleed) branch will intergrate RA2 and D2 into OpenRA in the future making the Kang Version Deprecated at a later date. However, until that point a tightly integrated and distributable branch is necessary for many System Packagers and Portable installations.
 
 OpenRA-Kang wishes to fill this gap. Kang may not be the solution we asked for, but it is the Solution we Need.
 
