@@ -1,6 +1,6 @@
 # OpenRA - Kang
 
-(Forked from https://github.com/BangL/OpenRA#bleed - As it was abandoned. See commit#2 - CURRENTLY IN A BAD STATE, i am working on it...)
+**(Forked from https://github.com/BangL/OpenRA#bleed - As it was abandoned. See commit#2 - CURRENTLY IN A BAD STATE, i am working on it...)
 
 A Libre/Free Real Time Strategy game engine supporting early Westwood classics. | The "Kang" version differentiates its self from the main(#bleed) branch by bundling RA2[https://github.com/OpenRA/ra2](https://github.com/OpenRA/ra2) and D2[https://github.com/OpenRA/D2](https://github.com/OpenRA/D2) Directly into the main "mod" bundle. 
 
@@ -14,9 +14,9 @@ Distributed mods include a reimagining of
 
 * Command & Conquer: Red Alert
 * Command & Conquer: Tiberian Dawn
-* Command & Conquer: Red Alert 2 [https://github.com/OpenRA/ra2](https://github.com/OpenRA/ra2)
+* Command & Conquer: Red Alert 2 | [https://github.com/OpenRA/ra2](https://github.com/OpenRA/ra2)
 * Dune 2000
-* Dune II [https://github.com/OpenRA/d2](https://github.com/OpenRA/d2)
+* Dune II | [https://github.com/OpenRA/d2](https://github.com/OpenRA/d2)
 
 Check our [Playing the Game](https://github.com/OpenRA/OpenRA/wiki/Playing-the-game) Guide to win multiplayer matches.
 
