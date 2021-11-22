@@ -1,8 +1,26 @@
 # OpenRA - Kang
 
-(Forked from https://github.com/BangL/OpenRA#bleed - As it was abandoned. See commit#2)
+(Forked from https://github.com/BangL/OpenRA#bleed - As it was abandoned. See commit#2 - CURRENTLY IN A BAD STATE, i am working on it...)
 
-A Libre/Free Real Time Strategy game engine supporting early Westwood classics.
+A Libre/Free Real Time Strategy game engine supporting early Westwood classics. | The "Kang" version differentiates its self from the main(#bleed) branch by bundling RA2[https://github.com/OpenRA/ra2](https://github.com/OpenRA/ra2) and D2[https://github.com/OpenRA/D2](https://github.com/OpenRA/D2) Directly into the main "mod" bundle. 
+
+It is expected that the OpenRA[https://github.com/OpenRA/OpenRA](https://github.com/OpenRA/OpenRA) Main(#Bleed) branch will intergrate RA2 and D2 into OpenRA in the future making the Kang Version Deprecated at a later date. However, until that point a tightly integrated and distributable branch is necessary for many System Packagers and Portable installations.
+
+OpenRA-Kang wishes to fill this gap. Kang may not be the solution we asked for, but it is the Solution we Need.
+
+# Play
+
+Distributed mods include a reimagining of
+
+* Command & Conquer: Red Alert
+* Command & Conquer: Tiberian Dawn
+* Command & Conquer: Red Alert 2 [https://github.com/OpenRA/ra2](https://github.com/OpenRA/ra2)
+* Dune 2000
+* Dune II [https://github.com/OpenRA/d2](https://github.com/OpenRA/d2)
+
+Check our [Playing the Game](https://github.com/OpenRA/OpenRA/wiki/Playing-the-game) Guide to win multiplayer matches.
+
+# Upstream Information.
 
 * Website: [http://www.openra.net](http://www.openra.net)
 * IRC: \#openra on irc.freenode.net
@@ -11,16 +29,6 @@ A Libre/Free Real Time Strategy game engine supporting early Westwood classics.
 Please read the [FAQ](http://wiki.openra.net/FAQ) in our [Wiki](http://wiki.openra.net) and report problems at [http://bugs.openra.net](http://bugs.openra.net).
 
 Join the [Forums](http://www.sleipnirstuff.com/forum/viewforum.php?f=80) for discussion.
-
-## Play
-
-Distributed mods include a reimagining of
-
-* Command & Conquer: Red Alert
-* Command & Conquer: Tiberian Dawn
-* Dune 2000
-
-Check our [Playing the Game](https://github.com/OpenRA/OpenRA/wiki/Playing-the-game) Guide to win multiplayer matches.
 
 ## Contribute
 
